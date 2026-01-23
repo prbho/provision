@@ -398,86 +398,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkEmail = async (email: string): Promise<EmailCheckResult> => {
     try {
-      console.log('🔍 Checking email existence:', email)
+      console.log('📧 Checking email:', email)
 
-      const normalizedEmail = email.toLowerCase().trim()
+      if (!email || !email.includes('@')) {
+        console.log('❌ Invalid email format')
+        return {
+          exists: false,
+          error: true,
+          message: 'Please enter a valid email address',
+        }
+      }
 
-      // Check BOTH collections
-      const [usersResponse, agentsResponse] = await Promise.all([
-        databases.listDocuments(DATABASE_ID, USERS_COLLECTION_ID, [
-          Query.equal('email', normalizedEmail),
-          Query.limit(1),
-        ]),
-        databases.listDocuments(DATABASE_ID, AGENTS_COLLECTION_ID, [
-          Query.equal('email', normalizedEmail),
-          Query.limit(1),
-        ]),
-      ])
-
-      console.log('📊 Database query results:', {
-        usersTotal: usersResponse.total,
-        usersFound: usersResponse.documents.length,
-        agentsTotal: agentsResponse.total,
-        agentsFound: agentsResponse.documents.length,
+      const response = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
       })
 
-      // Check users collection first
-      if (usersResponse.documents.length > 0) {
-        const userDoc = usersResponse.documents[0]
-        console.log('✅ User found in USERS collection:', {
-          id: userDoc.$id,
-          userType: userDoc.userType,
-          emailVerified: userDoc.emailVerified,
-        })
+      const result = await response.json()
+      console.log('📧 API response:', result)
 
+      // Handle API errors
+      if (!response.ok || result.error) {
+        console.error(
+          '❌ Email check failed:',
+          result.message || result.warning
+        )
         return {
-          exists: true,
-          user: {
-            $id: userDoc.$id,
-            name: userDoc.name,
-            email: userDoc.email,
-            emailVerified: userDoc.emailVerified,
-            isActive: userDoc.isActive,
-            userType: userDoc.userType,
-            city: userDoc.city,
-            agency: userDoc.agency,
-          },
+          exists: false,
+          error: true,
+          message: result.message || result.warning || 'Unable to check email',
+          warning: result.warning,
         }
       }
 
-      // Check agents collection
-      if (agentsResponse.documents.length > 0) {
-        const userDoc = agentsResponse.documents[0]
-        console.log('✅ User found in AGENTS collection:', {
-          id: userDoc.$id,
-          userType: userDoc.userType,
-          emailVerified: userDoc.emailVerified,
-          agency: userDoc.agency,
-          city: userDoc.city,
-        })
-
-        return {
-          exists: true,
-          user: {
-            $id: userDoc.$id,
-            name: userDoc.name,
-            email: userDoc.email,
-            emailVerified: userDoc.emailVerified,
-            isActive: userDoc.isActive,
-            userType: userDoc.userType,
-            agency: userDoc.agency,
-            city: userDoc.city,
-          },
-        }
+      // Return the result (exists will be true/false)
+      return result as EmailCheckResult
+    } catch (error: any) {
+      console.error('❌ Email check exception:', error.message)
+      return {
+        exists: false,
+        error: true,
+        message: 'Network error. Please try again.',
       }
-
-      console.log(
-        '❌ No user found with email in any collection:',
-        normalizedEmail
-      )
-      return { exists: false }
-    } catch {
-      return { exists: false }
     }
   }
 

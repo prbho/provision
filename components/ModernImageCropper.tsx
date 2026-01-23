@@ -231,7 +231,7 @@ export default function ModernImageCropper({
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-800 bg-linear-to-r from-gray-900 to-gray-950">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <div className="p-2 rounded-lg bg-brand/5/10 border border-emerald-500/20">
                 <Crop className="w-5 h-5 text-emerald-400" />
               </div>
               <div>
@@ -334,7 +334,7 @@ export default function ModernImageCropper({
                       max={3}
                       step={0.1}
                       onValueChange={([value]) => onZoomChange(value)}
-                      className="[[role=slider]]:bg-emerald-500 [[role=slider]]:border-emerald-400"
+                      className="[[role=slider]]:bg-brand/5 [[role=slider]]:border-emerald-400"
                     />
                     <div className="flex gap-2">
                       <button
@@ -380,7 +380,7 @@ export default function ModernImageCropper({
                       max={360}
                       step={1}
                       onValueChange={([value]) => onRotationChange(value)}
-                      className="[[role=slider]]:bg-emerald-500 [[role=slider]]:border-emerald-400"
+                      className="[[role=slider]]:bg-brand/5 [[role=slider]]:border-emerald-400"
                     />
                     <div className="flex gap-2">
                       <button
@@ -416,7 +416,7 @@ export default function ModernImageCropper({
                   <button
                     onClick={handleCropComplete}
                     disabled={isProcessing || !croppedAreaPixels}
-                    className="w-full py-3 px-4 bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all flex items-center justify-center gap-2 group"
+                    className="w-full py-3 px-4 bg-linear-to-r from-brand to-emerald-600 hover:from-brand hover:from-brand disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all flex items-center justify-center gap-2 group"
                     onMouseDown={(e) => e.stopPropagation()}
                   >
                     {isProcessing ? (

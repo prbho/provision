@@ -1,5 +1,5 @@
-Contact: mailto:security@propsafehub.com
+Contact: mailto:security@propertyvision.com
 Expires: 2025-12-31T23:00:00.000Z
 Preferred-Languages: en
-Canonical: https://propsafehub.com/.well-known/security.txt
-Policy: https://propsafehub.com/security-policy
+Canonical: https://propertyvision.com/.well-known/security.txt
+Policy: https://propertyvision.com/security-policy

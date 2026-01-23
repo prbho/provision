@@ -62,7 +62,7 @@ export async function generateMetadata(props: PageProps) {
     const property = await getProperty(params.id)
 
     return {
-      title: `${property.title} | ${property.city}, ${property.state} - PropSafeHub`,
+      title: `${property.title} | ${property.city}, ${property.state} - propertyvision`,
       description: property.description.substring(0, 160) + '...',
       openGraph: {
         title: property.title,
@@ -72,7 +72,7 @@ export async function generateMetadata(props: PageProps) {
     }
   } catch {
     return {
-      title: 'Property Not Found - PropSafeHub',
+      title: 'Property Not Found - propertyvision',
       description: 'The property you are looking for does not exist.',
     }
   }

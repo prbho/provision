@@ -245,6 +245,7 @@ export interface Agent {
   specialties: string[]
   languages: string[]
   officePhone: string
+  state: string
   mobilePhone: string
   website: string
   totalListings: number

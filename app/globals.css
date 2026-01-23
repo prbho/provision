@@ -75,6 +75,17 @@
   background: #0d2a52;
 }
 
+@theme {
+  --color-primary: #0f6b3a;
+  --color-secondary: #1fa463;
+  --color-surface: #c9a24d;
+
+  --color-brand: #0f6b3a;
+  --color-brand-50: #d0efde;
+  --color-gold-50: #f3dba7;
+  --color-gold-600: #c9a24d;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

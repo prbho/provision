@@ -136,14 +136,14 @@ const SidebarContent = ({
           href={item.href}
           className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group relative ${
             isActive(item.href)
-              ? 'bg-emerald-50 text-emerald-700 font-medium'
+              ? 'bg-brand/5 text-brand font-medium'
               : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
           }`}
         >
           <div
             className={`shrink-0 ${
               isActive(item.href)
-                ? 'text-emerald-600'
+                ? 'text-brand'
                 : 'text-gray-500 group-hover:text-gray-700'
             }`}
           >
@@ -455,7 +455,7 @@ export default function DashboardSidebar({
       case 'seller':
         return 'bg-amber-100 text-amber-600'
       case 'buyer':
-        return 'bg-emerald-100 text-emerald-600'
+        return 'bg-brand/10 text-emerald-600'
       default:
         return 'bg-gray-100 text-gray-600'
     }

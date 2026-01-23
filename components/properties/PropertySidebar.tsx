@@ -1,15 +1,24 @@
 // components/properties/PropertySidebar.tsx
 'use client'
 
-import { useEffect, useMemo, useState } from 'react' // Add useMemo
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Property } from '@/types'
-import { Calculator, Calendar } from 'lucide-react'
+import {
+  Calculator,
+  Calendar,
+  Eye,
+  Heart,
+  TrendingDown,
+  Users,
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 import MessageButton from '@/components/messages/MessageButton'
 import MortgageCalculator from '@/components/MortgageCalculator'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
 import Portal from '../Portal'
 import AgentDetails from './AgentDetails'
@@ -41,29 +50,16 @@ export default function PropertySidebar({
       return false
     }
 
-    // Check all possible ownership scenarios
     const checks = [
-      // 1. Direct user ID match (property was posted with user's account ID)
       property.agentId === user.$id,
-
-      // 2. User's agent document ID match (user has agent profile)
       user.agentDocumentId && property.agentId === user.agentDocumentId,
-
-      // 3. Agent profile context (viewing own agent profile)
       agentProfileId && property.agentId === agentProfileId,
     ]
 
-    const result = checks.some((check) => check === true)
+    return checks.some((check) => check === true)
+  }, [user, property.agentId, agentProfileId])
 
-    console.log('🎯 Ownership result:', {
-      result,
-      reason: result
-        ? 'User owns this property (matched account ID or agent document ID)'
-        : 'User does NOT own this property',
-    })
-
-    return result
-  }, [user, property.agentId, agentProfileId]) // Add dependencies
+  const isShortLet = property.status === 'short-let'
 
   const handleScheduleViewing = async (scheduleData: ScheduleData) => {
     try {
@@ -84,11 +80,13 @@ export default function PropertySidebar({
 
       if (result.success) {
         toast.success(
-          'Viewing scheduled successfully! The agent will contact you soon.'
+          isShortLet
+            ? 'Booking request sent! The host will contact you soon.'
+            : 'Viewing scheduled successfully! The agent will contact you soon.'
         )
         setShowScheduleModal(false)
       } else {
-        toast.error('Failed to schedule viewing. Please try again.')
+        toast.error('Failed to schedule. Please try again.')
       }
     } catch {
       toast.error('An error occurred. Please try again.')
@@ -105,6 +103,10 @@ export default function PropertySidebar({
     const formattedPrice = formatter.format(price)
 
     switch (unit) {
+      case 'daily':
+        return `${formattedPrice}/night`
+      case 'weekly':
+        return `${formattedPrice}/week`
       case 'monthly':
         return `${formattedPrice}/mo`
       case 'yearly':
@@ -119,21 +121,10 @@ export default function PropertySidebar({
       if (!property.agentId) return
 
       try {
-        console.log('🔍 Fetching agent data for:', property.agentId)
         const response = await fetch(`/api/agents/${property.agentId}`)
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch agent')
-        }
+        if (!response.ok) throw new Error('Failed to fetch agent')
 
         const data = await response.json()
-        console.log('✅ Agent data fetched:', {
-          name: data.name,
-          avatar: data.avatar,
-          agency: data.agency,
-          rating: data.rating,
-        })
-
         setAgentData({
           name: data.name,
           avatar: data.avatar,
@@ -142,7 +133,7 @@ export default function PropertySidebar({
           agency: data.agency,
         })
       } catch (error) {
-        console.error('❌ Failed to fetch agent:', error)
+        console.error('Failed to fetch agent:', error)
       }
     }
 
@@ -151,155 +142,185 @@ export default function PropertySidebar({
 
   return (
     <>
-      <div
-        className="lg:sticky lg:top-24 space-y-6"
-        style={{ height: 'fit-content' }}
-      >
+      <div className="space-y-4 sm:space-y-6">
         {/* Price Card */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-          <div className="mb-6">
-            <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
-              {formatPrice(property.price, property.priceUnit)}
-            </div>
-            {property.originalPrice &&
-              property.originalPrice > property.price && (
-                <div className="inline-block">
-                  <div className="text-lg text-gray-500 line-through">
-                    {formatPrice(property.originalPrice, property.priceUnit)}
+        <Card className="border-gray-200 shadow-sm">
+          <CardContent className="p-5 sm:p-6">
+            {/* Price Section */}
+            <div className="mb-6">
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                {formatPrice(property.price, property.priceUnit)}
+              </div>
+              {property.originalPrice &&
+                property.originalPrice > property.price && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-base text-gray-500 line-through">
+                      {formatPrice(property.originalPrice, property.priceUnit)}
+                    </span>
+                    <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                      <TrendingDown className="h-3 w-3 mr-1" />
+                      Save{' '}
+                      {Math.round(
+                        ((property.originalPrice - property.price) /
+                          property.originalPrice) *
+                          100
+                      )}
+                      %
+                    </Badge>
                   </div>
-                  <span className="ml-2 text-sm font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
-                    Save{' '}
-                    {Math.round(
-                      ((property.originalPrice - property.price) /
-                        property.originalPrice) *
-                        100
-                    )}
-                    %
-                  </span>
+                )}
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="space-y-3 mb-6">
+              {/* Mortgage Calculator Button - Only for sale/rent */}
+              {!isShortLet && (
+                <div className="mb-4">
+                  <p className="text-xs text-gray-500 mb-2">
+                    Estimate your monthly payments
+                  </p>
+                  <Button
+                    onClick={() => setShowMortgageCalculator(true)}
+                    className="w-full py-5 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                    size="lg"
+                  >
+                    <Calculator className="h-5 w-5 mr-2" />
+                    Calculate Mortgage
+                  </Button>
                 </div>
               )}
-          </div>
 
-          {/* Mortgage Calculator Button */}
-          <div className="mb-4">
-            <Button
-              onClick={() => setShowMortgageCalculator(true)}
-              className="w-full py-6 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg transform transition-all duration-200 border-0 shadow-md hover:shadow-lg"
-              size="lg"
-            >
-              <div className="flex items-center justify-center space-x-3">
-                <div className="flex items-center space-x-2">
-                  <Calculator className="h-6 w-6" />
-                </div>
-                <span className="text-base font-bold tracking-wide">
-                  CALCULATE MORTGAGE
-                </span>
+              {/* Message/Contact Button */}
+              <div className="space-y-2">
+                {!isOwner ? (
+                  <MessageButton
+                    property={property}
+                    agentId={property.agentId}
+                    agentName={property.agentName || 'Property Agent'}
+                    propertyId={property.$id}
+                    propertyTitle={property.title}
+                    className="w-full py-5 bg-linear-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold"
+                    variant="button"
+                  />
+                ) : (
+                  <div className="space-y-2">
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                      <p className="text-sm text-emerald-700 font-medium text-center">
+                        Your listing • View messages from interested{' '}
+                        {isShortLet ? 'guests' : 'buyers'}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="w-full py-5 border-emerald-200 hover:bg-emerald-50"
+                      onClick={() => {
+                        window.location.href = `/dashboard/agent/${user?.$id}/messages?propertyId=${property.$id}`
+                      }}
+                    >
+                      <Users className="h-5 w-5 mr-2" />
+                      View Messages
+                    </Button>
+                  </div>
+                )}
               </div>
-            </Button>
 
-            <div className="mt-2 text-center">
-              <p className="text-xs text-gray-600">
-                💡 See your monthly payments and loan options
-              </p>
+              {/* Schedule Viewing/Booking Button */}
+              <Button
+                variant={isShortLet ? 'default' : 'outline'}
+                className={`w-full py-5 ${
+                  isShortLet
+                    ? 'bg-linear-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white'
+                    : 'border-gray-300 hover:bg-gray-50'
+                }`}
+                onClick={() => setShowScheduleModal(true)}
+                disabled={isOwner}
+                title={
+                  isOwner
+                    ? "You can't schedule a viewing for your own property"
+                    : isShortLet
+                      ? 'Book this property'
+                      : 'Schedule a property viewing'
+                }
+              >
+                <Calendar className="h-5 w-5 mr-2" />
+                {isOwner
+                  ? 'Manage Bookings'
+                  : isShortLet
+                    ? 'Book Now'
+                    : 'Schedule Viewing'}
+              </Button>
             </div>
-          </div>
 
-          <div className="space-y-3 mb-6">
-            {/* CONDITIONAL MESSAGE BUTTON - Hide if user is owner */}
-            {!isOwner ? (
-              <MessageButton
-                property={property}
-                agentId={property.agentId}
-                agentName={property.agentName || 'Property Agent'}
-                propertyId={property.$id}
-                propertyTitle={property.title}
-                className="w-full py-6 capitalize bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
-                variant="button"
-              />
-            ) : (
-              <div>
-                <div className="p-2 mb-2 bg-emerald-50 border border-emerald-200 rounded-lg text-center">
-                  <p className="text-xs text-emerald-600">
-                    This is your listing: Check your message to see if
-                    interested buyers have contacted you
-                  </p>
+            {/* Stats Section */}
+            <div className="border-t border-gray-100 pt-5 space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-3 rounded-lg bg-gray-50">
+                  <div className="flex items-center justify-center mb-1">
+                    <Eye className="h-4 w-4 text-gray-600" />
+                  </div>
+                  <div className="text-sm font-semibold text-gray-900">
+                    {property.views.toLocaleString()}
+                  </div>
+                  <div className="text-xs text-gray-500">Views</div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full py-6 border-gray-300 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => {
-                    window.location.href = `/dashboard/agent/${user?.$id}/messages?propertyId=${property.$id}`
-                  }}
-                >
-                  View Messages
-                </Button>
+                <div className="text-center p-3 rounded-lg bg-gray-50">
+                  <div className="flex items-center justify-center mb-1">
+                    <Heart className="h-4 w-4 text-gray-600" />
+                  </div>
+                  <div className="text-sm font-semibold text-gray-900">
+                    {property.favorites}
+                  </div>
+                  <div className="text-xs text-gray-500">Favorites</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-gray-50">
+                  <div className="flex items-center justify-center mb-1">
+                    <Calendar className="h-4 w-4 text-gray-600" />
+                  </div>
+                  <div className="text-sm font-semibold text-gray-900">
+                    {new Date(property.listDate).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </div>
+                  <div className="text-xs text-gray-500">Listed</div>
+                </div>
               </div>
-            )}
 
-            {/* Schedule Viewing Button */}
-            <Button
-              variant="outline"
-              className="w-full py-6 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => setShowScheduleModal(true)}
-              disabled={isOwner}
-              title={
-                isOwner
-                  ? "You can't schedule a viewing for your own property"
-                  : 'Schedule a property viewing'
-              }
-            >
-              <Calendar className="h-5 w-5 mr-2" />
-              {isOwner ? 'Manage Viewings' : 'Schedule Viewing'}
-            </Button>
-
-            <Portal>
-              <ScheduleViewingModal
-                property={property}
-                isOpen={showScheduleModal}
-                onClose={() => setShowScheduleModal(false)}
-                onSchedule={handleScheduleViewing}
-              />
-            </Portal>
-          </div>
-
-          <div className="border-t border-gray-200 pt-5 space-y-3 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Listed Date</span>
-              <span className="font-semibold text-gray-900">
-                {new Date(property.listDate).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </span>
+              {/* Quick Info */}
+              <div className="space-y-2 text-sm">
+                {property.isVerified && (
+                  <div className="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
+                    <span className="text-gray-600">Verification</span>
+                    <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200">
+                      ✓ Verified
+                    </Badge>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-              <span className="text-gray-600">Views</span>
-              <span className="font-semibold text-gray-900">
-                {property.views.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Favorites</span>
-              <span className="font-semibold text-gray-900">
-                {property.favorites}
-              </span>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
+        {/* Agent Details */}
         <AgentDetails property={property} />
       </div>
 
-      {/* Mortgage Calculator Modal */}
+      {/* Modals */}
       <Portal>
-        <MortgageCalculator
+        <ScheduleViewingModal
           property={property}
-          isOpen={showMortgageCalculator}
-          onClose={() => setShowMortgageCalculator(false)}
-          userId={user?.$id}
+          isOpen={showScheduleModal}
+          onClose={() => setShowScheduleModal(false)}
+          onSchedule={handleScheduleViewing}
         />
+        {!isShortLet && (
+          <MortgageCalculator
+            property={property}
+            isOpen={showMortgageCalculator}
+            onClose={() => setShowMortgageCalculator(false)}
+            userId={user?.$id}
+          />
+        )}
       </Portal>
     </>
   )

@@ -1,4 +1,3 @@
-// components/Header/HeaderDesktop.tsx
 'use client'
 
 import Image from 'next/image'
@@ -11,55 +10,63 @@ import HeaderSearch from './HeaderSearch'
 import NavigationLinks from './NavigationLinks'
 import UserDropdown from './UserDropdown'
 
-interface HeaderDesktopProps {
-  isAuthModalOpen: boolean
-  setIsAuthModalOpen: (open: boolean) => void
-  openAuth: () => void
-}
-
-export default function HeaderDesktop({ openAuth }: HeaderDesktopProps) {
+export default function HeaderDesktop() {
   const { isAuthenticated } = useAuth()
 
   return (
-    <div className="hidden md:flex max-w-11/12 px-6 mx-auto h-16 items-center">
-      {/* Left Section (Logo + Search) */}
-      <div className="flex items-center flex-1">
-        {/* Logo */}
-        <Link href="/" className="flex items-center space-x-2">
-          <Image
-            width={250}
-            height={200}
-            src="/logo.png"
-            alt="PropSafe Hub"
-            className="h-12 w-auto"
-          />
-        </Link>
+    <header className="hidden md:block sticky top-0 z-50">
+      {/* Glass container */}
+      <div className="backdrop-blur-md bg-white/80 border-b border-gray-100">
+        <div className="mx-auto px-6 h-16 flex items-center max-w-11/12">
+          {/* Left: Logo + Search */}
+          <div className="flex items-center flex-1 min-w-0">
+            {/* Logo */}
+            <Link href="/" className="flex items-center shrink-0">
+              <Image
+                src="/logo.png"
+                alt="PropertyVision"
+                width={180}
+                height={60}
+                priority
+                className="h-15 w-auto object-contain"
+              />
+            </Link>
 
-        {/* Desktop Search */}
-        <div className="flex flex-1 mx-8">
-          <HeaderSearch />
+            {/* Search */}
+            <div className="hidden lg:flex flex-1 mx-8 max-w-xl">
+              <HeaderSearch />
+            </div>
+          </div>
+
+          {/* Right: Nav + Auth */}
+          <div className="flex items-center gap-4 ml-auto">
+            <NavigationLinks />
+
+            <Separator orientation="vertical" className="h-6" />
+
+            {isAuthenticated ? (
+              <UserDropdown />
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/login"
+                    className="bg-brand hover:bg-brand/90 text-white px-5 py-2 rounded-sm text-sm font-semibold"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="bg-brand/10 border border-brand/90 transition-all hover:bg-brand/20 text-brand px-5 py-2 rounded-sm text-sm font-semibold"
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Desktop Navigation */}
-      <div className="flex items-center space-x-4 ml-auto">
-        <NavigationLinks />
-
-        <Separator orientation="vertical" className="h-6" />
-
-        {isAuthenticated ? (
-          <UserDropdown />
-        ) : (
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={openAuth}
-              className="bg-[#0D2A52] hover:bg-[#061c3a] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-            >
-              Login / Register
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    </header>
   )
 }

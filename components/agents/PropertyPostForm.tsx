@@ -3,15 +3,13 @@
 
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   PROPERTY_AMENITIES,
   PROPERTY_FEATURES,
-  PROPERTY_TYPES,
   PropertyFormData,
-  TITLE_DOCUMENTS,
 } from '@/types'
 import {
   Bath,
@@ -19,20 +17,21 @@ import {
   Building2,
   Calendar,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   DollarSign,
   Globe,
   Home,
+  InfoIcon,
   Key,
   Loader2,
   Map,
   MapPin,
   Moon,
   Navigation,
-  Shield,
+  Sparkles,
   Square,
-  Tag,
   Upload,
-  Wifi,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -54,11 +53,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
 import { Location } from '@/lib/locations/locationService'
 import { clientPropertyService } from '@/lib/properties/clientPropertyService'
 
-import ImageManager from '../properties/ImageManager'
 import ImageUpload from '../ui/ImageUpload'
 import { SafeRichTextEditor } from '../ui/SafeRichTextEditor'
 import LocationSearch from './LocationSearch'
@@ -67,6 +64,53 @@ interface PropertyPostFormProps {
   onSuccess?: () => void
   onCancel?: () => void
 }
+
+// Progress step component
+const ProgressStep = ({
+  number,
+  title,
+  isActive,
+  isCompleted,
+}: {
+  number: number
+  title: string
+  isActive: boolean
+  isCompleted: boolean
+}) => (
+  <div className="flex items-center gap-3">
+    <div
+      className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${
+        isCompleted
+          ? 'bg-brand/10 text-brand border-2 border-brand/30 shadow-sm'
+          : isActive
+            ? 'bg-brand text-white shadow-md'
+            : 'bg-gray-100 text-gray-400 border border-gray-200'
+      }`}
+    >
+      {isCompleted ? <CheckCircle2 className="w-5 h-5" /> : number}
+    </div>
+    <div
+      className={`hidden sm:block transition-all duration-300 ${
+        isActive ? 'opacity-100' : 'opacity-60'
+      }`}
+    >
+      <span
+        className={`text-xs font-medium ${
+          isActive ? 'text-brand' : 'text-gray-500'
+        }`}
+      >
+        Step {number}
+      </span>
+      <p
+        className={`text-sm font-medium ${
+          isActive ? 'text-gray-900' : 'text-gray-600'
+        }`}
+      >
+        {title}
+      </p>
+    </div>
+  </div>
+)
 
 export default function PropertyPostForm({
   onSuccess,
@@ -80,9 +124,13 @@ export default function PropertyPostForm({
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(
     null
   )
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [showScrollTop, setShowScrollTop] = useState(false)
   const userType = params.userType as string
+  const [currentStep, setCurrentStep] = useState(1) // Changed to numeric steps
+  const totalSteps = 5
 
-  // Image states - SIMPLIFIED VERSION
+  // Image states
   const [newImages, setNewImages] = useState<
     Array<{ file: File; previewUrl: string }>
   >([])
@@ -92,7 +140,7 @@ export default function PropertyPostForm({
   const [agentProfileId, setAgentProfileId] = useState<string>('')
   const [fetchingAgentProfile, setFetchingAgentProfile] = useState(false)
   const [tagsInput, setTagsInput] = useState<string>('')
-
+  const mainContentRef = useRef<HTMLDivElement>(null)
   const [formData, setFormData] = useState<PropertyFormData>({
     // Basic Information
     title: '',
@@ -141,7 +189,7 @@ export default function PropertyPostForm({
     customPlanDepositPercent: 30,
     customPlanMonths: 12,
 
-    // Short-Let Specific Fields (initialize with defaults)
+    // Short-Let Specific Fields
     minimumStay: 1,
     maximumStay: 30,
     instantBooking: false,
@@ -191,40 +239,42 @@ export default function PropertyPostForm({
     'Breakfast Included',
   ]
 
+  // Handle scroll for sticky sidebar and scroll to top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50)
+      setShowScrollTop(window.scrollY > 300)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   // Fetch agent profile when user is loaded
   useEffect(() => {
     const fetchAgentProfile = async () => {
       if (user && user.userType === 'agent') {
         setFetchingAgentProfile(true)
         try {
-          console.log('🔍 Fetching agent profile for user:', user.$id)
-
-          // Try to get agent profile by user ID
           const response = await fetch(
             `/api/agents/get-by-user?userId=${user.$id}`
           )
 
           if (response.ok) {
             const agentProfile = await response.json()
-            console.log('✅ Agent profile found:', {
-              agentId: agentProfile.$id,
-              userId: user.$id,
-              name: agentProfile.name,
-            })
             setAgentProfileId(agentProfile.$id)
           } else {
-            console.warn('⚠️ No agent profile found by userId, trying email...')
-
-            // Try by email as fallback
             const emailResponse = await fetch(
               `/api/agents/get-by-user?email=${encodeURIComponent(user.email)}`
             )
             if (emailResponse.ok) {
               const agentProfile = await emailResponse.json()
-              console.log('✅ Agent profile found by email:', agentProfile.$id)
               setAgentProfileId(agentProfile.$id)
 
-              // Update agent profile with userId for future reference
               try {
                 await fetch('/api/agents/update-user-id', {
                   method: 'POST',
@@ -234,12 +284,8 @@ export default function PropertyPostForm({
                     userId: user.$id,
                   }),
                 })
-                console.log('✅ Linked user ID to agent profile')
-              } catch {
-                console.log('⚠️ Could not update agent profile with userId')
-              }
+              } catch {}
             } else {
-              console.error('❌ No agent profile found for user:', user.$id)
               toast.error('Agent profile not found. Please contact support.')
             }
           }
@@ -257,10 +303,8 @@ export default function PropertyPostForm({
       if (!user) {
         router.push('/login?redirect=/agent/properties/new')
       } else if (user.userType !== 'agent' && user.userType !== 'seller') {
-        // Allow both agents and sellers
         router.push('/dashboard')
       } else {
-        // For sellers, set default listedBy to 'owner'
         if (user.userType === 'seller') {
           setFormData((prev) => ({
             ...prev,
@@ -269,7 +313,6 @@ export default function PropertyPostForm({
           setPageLoading(false)
         }
 
-        // Only fetch agent profile for agents
         if (user.userType === 'agent') {
           fetchAgentProfile()
         }
@@ -348,21 +391,8 @@ export default function PropertyPostForm({
     }))
   }
 
-  // HandleImageChange function - SIMPLIFIED
-  // In your PropertyPostForm.tsx - Update the handleImageChange function:
   const handleImageChange = (files: File[]) => {
-    // This function is called by ImageUpload when files are selected
-    // We'll create preview URLs as data URLs
     const newImageFiles = files.map((file) => {
-      // Create a data URL for preview
-      const reader = new FileReader()
-      const previewUrlPromise = new Promise<string>((resolve) => {
-        reader.onloadend = () => resolve(reader.result as string)
-        reader.readAsDataURL(file)
-      })
-
-      // For now, we'll store the promise, but in practice you'd need to handle this async
-      // Let's create a placeholder and update it when the data URL is ready
       const placeholderUrl =
         'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz48dGV4dCB4PSI1MCIgeT0iNTUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzY2NiI+TG9hZGluZy4uLjwvdGV4dD48L3N2Zz4='
 
@@ -374,7 +404,6 @@ export default function PropertyPostForm({
 
     setNewImages((prev) => {
       const combined = [...prev, ...newImageFiles]
-      // Remove duplicates based on file name and size
       const uniqueFiles = combined.reduce(
         (acc, current) => {
           const exists = acc.find(
@@ -390,11 +419,10 @@ export default function PropertyPostForm({
         [] as Array<{ file: File; previewUrl: string }>
       )
 
-      return uniqueFiles.slice(0, 10) // Max 10 images
+      return uniqueFiles.slice(0, 10)
     })
 
-    // Convert files to data URLs for preview
-    files.forEach((file, index) => {
+    files.forEach((file) => {
       const reader = new FileReader()
       reader.onloadend = () => {
         setNewImages((prev) => {
@@ -415,43 +443,12 @@ export default function PropertyPostForm({
     })
   }
 
-  // Handler for deleting new images
-  const handleDeleteNewImage = (index: number) => {
-    setNewImages((prev) => {
-      const newImages = [...prev]
-      // Revoke the object URL to prevent memory leaks
-      URL.revokeObjectURL(newImages[index].previewUrl)
-      newImages.splice(index, 1)
-      return newImages
-    })
-  }
-
-  // Handler for setting new image as main
-  const handleSetNewAsMain = (index: number) => {
-    setNewImages((prev) => {
-      if (prev.length === 0) return prev
-
-      const newArray = [...prev]
-      const [selected] = newArray.splice(index, 1)
-      return [selected, ...newArray]
-    })
-  }
-
-  // Handler for reordering new images
-  const handleReorderNewImages = (
-    newOrder: Array<{ file: File; previewUrl: string }>
-  ) => {
-    setNewImages(newOrder)
-  }
-
-  // Update your uploadImagesToStorage function
   const uploadImagesToStorage = async (files: File[]): Promise<string[]> => {
     const uploadedImageUrls: string[] = []
 
-    // Show uploading state
     setUploadingImages(newImages.map((img) => img.previewUrl))
 
-    for (const [index, file] of files.entries()) {
+    for (const file of files) {
       try {
         const formData = new FormData()
         formData.append('image', file)
@@ -470,16 +467,13 @@ export default function PropertyPostForm({
 
         const result = await response.json()
         uploadedImageUrls.push(result.fileUrl || result.fileId)
-
-        // Update uploading state
-        setUploadingImages((prev) => prev.slice(1)) // Remove one from the front
+        setUploadingImages((prev) => prev.slice(1))
       } catch (error) {
         console.error('Error uploading image:', error)
         throw error
       }
     }
 
-    // Clear uploading state
     setUploadingImages([])
     return uploadedImageUrls
   }
@@ -510,11 +504,65 @@ export default function PropertyPostForm({
     }
   }
 
+  // Step validation functions
+  const validateStep = (step: number): boolean => {
+    switch (step) {
+      case 1: // Basic Info
+        return !!(formData.title && formData.description && formData.status)
+      case 2: // Details
+        return !!(
+          selectedLocation &&
+          formData.address &&
+          formData.bedrooms &&
+          formData.bathrooms &&
+          formData.squareFeet
+        )
+      case 3: // Media
+        return newImages.length > 0
+      case 4: // Pricing
+        return !!(formData.price > 0)
+      case 5: // Finalize
+        return true // No validation needed for final step
+      default:
+        return false
+    }
+  }
+
+  // Navigation functions
+  const goToNextStep = () => {
+    if (currentStep < totalSteps) {
+      if (validateStep(currentStep)) {
+        setCurrentStep(currentStep + 1)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      } else {
+        toast.error(
+          `Please complete all required fields in step ${currentStep} before continuing.`
+        )
+      }
+    }
+  }
+
+  const goToPrevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  const goToStep = (step: number) => {
+    // Allow going back to completed steps
+    if (step < currentStep || validateStep(currentStep)) {
+      setCurrentStep(step)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      toast.error('Please complete the current step before jumping ahead.')
+    }
+  }
+
   // HandleSubmit function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validate agent profile is loaded only for agents
     if (user?.userType === 'agent' && !agentProfileId) {
       toast.error(
         'Agent profile not loaded. Please refresh the page and try again.'
@@ -522,7 +570,16 @@ export default function PropertyPostForm({
       return
     }
 
-    // FIXED: Check newImages instead of uploadedFiles
+    if (
+      !validateStep(1) ||
+      !validateStep(2) ||
+      !validateStep(3) ||
+      !validateStep(4)
+    ) {
+      toast.error('Please complete all required steps before submitting.')
+      return
+    }
+
     if (newImages.length === 0) {
       toast.error('Please upload at least one property image')
       return
@@ -536,18 +593,14 @@ export default function PropertyPostForm({
     setIsSubmitting(true)
 
     try {
-      // IMPORTANT: Upload images in the correct order from newImages
       const imageUrls = await uploadImagesToStorage(
         newImages.map((img) => img.file)
       )
 
-      // Prepare property data based on user type
       const propertyData = {
         ...formData,
-        // Add user-specific data
         userId: user?.$id,
         userType: user?.userType,
-        // For agents, use agentProfileId; for sellers, use seller ID
         ...(user?.userType === 'agent' && {
           agentId: agentProfileId,
           agentName: user?.name,
@@ -558,17 +611,9 @@ export default function PropertyPostForm({
         }),
         listedBy: formData.listedBy,
         phone: user?.phone || '',
-        images: imageUrls, // Use the uploaded image URLs
+        images: imageUrls,
         propertyId: `property_${Date.now()}`,
       }
-
-      console.log('📤 Creating property with:', {
-        status: formData.status,
-        userType: user?.userType,
-        agentId: user?.userType === 'agent' ? agentProfileId : 'seller',
-        priceUnit: formData.priceUnit,
-        imagesCount: imageUrls.length,
-      })
 
       const result = await clientPropertyService.createProperty(propertyData)
       toast.success('Property created successfully!')
@@ -589,7 +634,7 @@ export default function PropertyPostForm({
   ) {
     return (
       <div className="flex flex-col items-center justify-center space-y-4 py-12">
-        <Loader2 className="w-12 h-12 text-emerald-600 animate-spin" />
+        <Loader2 className="w-12 h-12 text-brand animate-spin" />
         <h2 className="text-xl font-semibold text-gray-900">
           {user?.userType === 'agent' && fetchingAgentProfile
             ? 'Loading agent profile...'
@@ -600,1147 +645,949 @@ export default function PropertyPostForm({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Show agent profile warning only for agents */}
-      {user?.userType === 'agent' && !agentProfileId && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-          <p className="text-yellow-800">
-            ⚠️ Agent profile not found. Properties cannot be created without an
-            agent profile. Please contact support or try refreshing the page.
-          </p>
-        </div>
-      )}
+    <div className="min-h-screen bg-linear-to-b from-slate-50 to-white">
+      {/* Sticky Progress Header */}
 
-      {/* Show seller confirmation message */}
-      {user?.userType === 'seller' && (
-        <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 mb-4">
-          <p className="text-emerald-800">
-            Seller/owner. You&apos;ll be listed as the property owner.
-          </p>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* IMAGES SECTION */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Upload className="w-5 h-5" />
-              Property Images *
-            </CardTitle>
-            <CardDescription>
-              Upload at least one image. Maximum 10 images allowed. Recommended:
-              5+ images for best results.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Image Upload for adding new images */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium text-gray-900">Add Images</h4>
-              <ImageUpload
-                value={newImages}
-                onChange={setNewImages}
-                onImagesChange={handleImageChange}
-                maxImages={10}
-                accept="image/*"
-              />
-            </div>
-
-            {/* ImageManager for managing uploaded images */}
-            {newImages.length > 0 && (
-              <div className="space-y-4">
-                {/* <h4 className="text-sm font-medium text-gray-900">
-                  Image Preview ({newImages.length}/10)
-                </h4>
-                <ImageManager
-                  existingImages={[]}
-                  imagesToDelete={[]}
-                  newImages={newImages}
-                  uploadingImages={uploadingImages}
-                  onDeleteImage={() => {}}
-                  onDeleteNewImage={handleDeleteNewImage}
-                  onSetAsMain={() => {}}
-                  onSetNewAsMain={handleSetNewAsMain}
-                  onReorder={() => {}}
-                  onReorderNewImages={handleReorderNewImages}
-                /> */}
-
-                {/* Instructions */}
-                <div className="flex items-start gap-3">
-                  <div>
-                    <div className="flex">
-                      <h5 className="font-medium text-sm mb-1">
-                        How to manage images
-                      </h5>
-                    </div>
-                    <ul className="text-xs text-gray-500 space-y-1">
-                      {/* <li>
-                        • <strong>Drag</strong> images to reorder them
-                      </li> */}
-                      <li>
-                        • <strong>First image</strong> is the main property
-                        photo
-                      </li>
-                      <li>
-                        • <strong>Hover</strong> over images to see remove
-                        action button
-                      </li>
-                      <li>
-                        • <strong>Remove</strong> images before uploading if
-                        needed
-                      </li>
-                      <li>
-                        • Images will be uploaded when you click &quot;
-                        <strong>Publish Property</strong>&quot;
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Image requirement reminder */}
-            {newImages.length === 0 && (
-              <div className="rounded-lg bg-amber-50 p-4 border border-amber-200">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-white rounded-lg">
-                    <Upload className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <h5 className="font-semibold text-base text-amber-900">
-                      Image Requirement
-                    </h5>
-                    <p className="text-xs text-amber-700">
-                      You need to upload at least one property image. Properties
-                      with high-quality photos get 10x more views!
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Basic Information - UPDATED WITH SHORT-LET */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Home className="w-5 h-5" />
-              Basic Information
-            </CardTitle>
-            <CardDescription>
-              Provide essential details about your property
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="title">Lisitng Title *</Label>
-                <Input
-                  id="title"
-                  required
-                  value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  placeholder={
-                    formData.status === 'short-let'
-                      ? 'Cozy 2-Bedroom Vacation Home with WiFi & Pool'
-                      : formData.status === 'for-rent'
-                        ? 'Modern 3-Bedroom Apartment in Lekki'
-                        : 'Beautiful 4-Bedroom House for Sale'
-                  }
-                />
-              </div>
-              {formData.status !== 'short-let' && (
-                <div className="space-y-2">
-                  <Label htmlFor="propertyType">Property Type *</Label>
-                  <Select
-                    required
-                    value={formData.propertyType}
-                    onValueChange={(value) =>
-                      handleInputChange('propertyType', value)
-                    }
-                  >
-                    <SelectTrigger id="propertyType">
-                      <SelectValue placeholder="Select property type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PROPERTY_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              {/* UPDATED STATUS FIELD */}
-              <div className="space-y-2">
-                <Label htmlFor="status">Listing Type *</Label>
-                <Select
-                  required
-                  value={formData.status}
-                  onValueChange={(value) => handleInputChange('status', value)}
-                >
-                  <SelectTrigger id="status">
-                    <SelectValue placeholder="Select listing type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="for-sale">
-                      <div className="flex items-center gap-2">
-                        <Home className="w-4 h-4" />
-                        For Sale
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="for-rent">
-                      <div className="flex items-center gap-2">
-                        <Key className="w-4 h-4" />
-                        For Rent
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="short-let">
-                      <div className="flex items-center gap-2">
-                        <Moon className="w-4 h-4" />
-                        Short-Let
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="listedBy">Listed By *</Label>
-                <Select
-                  required
-                  value={formData.listedBy}
-                  onValueChange={(value) =>
-                    handleInputChange('listedBy', value)
-                  }
-                  disabled={user?.userType === 'seller'}
-                >
-                  <SelectTrigger id="listedBy">
-                    <SelectValue placeholder="Select who listed it" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="agent">Agent</SelectItem>
-                    <SelectItem value="owner">Owner</SelectItem>
-                  </SelectContent>
-                </Select>
-                {user?.userType === 'seller' && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    As a seller, you&apos;re listed as the property owner
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
-              <SafeRichTextEditor
-                value={formData.description}
-                onChange={(value) => handleInputChange('description', value)}
-                placeholder={
-                  formData.status === 'short-let'
-                    ? 'Describe your short-let property, nearby attractions, unique features...'
-                    : 'Describe the property features, neighborhood, and unique selling points...'
-                }
-              />
-              <p className="text-sm text-gray-500">
-                Write an engaging description. Formatting will be preserved when
-                displayed.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* SHORT-LET SPECIFIC SECTION */}
-        {formData.status === 'short-let' && (
-          <>
-            {/* Stay Duration & Availability */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Stay Duration & Availability
-                </CardTitle>
-                <CardDescription>
-                  Configure booking options for your short-let property
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="minimumStay">Minimum Stay (nights) *</Label>
-                    <Input
-                      id="minimumStay"
-                      type="number"
-                      placeholder="1"
-                      value={formData.minimumStay || 1}
-                      onChange={(e) =>
-                        handleInputChange(
-                          'minimumStay',
-                          parseInt(e.target.value) || 1
-                        )
-                      }
-                      min="1"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="maximumStay">Maximum Stay (nights)</Label>
-                    <Input
-                      id="maximumStay"
-                      type="number"
-                      placeholder="30"
-                      value={formData.maximumStay || 30}
-                      onChange={(e) =>
-                        handleInputChange(
-                          'maximumStay',
-                          parseInt(e.target.value) || 30
-                        )
-                      }
-                      min="1"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="checkInTime">Check-in Time *</Label>
-                    <Select
-                      value={formData.checkInTime || '14:00'}
-                      onValueChange={(value) =>
-                        handleInputChange('checkInTime', value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="12:00">12:00 PM</SelectItem>
-                        <SelectItem value="13:00">1:00 PM</SelectItem>
-                        <SelectItem value="14:00">2:00 PM</SelectItem>
-                        <SelectItem value="15:00">3:00 PM</SelectItem>
-                        <SelectItem value="16:00">4:00 PM</SelectItem>
-                        <SelectItem value="flexible">Flexible</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="checkOutTime">Check-out Time *</Label>
-                    <Select
-                      value={formData.checkOutTime || '11:00'}
-                      onValueChange={(value) =>
-                        handleInputChange('checkOutTime', value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="10:00">10:00 AM</SelectItem>
-                        <SelectItem value="11:00">11:00 AM</SelectItem>
-                        <SelectItem value="12:00">12:00 PM</SelectItem>
-                        <SelectItem value="flexible">Flexible</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="availabilityStart">Available From</Label>
-                    <Input
-                      id="availabilityStart"
-                      type="date"
-                      value={formData.availabilityStart || ''}
-                      onChange={(e) =>
-                        handleInputChange('availabilityStart', e.target.value)
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="availabilityEnd">Available Until</Label>
-                    <Input
-                      id="availabilityEnd"
-                      type="date"
-                      value={formData.availabilityEnd || ''}
-                      onChange={(e) =>
-                        handleInputChange('availabilityEnd', e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="instantBooking"
-                    checked={formData.instantBooking || false}
-                    onCheckedChange={(checked) =>
-                      handleInputChange('instantBooking', checked)
-                    }
-                  />
-                  <Label htmlFor="instantBooking" className="cursor-pointer">
-                    Enable Instant Booking (Guests can book immediately without
-                    approval)
-                  </Label>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Cancellation Policy */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Cancellation Policy
-                </CardTitle>
-                <CardDescription>
-                  Choose how flexible you want to be with cancellations
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Select
-                  value={formData.cancellationPolicy || 'moderate'}
-                  onValueChange={(value) =>
-                    handleInputChange('cancellationPolicy', value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select cancellation policy" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="flexible">
-                      <div className="flex flex-col">
-                        <span className="font-medium">Flexible</span>
-                        <span className="text-sm text-gray-500">
-                          Full refund up to 24 hours before check-in
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="moderate">
-                      <div className="flex flex-col">
-                        <span className="font-medium">Moderate</span>
-                        <span className="text-sm text-gray-500">
-                          Full refund up to 5 days before check-in
-                        </span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="strict">
-                      <div className="flex flex-col">
-                        <span className="font-medium">Strict</span>
-                        <span className="text-sm text-gray-500">
-                          50% refund up to 7 days before check-in
-                        </span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
-
-            {/* Short-Let Specific Features */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wifi className="h-5 w-5" />
-                  Short-Let Features & Amenities
-                </CardTitle>
-                <CardDescription>
-                  Select amenities that are important for short-term stays
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {shortLetFeaturesList.map((feature) => (
-                    <div key={feature} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`shortlet-feature-${feature}`}
-                        checked={formData.features.includes(feature)}
-                        onCheckedChange={() =>
-                          handleArrayToggle('features', feature)
-                        }
-                      />
-                      <Label
-                        htmlFor={`shortlet-feature-${feature}`}
-                        className="text-sm cursor-pointer"
-                      >
-                        {feature}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* House Rules */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Key className="h-5 w-5" />
-                  House Rules
-                </CardTitle>
-                <CardDescription>
-                  Set clear rules for your guests
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {houseRulesList.map((rule) => (
-                    <div key={rule} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`rule-${rule}`}
-                        checked={formData.houseRules?.includes(rule)}
-                        onCheckedChange={() =>
-                          handleArrayToggle('houseRules', rule)
-                        }
-                      />
-                      <Label
-                        htmlFor={`rule-${rule}`}
-                        className="text-sm cursor-pointer"
-                      >
-                        {rule}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
-
-        {/* Location Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
-              Location
-            </CardTitle>
-            <CardDescription>
-              Help {formData.status === 'short-let' ? 'guests' : 'buyers'} find
-              your property
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label>Search Location *</Label>
-              <LocationSearch
-                onLocationSelect={handleLocationSelect}
-                placeholder="Type area, city, or state..."
-                showMapFeatures={true}
-                selectedLocation={selectedLocation}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="address">Full Address *</Label>
-                <Input
-                  id="address"
-                  required
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  placeholder={
-                    formData.status === 'short-let'
-                      ? 'Exact address for GPS navigation'
-                      : 'Street address, building number, etc.'
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="zipCode">ZIP Code</Label>
-                <Input
-                  id="zipCode"
-                  value={formData.zipCode}
-                  onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                  placeholder="e.g., 100001"
-                />
-              </div>
-            </div>
-
-            {selectedLocation && (
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    <h4 className="font-semibold text-green-900">
-                      Location Confirmed
-                    </h4>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div className="text-center p-3 bg-white rounded-lg border border-green-100">
-                      <Building2 className="w-4 h-4 text-green-600 mx-auto mb-1" />
-                      <p className="text-gray-600">City</p>
-                      <p className="font-semibold">{formData.city}</p>
-                    </div>
-                    <div className="text-center p-3 bg-white rounded-lg border border-green-100">
-                      <Map className="w-4 h-4 text-blue-600 mx-auto mb-1" />
-                      <p className="text-gray-600">State</p>
-                      <p className="font-semibold">{formData.state}</p>
-                    </div>
-                    <div className="text-center p-3 bg-white rounded-lg border border-green-100">
-                      <Globe className="w-4 h-4 text-purple-600 mx-auto mb-1" />
-                      <p className="text-gray-600">Country</p>
-                      <p className="font-semibold">{formData.country}</p>
-                    </div>
-                    {formData.neighborhood && (
-                      <div className="text-center p-3 bg-white rounded-lg border border-green-100">
-                        <Navigation className="w-4 h-4 text-orange-600 mx-auto mb-1" />
-                        <p className="text-gray-600">Area</p>
-                        <p className="font-semibold">{formData.neighborhood}</p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Pricing - UPDATED FOR SHORT-LET */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5" />
-              Pricing
-            </CardTitle>
-            <CardDescription>
-              Set competitive pricing for your property
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="price">{getPriceLabel()} *</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  required
-                  min="0"
-                  value={formData.price || ''}
-                  onChange={(e) =>
-                    handleInputChange(
-                      'price',
-                      e.target.value === '' ? 0 : parseFloat(e.target.value)
-                    )
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="priceUnit">Price Unit *</Label>
-                <Select
-                  required
-                  value={formData.priceUnit}
-                  onValueChange={(value) =>
-                    handleInputChange('priceUnit', value)
-                  }
-                >
-                  <SelectTrigger id="priceUnit">
-                    <SelectValue placeholder="Select price unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getPriceUnitOptions().map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit.charAt(0).toUpperCase() + unit.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-end">
-                <Card className="w-full bg-blue-50 border-blue-200">
-                  <CardContent className="p-4">
-                    <p className="text-sm font-medium text-blue-900">
-                      {formData.status === 'for-sale' && (
-                        <>Total Price: ₦{formData.price.toLocaleString()}</>
-                      )}
-                      {formData.status === 'for-rent' && (
-                        <>
-                          {formData.priceUnit === 'monthly' && 'Monthly: '}
-                          {formData.priceUnit === 'yearly' && 'Yearly: '}₦
-                          {formData.price.toLocaleString()}
-                          {formData.priceUnit === 'monthly' && '/mo'}
-                          {formData.priceUnit === 'yearly' && '/yr'}
-                        </>
-                      )}
-                      {formData.status === 'short-let' && (
-                        <>
-                          {formData.priceUnit === 'daily' && 'Daily: '}
-                          {formData.priceUnit === 'weekly' && 'Weekly: '}
-                          {formData.priceUnit === 'monthly' && 'Monthly: '}₦
-                          {formData.price.toLocaleString()}
-                          {formData.priceUnit === 'daily' && '/night'}
-                          {formData.priceUnit === 'weekly' && '/week'}
-                          {formData.priceUnit === 'monthly' && '/month'}
-                        </>
-                      )}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="originalPrice">Original Price (Optional)</Label>
-              <Input
-                id="originalPrice"
-                type="number"
-                min="0"
-                value={formData.originalPrice || ''}
-                onChange={(e) =>
-                  handleInputChange(
-                    'originalPrice',
-                    e.target.value ? parseFloat(e.target.value) : undefined
-                  )
-                }
-                placeholder="Original price if discounted"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Property Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Property Details</CardTitle>
-            <CardDescription>
-              Specify the physical characteristics of your property
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {formData.propertyType !== 'land' && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="bedrooms" className="flex items-center gap-2">
-                    <Bed className="w-4 h-4" />
-                    Bedrooms *
-                  </Label>
-                  <Input
-                    id="bedrooms"
-                    type="number"
-                    required
-                    min="0"
-                    max="20"
-                    value={formData.bedrooms}
-                    onChange={(e) =>
-                      handleInputChange(
-                        'bedrooms',
-                        parseInt(e.target.value) || 0
-                      )
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="bathrooms"
-                    className="flex items-center gap-2"
-                  >
-                    <Bath className="w-4 h-4" />
-                    Bathrooms *
-                  </Label>
-                  <Input
-                    id="bathrooms"
-                    type="number"
-                    required
-                    min="0"
-                    max="20"
-                    value={formData.bathrooms}
-                    onChange={(e) =>
-                      handleInputChange(
-                        'bathrooms',
-                        parseInt(e.target.value) || 0
-                      )
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="squareFeet"
-                    className="flex items-center gap-2"
-                  >
-                    <Square className="w-4 h-4" />
-                    Square Meter *
-                  </Label>
-                  <Input
-                    id="squareFeet"
-                    type="number"
-                    required
-                    min="0"
-                    value={formData.squareFeet}
-                    onChange={(e) =>
-                      handleInputChange(
-                        'squareFeet',
-                        parseInt(e.target.value) || 0
-                      )
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="yearBuilt"
-                    className="flex items-center gap-2"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    Year Built
-                  </Label>
-                  <Input
-                    id="yearBuilt"
-                    type="number"
-                    min="1800"
-                    max={new Date().getFullYear()}
-                    value={formData.yearBuilt || ''}
-                    onChange={(e) =>
-                      handleInputChange(
-                        'yearBuilt',
-                        e.target.value ? parseInt(e.target.value) : undefined
-                      )
-                    }
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="lotSize">Lot Size (m²)</Label>
-              <Input
-                id="lotSize"
-                type="number"
-                min="0"
-                value={formData.lotSize || ''}
-                onChange={(e) =>
-                  handleInputChange(
-                    'lotSize',
-                    e.target.value ? parseInt(e.target.value) : undefined
-                  )
-                }
-                placeholder="Land area for houses/land"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Features & Amenities */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Features & Amenities</CardTitle>
-            <CardDescription>
-              Select the features and amenities that make your property stand
-              out
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Features */}
+      {/* Fixed Header */}
+      <header className="fixed top-16 left-0 right-0 z-50 bg-white border-b border-gray-200">
+        <div className="border-t">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            {/* Progress steps */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Property Features
-                </h3>
-                <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
-                  {PROPERTY_FEATURES.map((feature) => (
-                    <div key={feature} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`feature-${feature}`}
-                        checked={formData.features.includes(feature)}
-                        onCheckedChange={() =>
-                          handleArrayToggle('features', feature)
-                        }
-                      />
-                      <Label
-                        htmlFor={`feature-${feature}`}
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        {feature}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
+                <h1 className="text-lg md:text-xl font-bold">
+                  {formData.status === 'short-let'
+                    ? 'List a Short-Let'
+                    : 'List a Property'}
+                </h1>
+                <p className="text-gray-400">
+                  Complete {totalSteps} simple steps to publish your listing
+                </p>
               </div>
 
-              {/* Amenities */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Community Amenities
-                </h3>
-                <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
-                  {PROPERTY_AMENITIES.map((amenity) => (
-                    <div key={amenity} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`amenity-${amenity}`}
-                        checked={formData.amenities.includes(amenity)}
-                        onCheckedChange={() =>
-                          handleArrayToggle('amenities', amenity)
-                        }
-                      />
-                      <Label
-                        htmlFor={`amenity-${amenity}`}
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        {amenity}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
+              {/* Progress steps */}
+              <div className="flex items-center gap-4">
+                {[1, 2, 3, 4, 5].map((step) => (
+                  <button
+                    key={step}
+                    onClick={() => goToStep(step)}
+                    className="flex items-center gap-3 group"
+                    disabled={step > currentStep && !validateStep(currentStep)}
+                  >
+                    <ProgressStep
+                      number={step}
+                      title={
+                        step === 1
+                          ? 'Basics'
+                          : step === 2
+                            ? 'Details'
+                            : step === 3
+                              ? 'Media'
+                              : step === 4
+                                ? 'Pricing'
+                                : 'Finalize'
+                      }
+                      isActive={currentStep === step}
+                      isCompleted={currentStep > step}
+                    />
+                  </button>
+                ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Title Documents - Only show for non-short-let properties */}
-        {formData.status !== 'short-let' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Title Documents</CardTitle>
-              <CardDescription>
-                Select the applicable Title Documents for the property
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
-                {/* Features */}
-                <div>
-                  <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
-                    {TITLE_DOCUMENTS.map((title) => (
-                      <div key={title} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`title-${title}`}
-                          checked={formData.titles.includes(title)}
-                          onCheckedChange={() =>
-                            handleArrayToggle('titles', title)
-                          }
-                        />
-                        <Label
-                          htmlFor={`title-${title}`}
-                          className="text-sm font-normal cursor-pointer"
-                        >
-                          {title}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Payment Options */}
-        {formData.status !== 'short-let' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Options</CardTitle>
-              <CardDescription>
-                {/* Remove the ternary - it's always "buyers" since we're not in short-let */}
-                Configure available payment methods for buyers
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="paymentOutright"
-                  checked={formData.paymentOutright}
-                  onCheckedChange={(checked) =>
-                    handleInputChange('paymentOutright', checked)
-                  }
-                />
-                <Label htmlFor="paymentOutright" className="cursor-pointer">
-                  {/* Remove the ternary - it's always "Outright Purchase Available" */}
-                  Outright Purchase Available
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="paymentPlan"
-                  checked={formData.paymentPlan}
-                  onCheckedChange={(checked) =>
-                    handleInputChange('paymentPlan', checked)
-                  }
-                />
-                <Label htmlFor="paymentPlan" className="cursor-pointer">
-                  {/* Remove the ternary - it's always "Payment Plan Available" */}
-                  Payment Plan Available
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="mortgageEligible"
-                  checked={formData.mortgageEligible}
-                  onCheckedChange={(checked) =>
-                    handleInputChange('mortgageEligible', checked)
-                  }
-                />
-                <Label htmlFor="mortgageEligible" className="cursor-pointer">
-                  Mortgage Eligible
-                </Label>
-              </div>
-
-              {formData.paymentPlan && (
-                <Card className="bg-gray-50">
-                  <CardContent className="p-4 space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="customPlanAvailable"
-                        checked={formData.customPlanAvailable}
-                        onCheckedChange={(checked) =>
-                          handleInputChange('customPlanAvailable', checked)
-                        }
-                      />
-                      <Label
-                        htmlFor="customPlanAvailable"
-                        className="cursor-pointer"
-                      >
-                        Custom Payment Plan
-                      </Label>
-                    </div>
-
-                    {formData.customPlanAvailable && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="customPlanDepositPercent">
-                            Deposit Percentage
-                          </Label>
-                          <Input
-                            id="customPlanDepositPercent"
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={formData.customPlanDepositPercent}
-                            onChange={(e) =>
-                              handleInputChange(
-                                'customPlanDepositPercent',
-                                parseInt(e.target.value) || 0
-                              )
-                            }
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="customPlanMonths">
-                            Payment Months
-                          </Label>
-                          <Input
-                            id="customPlanMonths"
-                            type="number"
-                            min="1"
-                            max="60"
-                            value={formData.customPlanMonths}
-                            onChange={(e) =>
-                              handleInputChange(
-                                'customPlanMonths',
-                                parseInt(e.target.value) || 0
-                              )
-                            }
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Additional Options */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Tag className="w-5 h-5" />
-              Additional Options
-            </CardTitle>
-            <CardDescription>
-              Enhance your listing with additional features
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isFeatured"
-                checked={formData.isFeatured}
-                onCheckedChange={(checked) =>
-                  handleInputChange('isFeatured', checked)
-                }
-              />
-              <Label htmlFor="isFeatured" className="cursor-pointer">
-                Feature this property (additional cost may apply)
-              </Label>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tags">Tags (comma separated)</Label>
-              <Input
-                id="tags"
-                value={tagsInput}
-                onChange={(e) => handleTagsInputChange(e.target.value)}
-                placeholder="e.g., luxury, waterfront, new, renovated"
-              />
-              {formData.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {formData.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Submit Buttons */}
-
-        <div className="pt-6">
-          <div className="flex gap-4">
-            <Button
-              type="submit"
-              disabled={
-                isSubmitting ||
-                (user?.userType === 'agent' && !agentProfileId) ||
-                newImages.length === 0 // Added: disable if no images
-              }
-              className="flex-1 h-12 bg-linear-to-br from-gray-900 to-gray-600 hover:from-gray-600 hover:to-gray-700"
-              size="lg"
-            >
-              {isSubmitting ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Publishing...
-                </div>
-              ) : user?.userType === 'agent' && !agentProfileId ? (
-                'Agent Profile Required'
-              ) : newImages.length === 0 ? (
-                'Upload Images First'
-              ) : formData.status === 'short-let' ? (
-                'Publish Short-Let'
-              ) : (
-                'Publish Property'
-              )}
-            </Button>
-
-            {onCancel && (
-              <Button
-                type="button"
-                onClick={onCancel}
-                variant="outline"
-                size="lg"
-              >
-                Cancel
-              </Button>
-            )}
           </div>
         </div>
-      </form>
+      </header>
+
+      <div className="space-y-8 mt-20">
+        {/* User Type Indicator */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {user?.userType === 'seller' && (
+            <div className="bg-brand/5 border border-brand/20 rounded-xl p-2 flex items-center gap-3">
+              <InfoIcon className="w-8 h-8 text-brand" />
+              <div>
+                <p className="text-brand font-medium">
+                  Selling as Property Owner
+                </p>
+                <p className="text-stone-600 text-sm">
+                  You&apos;ll be listed as the property owner and direct contact
+                </p>
+              </div>
+            </div>
+          )}
+
+          {user?.userType === 'agent' && !agentProfileId && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+              <div className="flex items-center gap-3">
+                <InfoIcon className="w-5 h-5 text-yellow-600" />
+                <p className="text-yellow-800">
+                  Agent profile not found. Properties cannot be created without
+                  an agent profile.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Current Step Display */}
+          <div className="flex items-center justify-between mb-6 mt-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">
+                {currentStep === 1 && 'Step 1: Property Basics'}
+                {currentStep === 2 && 'Step 2: Location & Details'}
+                {currentStep === 3 && 'Step 3: Upload Images'}
+                {currentStep === 4 && 'Step 4: Pricing'}
+                {currentStep === 5 && 'Step 5: Finalize & Publish'}
+              </h2>
+              <p className="text-gray-600">
+                {currentStep === 1 && 'Tell us about your property'}
+                {currentStep === 2 && 'Where is your property located?'}
+                {currentStep === 3 && 'Add photos to showcase your property'}
+                {currentStep === 4 && 'Set your price and payment options'}
+                {currentStep === 5 && 'Review and publish your listing'}
+              </p>
+            </div>
+            <div className="text-sm text-gray-500">
+              Step {currentStep} of {totalSteps}
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Step 1: Basic Information */}
+            {currentStep === 1 && (
+              <div className="space-y-6 animate-fadeIn">
+                <Card>
+                  <CardHeader className="border-b">
+                    <CardTitle className="flex items-center gap-2">
+                      <Home className="w-5 h-5" />
+                      Property Basics
+                    </CardTitle>
+                    <CardDescription>
+                      Start with the essential information about your property
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6 pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label htmlFor="title" className="font-medium">
+                          Listing Title *
+                        </Label>
+                        <Input
+                          id="title"
+                          required
+                          value={formData.title}
+                          onChange={(e) =>
+                            handleInputChange('title', e.target.value)
+                          }
+                          placeholder={
+                            formData.status === 'short-let'
+                              ? 'Cozy 2-Bedroom Vacation Home with WiFi & Pool'
+                              : formData.status === 'for-rent'
+                                ? 'Modern 3-Bedroom Apartment in Lekki'
+                                : 'Beautiful 4-Bedroom House for Sale'
+                          }
+                          className="h-11"
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label htmlFor="status" className="font-medium">
+                          Listing Type *
+                        </Label>
+                        <Select
+                          required
+                          value={formData.status}
+                          onValueChange={(value) =>
+                            handleInputChange('status', value)
+                          }
+                        >
+                          <SelectTrigger id="status" className="h-11">
+                            <SelectValue placeholder="Select listing type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="for-sale">
+                              <div className="flex items-center gap-2">
+                                <Home className="w-4 h-4" />
+                                <span>For Sale</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="for-rent">
+                              <div className="flex items-center gap-2">
+                                <Key className="w-4 h-4" />
+                                <span>For Rent</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="short-let">
+                              <div className="flex items-center gap-2">
+                                <Moon className="w-4 h-4" />
+                                <span>Short-Let</span>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="font-medium">Description *</Label>
+                      <div className="rounded-lg border border-gray-200 bg-white">
+                        <SafeRichTextEditor
+                          value={formData.description}
+                          onChange={(value) =>
+                            handleInputChange('description', value)
+                          }
+                          placeholder={
+                            formData.status === 'short-let'
+                              ? 'Describe your short-let property, nearby attractions, unique features...'
+                              : 'Describe the property features, neighborhood, and unique selling points...'
+                          }
+                        />
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        Include key features in the first paragraph for better
+                        visibility
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Validation reminder */}
+                {!validateStep(1) && (
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 flex items-center gap-3">
+                    <InfoIcon className="w-5 h-5 text-amber-600" />
+                    <p className="text-amber-700 text-sm">
+                      Please complete all required fields (*) before continuing
+                      to the next step.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 2: Location & Details */}
+            {currentStep === 2 && (
+              <div className="space-y-6 animate-fadeIn">
+                <Card className="border-blue-100 shadow-sm">
+                  <CardHeader className="bg-gradient-to-r from-blue-50 to-white border-b">
+                    <CardTitle className="flex items-center gap-2">
+                      <MapPin className="w-5 h-5" />
+                      Location & Property Details
+                    </CardTitle>
+                    <CardDescription>
+                      Help potential{' '}
+                      {formData.status === 'short-let' ? 'guests' : 'buyers'}{' '}
+                      find and understand your property
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6 pt-6">
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <Label className="font-medium">Search Location *</Label>
+                        <LocationSearch
+                          onLocationSelect={handleLocationSelect}
+                          placeholder="Type area, city, or state..."
+                          showMapFeatures={true}
+                          selectedLocation={selectedLocation}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <Label htmlFor="address" className="font-medium">
+                            Full Address *
+                          </Label>
+                          <Input
+                            id="address"
+                            required
+                            value={formData.address}
+                            onChange={(e) =>
+                              handleInputChange('address', e.target.value)
+                            }
+                            placeholder="Street address, building number, etc."
+                            className="h-11"
+                          />
+                        </div>
+
+                        <div className="space-y-3">
+                          <Label htmlFor="zipCode" className="font-medium">
+                            ZIP Code
+                          </Label>
+                          <Input
+                            id="zipCode"
+                            value={formData.zipCode}
+                            onChange={(e) =>
+                              handleInputChange('zipCode', e.target.value)
+                            }
+                            placeholder="e.g., 100001"
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+
+                      {selectedLocation && (
+                        <div className="bg-linear-to-r from-green-50 to-brand/5 border border-green-200 rounded-xl p-4">
+                          <div className="flex items-center gap-3 mb-4">
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            <h4 className="font-semibold text-green-900">
+                              Location Confirmed
+                            </h4>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div className="text-center p-3 bg-white rounded-lg border border-green-100">
+                              <Building2 className="w-4 h-4 text-green-600 mx-auto mb-2" />
+                              <p className="text-gray-600">City</p>
+                              <p className="font-semibold text-gray-900">
+                                {formData.city}
+                              </p>
+                            </div>
+                            <div className="text-center p-3 bg-white rounded-lg border border-green-100">
+                              <Map className="w-4 h-4 text-blue-600 mx-auto mb-2" />
+                              <p className="text-gray-600">State</p>
+                              <p className="font-semibold text-gray-900">
+                                {formData.state}
+                              </p>
+                            </div>
+                            <div className="text-center p-3 bg-white rounded-lg border border-green-100">
+                              <Globe className="w-4 h-4 text-purple-600 mx-auto mb-2" />
+                              <p className="text-gray-600">Country</p>
+                              <p className="font-semibold text-gray-900">
+                                {formData.country}
+                              </p>
+                            </div>
+                            {formData.neighborhood && (
+                              <div className="text-center p-3 bg-white rounded-lg border border-green-100">
+                                <Navigation className="w-4 h-4 text-orange-600 mx-auto mb-2" />
+                                <p className="text-gray-600">Area</p>
+                                <p className="font-semibold text-gray-900">
+                                  {formData.neighborhood}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Property Specifications
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-3">
+                          <Label
+                            htmlFor="bedrooms"
+                            className="flex items-center gap-2 font-medium"
+                          >
+                            <Bed className="w-4 h-4" />
+                            Bedrooms *
+                          </Label>
+                          <Input
+                            id="bedrooms"
+                            type="number"
+                            required
+                            min="0"
+                            max="20"
+                            value={formData.bedrooms}
+                            onChange={(e) =>
+                              handleInputChange(
+                                'bedrooms',
+                                parseInt(e.target.value) || 0
+                              )
+                            }
+                            className="h-11"
+                          />
+                        </div>
+
+                        <div className="space-y-3">
+                          <Label
+                            htmlFor="bathrooms"
+                            className="flex items-center gap-2 font-medium"
+                          >
+                            <Bath className="w-4 h-4" />
+                            Bathrooms *
+                          </Label>
+                          <Input
+                            id="bathrooms"
+                            type="number"
+                            required
+                            min="0"
+                            max="20"
+                            value={formData.bathrooms}
+                            onChange={(e) =>
+                              handleInputChange(
+                                'bathrooms',
+                                parseInt(e.target.value) || 0
+                              )
+                            }
+                            className="h-11"
+                          />
+                        </div>
+
+                        <div className="space-y-3">
+                          <Label
+                            htmlFor="squareFeet"
+                            className="flex items-center gap-2 font-medium"
+                          >
+                            <Square className="w-4 h-4" />
+                            Square Meter *
+                          </Label>
+                          <Input
+                            id="squareFeet"
+                            type="number"
+                            required
+                            min="0"
+                            value={formData.squareFeet}
+                            onChange={(e) =>
+                              handleInputChange(
+                                'squareFeet',
+                                parseInt(e.target.value) || 0
+                              )
+                            }
+                            className="h-11"
+                          />
+                        </div>
+
+                        <div className="space-y-3">
+                          <Label
+                            htmlFor="yearBuilt"
+                            className="flex items-center gap-2 font-medium"
+                          >
+                            <Calendar className="w-4 h-4" />
+                            Year Built
+                          </Label>
+                          <Input
+                            id="yearBuilt"
+                            type="number"
+                            min="1800"
+                            max={new Date().getFullYear()}
+                            value={formData.yearBuilt || ''}
+                            onChange={(e) =>
+                              handleInputChange(
+                                'yearBuilt',
+                                e.target.value
+                                  ? parseInt(e.target.value)
+                                  : undefined
+                              )
+                            }
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {!validateStep(2) && (
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 flex items-center gap-3">
+                    <InfoIcon className="w-5 h-5 text-amber-600" />
+                    <p className="text-amber-700 text-sm">
+                      Please complete location and property specifications
+                      before continuing.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 3: Media */}
+            {currentStep === 3 && (
+              <div className="space-y-6 animate-fadeIn">
+                <Card className="border-amber-100 shadow-sm">
+                  <CardHeader className="bg-gradient-to-r from-amber-50 to-white border-b">
+                    <CardTitle className="flex items-center gap-2">
+                      <Upload className="w-5 h-5" />
+                      Property Images
+                    </CardTitle>
+                    <CardDescription>
+                      Showcase your property with high-quality photos
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6 pt-6">
+                    <div className="space-y-4">
+                      <div className="rounded-xl border-2 border-dashed border-amber-300 bg-amber-50 p-8 text-center hover:border-amber-400 transition-colors">
+                        <div className="mb-4">
+                          <Upload className="w-12 h-12 text-amber-600 mx-auto" />
+                        </div>
+                        <ImageUpload
+                          value={newImages}
+                          onChange={setNewImages}
+                          onImagesChange={handleImageChange}
+                          maxImages={10}
+                          accept="image/*"
+                        />
+                        <p className="text-sm text-amber-700 mt-4">
+                          Drag & drop or click to upload. Max 10 images.
+                        </p>
+                      </div>
+
+                      {newImages.length > 0 && (
+                        <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
+                          <div className="flex items-start gap-4">
+                            <div className="p-3 bg-white rounded-lg border border-gray-300">
+                              <InfoIcon className="w-5 h-5 text-gray-600" />
+                            </div>
+                            <div>
+                              <h5 className="font-medium text-sm text-gray-900 mb-2">
+                                Tips for great property photos
+                              </h5>
+                              <ul className="text-xs text-gray-600 space-y-1">
+                                <li>
+                                  • Use natural lighting for better quality
+                                </li>
+                                <li>• Include different angles of each room</li>
+                                <li>• Show exterior, kitchen, and bathrooms</li>
+                                <li>
+                                  • First image should be the best exterior shot
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {newImages.length === 0 && (
+                        <div className="rounded-xl bg-gradient-to-r from-amber-50 to-yellow-50 p-6 border border-amber-200">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 bg-white rounded-lg border border-amber-300">
+                              <Upload className="w-6 h-6 text-amber-600" />
+                            </div>
+                            <div>
+                              <h5 className="font-semibold text-lg text-amber-900">
+                                High-quality photos increase visibility
+                              </h5>
+                              <p className="text-amber-700 text-sm mt-1">
+                                Properties with good photos get 10x more views
+                                and 5x more inquiries!
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {!validateStep(3) && (
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 flex items-center gap-3">
+                    <InfoIcon className="w-5 h-5 text-amber-600" />
+                    <p className="text-amber-700 text-sm">
+                      Please upload at least one image of your property before
+                      continuing.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 4: Pricing */}
+            {currentStep === 4 && (
+              <div className="space-y-6 animate-fadeIn">
+                <Card className="border-brand/10 shadow-sm">
+                  <CardHeader className="bg-linear-to-r from-brand/5 to-white border-b">
+                    <CardTitle className="flex items-center gap-2">
+                      <DollarSign className="w-5 h-5" />
+                      Pricing Details
+                    </CardTitle>
+                    <CardDescription>
+                      Set competitive pricing for your property
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6 pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-3">
+                        <Label htmlFor="price" className="font-medium">
+                          {getPriceLabel()} *
+                        </Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                            ₦
+                          </span>
+                          <Input
+                            id="price"
+                            type="number"
+                            required
+                            min="0"
+                            value={formData.price || ''}
+                            onChange={(e) =>
+                              handleInputChange(
+                                'price',
+                                e.target.value === ''
+                                  ? 0
+                                  : parseFloat(e.target.value)
+                              )
+                            }
+                            className="h-11 pl-8"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label htmlFor="priceUnit" className="font-medium">
+                          Price Unit *
+                        </Label>
+                        <Select
+                          required
+                          value={formData.priceUnit}
+                          onValueChange={(value) =>
+                            handleInputChange('priceUnit', value)
+                          }
+                        >
+                          <SelectTrigger id="priceUnit" className="h-11">
+                            <SelectValue placeholder="Select price unit" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getPriceUnitOptions().map((unit) => (
+                              <SelectItem key={unit} value={unit}>
+                                <span className="capitalize">{unit}</span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="font-medium text-transparent">
+                          Display
+                        </Label>
+                        <div className="bg-linear-to-r from-brand to-brand/60 text-white rounded-lg p-4">
+                          <p className="text-sm font-medium mb-1">
+                            Your listing price
+                          </p>
+                          <p className="text-xl font-bold">
+                            ₦{formData.price.toLocaleString()}
+                            {formData.priceUnit === 'monthly' && '/mo'}
+                            {formData.priceUnit === 'yearly' && '/yr'}
+                            {formData.priceUnit === 'daily' && '/night'}
+                            {formData.priceUnit === 'weekly' && '/week'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="originalPrice" className="font-medium">
+                        Original Price (Optional)
+                      </Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                          ₦
+                        </span>
+                        <Input
+                          id="originalPrice"
+                          type="number"
+                          min="0"
+                          value={formData.originalPrice || ''}
+                          onChange={(e) =>
+                            handleInputChange(
+                              'originalPrice',
+                              e.target.value
+                                ? parseFloat(e.target.value)
+                                : undefined
+                            )
+                          }
+                          placeholder="Original price if discounted"
+                          className="h-11 pl-8"
+                        />
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        Shows as a discounted price to attract buyers
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {!validateStep(4) && (
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 flex items-center gap-3">
+                    <InfoIcon className="w-5 h-5 text-amber-600" />
+                    <p className="text-amber-700 text-sm">
+                      Please set a valid price for your property before
+                      continuing.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 5: Finalize */}
+            {currentStep === 5 && (
+              <div className="space-y-6 animate-fadeIn">
+                <Card className="border-blue-100 shadow-sm">
+                  <CardHeader className="bg-gradient-to-r from-blue-50 to-white border-b">
+                    <CardTitle className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5" />
+                      Review & Publish
+                    </CardTitle>
+                    <CardDescription>
+                      Review your listing and make final adjustments before
+                      publishing
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6 pt-6">
+                    {/* Features & Amenities */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Features & Amenities
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-medium text-gray-900">
+                            Property Features
+                          </h4>
+                          <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-2">
+                            {PROPERTY_FEATURES.map((feature) => (
+                              <div
+                                key={feature}
+                                className="flex items-center space-x-2"
+                              >
+                                <Checkbox
+                                  id={`feature-${feature}`}
+                                  checked={formData.features.includes(feature)}
+                                  onCheckedChange={() =>
+                                    handleArrayToggle('features', feature)
+                                  }
+                                />
+                                <Label
+                                  htmlFor={`feature-${feature}`}
+                                  className="text-sm cursor-pointer"
+                                >
+                                  {feature}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-medium text-gray-900">
+                            Community Amenities
+                          </h4>
+                          <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-2">
+                            {PROPERTY_AMENITIES.map((amenity) => (
+                              <div
+                                key={amenity}
+                                className="flex items-center space-x-2"
+                              >
+                                <Checkbox
+                                  id={`amenity-${amenity}`}
+                                  checked={formData.amenities.includes(amenity)}
+                                  onCheckedChange={() =>
+                                    handleArrayToggle('amenities', amenity)
+                                  }
+                                />
+                                <Label
+                                  htmlFor={`amenity-${amenity}`}
+                                  className="text-sm cursor-pointer"
+                                >
+                                  {amenity}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Additional Options */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Additional Options
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                          <Checkbox
+                            id="isFeatured"
+                            checked={formData.isFeatured}
+                            onCheckedChange={(checked) =>
+                              handleInputChange('isFeatured', checked)
+                            }
+                          />
+                          <div>
+                            <Label
+                              htmlFor="isFeatured"
+                              className="font-medium cursor-pointer"
+                            >
+                              Feature this property
+                            </Label>
+                            <p className="text-sm text-gray-500">
+                              Get more visibility at the top of search results
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="tags" className="font-medium">
+                            Tags (comma separated)
+                          </Label>
+                          <Input
+                            id="tags"
+                            value={tagsInput}
+                            onChange={(e) =>
+                              handleTagsInputChange(e.target.value)
+                            }
+                            placeholder="e.g., luxury, waterfront, new, renovated"
+                          />
+                          {formData.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {formData.tags.map((tag, index) => (
+                                <span
+                                  key={index}
+                                  className="bg-gray-100 text-gray-800 text-xs px-3 py-1.5 rounded-full border border-gray-300"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Summary Section */}
+                    <Card className="bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200">
+                      <CardContent className="p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                          Listing Summary
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div className="space-y-1">
+                            <p className="text-gray-600">Listing Type</p>
+                            <p className="font-medium text-gray-900 capitalize">
+                              {formData.status.replace('-', ' ')}
+                            </p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-gray-600">Price</p>
+                            <p className="font-medium text-gray-900">
+                              ₦{formData.price.toLocaleString()}
+                              {formData.priceUnit === 'monthly' && '/mo'}
+                              {formData.priceUnit === 'yearly' && '/yr'}
+                              {formData.priceUnit === 'daily' && '/night'}
+                            </p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-gray-600">Location</p>
+                            <p className="font-medium text-gray-900">
+                              {formData.city}, {formData.state}
+                            </p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-gray-600">Images</p>
+                            <p className="font-medium text-gray-900">
+                              {newImages.length} uploaded
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Navigation Buttons - Always visible at bottom */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 -mx-6 -mb-6 mt-8">
+              <div className="max-w-7xl mx-auto">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    {currentStep > 1 && (
+                      <Button
+                        type="button"
+                        onClick={goToPrevStep}
+                        variant="outline"
+                        className="gap-2"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        Previous Step
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {onCancel && (
+                      <Button type="button" onClick={onCancel} variant="ghost">
+                        Cancel
+                      </Button>
+                    )}
+
+                    {currentStep < totalSteps ? (
+                      <Button
+                        type="button"
+                        onClick={goToNextStep}
+                        disabled={!validateStep(currentStep)}
+                        className="gap-2 bg-brand hover:bg-brand"
+                      >
+                        Next Step
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button" // Changed from "submit" to "button"
+                        onClick={handleSubmit} // Add onClick handler
+                        disabled={
+                          isSubmitting ||
+                          (user?.userType === 'agent' && !agentProfileId) ||
+                          !validateStep(1) ||
+                          !validateStep(2) ||
+                          !validateStep(3) ||
+                          !validateStep(4)
+                        }
+                        className="gap-2 bg-linear-to-r from-brand/90 to-brand hover:from-brand hover:to-brand shadow-lg hover:shadow-xl"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Publishing...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4" />
+                            Publish Property
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Progress indicator at bottom */}
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-600">
+                      {currentStep === 1 && 'Complete basic information'}
+                      {currentStep === 2 &&
+                        'Fill in location and property details'}
+                      {currentStep === 3 &&
+                        'Upload at least one property image'}
+                      {currentStep === 4 && 'Set your pricing'}
+                      {currentStep === 5 && 'Review and publish'}
+                    </div>
+                    <div className="text-sm font-medium text-brand">
+                      {validateStep(currentStep)
+                        ? '✓ Step complete'
+                        : 'Required fields missing'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   )
+}
+
+// Add CSS for fade-in animation
+const style = `
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+`
+
+// Add the style to the head
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style')
+  styleElement.textContent = style
+  document.head.appendChild(styleElement)
 }

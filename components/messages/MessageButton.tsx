@@ -233,7 +233,7 @@ export default function MessageButton({
     // Default button variant
     return (
       <>
-        {showIcon && <MessageCircle className="w-4 h-4 mr-2" />}
+        {showIcon && <MessageCircle className="w-4 h-4" />}
         {showText && `Message ${ownerInfo?.ownerName || 'Owner'}`}
       </>
     )
@@ -242,7 +242,7 @@ export default function MessageButton({
   // Determine button classes
   const getButtonClasses = () => {
     const baseClasses =
-      'text-white cursor-pointer capitalize transition-colors w-full py-6 bg-gradient-to-r from-emerald-600 to-emerald-800 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg transform transition-all duration-200 border-0'
+      'text-white cursor-pointer text-ellipsis capitalize transition-colors w-full py-6 bg-linear-to-r from-brand from-brand hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg transform transition-all duration-200 border-0'
 
     if (variant === 'icon') {
       return `${baseClasses} ${sizeClasses[size].icon} aspect-square w-fit bg-transparent text-gray-400 flex items-center justify-center ${className}`

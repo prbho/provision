@@ -220,7 +220,7 @@ export default function FavoriteCard({
                   property.status === 'for-sale'
                     ? 'bg-linear-to-r from-amber-700 to-orange-600 text-white'
                     : property.status === 'for-rent'
-                      ? 'bg-linear-to-r from-emerald-600 to-teal-500 text-white'
+                      ? 'bg-linear-to-r from-brand to-teal-500 text-white'
                       : property.status === 'sold'
                         ? 'bg-linear-to-r from-gray-700 to-gray-600 text-white'
                         : 'bg-linear-to-r from-purple-600 to-purple-500 text-white'
@@ -288,7 +288,7 @@ export default function FavoriteCard({
               {/* PAYMENT OPTIONS */}
               <div className="flex flex-wrap gap-2 my-3">
                 {property.outright && (
-                  <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-xs rounded-md">
+                  <span className="px-2 py-1 bg-brand/5 text-emerald-700 text-xs rounded-md">
                     Outright
                   </span>
                 )}

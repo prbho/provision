@@ -131,6 +131,30 @@ export default function SettingsPage() {
     }
   }, [user, authLoading])
 
+  // Handle URL hash for direct navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '')
+      if (
+        hash &&
+        ['profile', 'notifications', 'security', 'danger'].includes(hash)
+      ) {
+        setActiveTab(
+          hash as 'profile' | 'notifications' | 'security' | 'danger'
+        )
+      }
+    }
+
+    handleHashChange()
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+  // Update URL hash when tab changes
+  useEffect(() => {
+    window.location.hash = activeTab
+  }, [activeTab])
+
   // Calculate password strength
   useEffect(() => {
     if (!securitySettings.newPassword) {
@@ -398,7 +422,7 @@ export default function SettingsPage() {
     return (
       <div className="min-h-screen bg-linear-to-b from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand/20 mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">Loading settings...</p>
           <p className="text-sm text-gray-500 mt-1">Please wait a moment</p>
         </div>
@@ -412,8 +436,8 @@ export default function SettingsPage() {
       <div className="min-h-screen bg-linear-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
-            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Lock className="h-10 w-10 text-emerald-600" />
+            <div className="w-20 h-20 bg-brand/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Lock className="h-10 w-10 text-brand" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
               Sign In Required
@@ -423,7 +447,7 @@ export default function SettingsPage() {
             </p>
             <Button
               onClick={() => router.push('/login')}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-lg font-medium text-base shadow-sm hover:shadow transition-all duration-200"
+              className="bg-brand hover:bg-brand text-white px-8 py-3 rounded-lg font-medium text-base shadow-sm hover:shadow transition-all duration-200"
             >
               Sign In Now
             </Button>
@@ -442,7 +466,7 @@ export default function SettingsPage() {
             <Button
               variant="outline"
               onClick={() => router.push('/profile')}
-              className="flex items-center gap-2 border-gray-300 hover:border-emerald-300 hover:bg-emerald-50"
+              className="flex items-center gap-2 bg-transparent border-0 p-0! shadow-none"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Profile
@@ -460,21 +484,12 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="flex flex-col lg:flex-row">
             {/* Sidebar Navigation */}
-            <div className="lg:w-64 bg-linear-to-b from-gray-50 to-gray-100 border-r border-gray-200 p-6">
-              <div className="mb-8">
+            <div className="lg:w-64 bg-brand/5 border-r border-gray-200 p-4">
+              <div className="mb-8 border-b border-stone-300 pb-2">
                 <div className="flex items-center gap-3 mb-1">
-                  <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                    <Image
-                      className="w-10 h-10 rounded-full"
-                      src={user.avatar || '/default-avatar.png'}
-                      alt="User Avatar"
-                      width={40}
-                      height={40}
-                    />
-                  </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">{user.name}</h3>
                     <p className="text-sm text-gray-600">{user.email}</p>
@@ -483,11 +498,16 @@ export default function SettingsPage() {
               </div>
 
               <nav className="space-y-1">
-                <button
-                  onClick={() => setActiveTab('profile')}
+                <a
+                  href="#profile"
+                  id="profile-tab"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setActiveTab('profile')
+                  }}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
                     activeTab === 'profile'
-                      ? 'bg-emerald-600 text-white shadow-sm'
+                      ? 'bg-brand text-white shadow-sm'
                       : 'text-gray-700 hover:bg-gray-100 hover:shadow-sm'
                   }`}
                 >
@@ -495,13 +515,18 @@ export default function SettingsPage() {
                     className={`h-5 w-5 ${activeTab === 'profile' ? 'text-white' : 'text-gray-500'}`}
                   />
                   <span className="font-medium">Profile</span>
-                </button>
+                </a>
 
-                <button
-                  onClick={() => setActiveTab('notifications')}
+                <a
+                  href="#notifications"
+                  id="notifications-tab"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setActiveTab('notifications')
+                  }}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
                     activeTab === 'notifications'
-                      ? 'bg-emerald-600 text-white shadow-sm'
+                      ? 'bg-brand text-white shadow-sm'
                       : 'text-gray-700 hover:bg-gray-100 hover:shadow-sm'
                   }`}
                 >
@@ -509,13 +534,18 @@ export default function SettingsPage() {
                     className={`h-5 w-5 ${activeTab === 'notifications' ? 'text-white' : 'text-gray-500'}`}
                   />
                   <span className="font-medium">Notifications</span>
-                </button>
+                </a>
 
-                <button
-                  onClick={() => setActiveTab('security')}
+                <a
+                  href="#security"
+                  id="security-tab"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setActiveTab('security')
+                  }}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
                     activeTab === 'security'
-                      ? 'bg-emerald-600 text-white shadow-sm'
+                      ? 'bg-brand text-white shadow-sm'
                       : 'text-gray-700 hover:bg-gray-100 hover:shadow-sm'
                   }`}
                 >
@@ -523,10 +553,15 @@ export default function SettingsPage() {
                     className={`h-5 w-5 ${activeTab === 'security' ? 'text-white' : 'text-gray-500'}`}
                   />
                   <span className="font-medium">Security</span>
-                </button>
+                </a>
 
-                <button
-                  onClick={() => setActiveTab('danger')}
+                <a
+                  href="#danger"
+                  id="danger-tab"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setActiveTab('danger')
+                  }}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
                     activeTab === 'danger'
                       ? 'bg-red-600 text-white shadow-sm'
@@ -535,7 +570,7 @@ export default function SettingsPage() {
                 >
                   <AlertTriangle className="h-5 w-5" />
                   <span className="font-medium">Danger Zone</span>
-                </button>
+                </a>
               </nav>
             </div>
 
@@ -564,7 +599,7 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               handleUserSettingsChange('name', e.target.value)
                             }
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
                             placeholder="Enter your full name"
                             required
                           />
@@ -585,7 +620,7 @@ export default function SettingsPage() {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                              className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
                               placeholder="Enter your email"
                               required
                             />
@@ -607,7 +642,7 @@ export default function SettingsPage() {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                              className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
                               placeholder="Enter your phone number"
                             />
                           </div>
@@ -625,7 +660,7 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               handleUserSettingsChange('city', e.target.value)
                             }
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
                             placeholder="Enter your city"
                           />
                         </div>
@@ -640,7 +675,7 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               handleUserSettingsChange('state', e.target.value)
                             }
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
                             placeholder="Enter your state"
                           />
                         </div>
@@ -655,7 +690,7 @@ export default function SettingsPage() {
                               handleUserSettingsChange('bio', e.target.value)
                             }
                             rows={4}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
                             placeholder="Tell us about yourself..."
                           />
                           <p className="text-sm text-gray-500 mt-2">
@@ -724,7 +759,7 @@ export default function SettingsPage() {
                       ].map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center justify-between p-5 border border-gray-200 rounded-xl hover:border-emerald-300 transition-all"
+                          className="flex items-center justify-between p-5 border border-gray-200 rounded-xl hover:border-brand transition-all"
                         >
                           <div className="flex-1">
                             <h3 className="font-semibold text-gray-900 mb-1">
@@ -746,7 +781,7 @@ export default function SettingsPage() {
                               }
                               className="sr-only peer"
                             />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
                           </label>
                         </div>
                       ))}
@@ -783,7 +818,7 @@ export default function SettingsPage() {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                              className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
                               placeholder="Enter your current password"
                               required
                             />
@@ -807,7 +842,7 @@ export default function SettingsPage() {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                              className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
                               placeholder="Enter your new password"
                               required
                             />
@@ -829,7 +864,7 @@ export default function SettingsPage() {
                                   e.target.value
                                 )
                               }
-                              className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                              className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
                               placeholder="Confirm your new password"
                               required
                             />
@@ -855,7 +890,7 @@ export default function SettingsPage() {
                                   ? 'bg-red-500'
                                   : passwordStrength.score <= 4
                                     ? 'bg-yellow-500'
-                                    : 'bg-emerald-500'
+                                    : 'bg-brand'
                               }`}
                               style={{
                                 width: `${(passwordStrength.score / 6) * 100}%`,
@@ -868,39 +903,39 @@ export default function SettingsPage() {
                         </div>
                       )}
 
-                      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
-                        <h3 className="font-semibold text-emerald-800 mb-3 flex items-center gap-2">
+                      <div className="bg-brand/5 border border-brand/20 rounded-xl p-5">
+                        <h3 className="font-semibold text-brand mb-3 flex items-center gap-2">
                           <Lock className="h-5 w-5" />
                           Password Requirements
                         </h3>
-                        <ul className="text-sm text-emerald-700 space-y-2">
+                        <ul className="text-sm text-brand space-y-2">
                           <li className="flex items-center gap-2">
                             <div
-                              className={`w-2 h-2 rounded-full ${securitySettings.newPassword?.length >= 8 ? 'bg-emerald-500' : 'bg-emerald-200'}`}
+                              className={`w-2 h-2 rounded-full ${securitySettings.newPassword?.length >= 8 ? 'bg-brand' : 'bg-brand/20'}`}
                             />
                             At least 8 characters long
                           </li>
                           <li className="flex items-center gap-2">
                             <div
-                              className={`w-2 h-2 rounded-full ${/[A-Z]/.test(securitySettings.newPassword) ? 'bg-emerald-500' : 'bg-emerald-200'}`}
+                              className={`w-2 h-2 rounded-full ${/[A-Z]/.test(securitySettings.newPassword) ? 'bg-brand' : 'bg-brand/20'}`}
                             />
                             One uppercase letter (A-Z)
                           </li>
                           <li className="flex items-center gap-2">
                             <div
-                              className={`w-2 h-2 rounded-full ${/[a-z]/.test(securitySettings.newPassword) ? 'bg-emerald-500' : 'bg-emerald-200'}`}
+                              className={`w-2 h-2 rounded-full ${/[a-z]/.test(securitySettings.newPassword) ? 'bg-brand' : 'bg-brand/20'}`}
                             />
                             One lowercase letter (a-z)
                           </li>
                           <li className="flex items-center gap-2">
                             <div
-                              className={`w-2 h-2 rounded-full ${/\d/.test(securitySettings.newPassword) ? 'bg-emerald-500' : 'bg-emerald-200'}`}
+                              className={`w-2 h-2 rounded-full ${/\d/.test(securitySettings.newPassword) ? 'bg-brand' : 'bg-brand/20'}`}
                             />
                             One number (0-9)
                           </li>
                           <li className="flex items-center gap-2">
                             <div
-                              className={`w-2 h-2 rounded-full ${/[!@#$%^&*(),.?":{}|<>]/.test(securitySettings.newPassword) ? 'bg-emerald-500' : 'bg-emerald-200'}`}
+                              className={`w-2 h-2 rounded-full ${/[!@#$%^&*(),.?":{}|<>]/.test(securitySettings.newPassword) ? 'bg-brand' : 'bg-brand/20'}`}
                             />
                             One special character
                           </li>
@@ -1014,7 +1049,7 @@ export default function SettingsPage() {
                   <Button
                     onClick={handleSave}
                     disabled={saving}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-lg font-medium shadow-sm hover:shadow transition-all duration-200"
+                    className="bg-brand hover:bg-brand/20 text-white px-8 py-4 rounded-lg font-medium shadow-sm hover:shadow transition-all duration-200"
                   >
                     {saving ? (
                       <div className="flex items-center space-x-3">

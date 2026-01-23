@@ -97,7 +97,7 @@ export default function AccessibilityPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero */}
-      <section className="bg-linear-to-r from-emerald-600 to-emerald-700 text-white py-16">
+      <section className="bg-linear-to-r from-brand from-brand text-white py-16">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="text-center max-w-4xl mx-auto">
             <div className="inline-flex p-4 bg-white/10 rounded-2xl mb-6">
@@ -107,7 +107,7 @@ export default function AccessibilityPage() {
               Accessibility Features
             </h1>
             <p className="text-xl text-emerald-100 mb-8">
-              Settings that work across the entire PropSafe Hub platform
+              Settings that work across the entire PropertyVision platform
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
               <div className="bg-white/10 px-4 py-2 rounded-lg">
@@ -319,14 +319,14 @@ export default function AccessibilityPage() {
               Active Settings Applied Site-Wide
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div className="text-center p-3 bg-emerald-50 rounded-lg">
+              <div className="text-center p-3 bg-brand/5 rounded-lg">
                 <div className="text-lg font-bold text-emerald-600">
                   {settings.fontSize}%
                 </div>
                 <div className="text-xs text-emerald-700">Text Size</div>
               </div>
               <div
-                className={`text-center p-3 rounded-lg ${settings.highContrast ? 'bg-emerald-50' : 'bg-gray-50'}`}
+                className={`text-center p-3 rounded-lg ${settings.highContrast ? 'bg-brand/5' : 'bg-gray-50'}`}
               >
                 <div
                   className={`text-lg font-bold ${settings.highContrast ? 'text-emerald-600' : 'text-gray-400'}`}
@@ -340,7 +340,7 @@ export default function AccessibilityPage() {
                 </div>
               </div>
               <div
-                className={`text-center p-3 rounded-lg ${settings.grayscaleMode ? 'bg-emerald-50' : 'bg-gray-50'}`}
+                className={`text-center p-3 rounded-lg ${settings.grayscaleMode ? 'bg-brand/5' : 'bg-gray-50'}`}
               >
                 <div
                   className={`text-lg font-bold ${settings.grayscaleMode ? 'text-emerald-600' : 'text-gray-400'}`}
@@ -354,7 +354,7 @@ export default function AccessibilityPage() {
                 </div>
               </div>
               <div
-                className={`text-center p-3 rounded-lg ${settings.reducedMotion ? 'bg-emerald-50' : 'bg-gray-50'}`}
+                className={`text-center p-3 rounded-lg ${settings.reducedMotion ? 'bg-brand/5' : 'bg-gray-50'}`}
               >
                 <div
                   className={`text-lg font-bold ${settings.reducedMotion ? 'text-emerald-600' : 'text-gray-400'}`}
@@ -368,7 +368,7 @@ export default function AccessibilityPage() {
                 </div>
               </div>
               <div
-                className={`text-center p-3 rounded-lg ${settings.linkUnderline ? 'bg-emerald-50' : 'bg-gray-50'}`}
+                className={`text-center p-3 rounded-lg ${settings.linkUnderline ? 'bg-brand/5' : 'bg-gray-50'}`}
               >
                 <div
                   className={`text-lg font-bold ${settings.linkUnderline ? 'text-emerald-600' : 'text-gray-400'}`}
@@ -397,7 +397,7 @@ export default function AccessibilityPage() {
                 className="bg-white rounded-xl border p-6 shadow-sm"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+                  <div className="p-2 bg-brand/10 text-emerald-600 rounded-lg">
                     <category.icon className="h-6 w-6" />
                   </div>
                   <h3 className="font-semibold text-gray-900">
@@ -450,7 +450,7 @@ export default function AccessibilityPage() {
         </section>
 
         {/* Feedback Section */}
-        <section className="bg-linear-to-r from-emerald-600 to-emerald-700 rounded-2xl p-8 text-white text-center">
+        <section className="bg-linear-to-r from-brand from-brand rounded-2xl p-8 text-white text-center">
           <div className="max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold mb-4">
               Help Us Improve Accessibility
@@ -465,7 +465,7 @@ export default function AccessibilityPage() {
                 asChild
                 className="bg-white text-emerald-700 hover:bg-gray-100"
               >
-                <a href="mailto:accessibility@propsafehub.com?subject=Accessibility Feedback">
+                <a href="mailto:accessibility@propertyvision.com?subject=Accessibility Feedback">
                   Email Feedback
                 </a>
               </Button>
@@ -482,7 +482,7 @@ export default function AccessibilityPage() {
 
         {/* Commitment */}
         <div className="mt-16 text-center">
-          <div className="inline-flex p-4 bg-emerald-100 text-emerald-600 rounded-2xl mb-6">
+          <div className="inline-flex p-4 bg-brand/10 text-emerald-600 rounded-2xl mb-6">
             <Heart className="h-12 w-12" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -490,7 +490,7 @@ export default function AccessibilityPage() {
           </h2>
           <p className="text-gray-700 max-w-2xl mx-auto">
             Accessibility is not an afterthought—it&apos;s a core principle at
-            PropSafe Hub. We continuously monitor, test, and improve our
+            PropertyVision. We continuously monitor, test, and improve our
             platform to ensure equal access to real estate opportunities for
             everyone.
           </p>

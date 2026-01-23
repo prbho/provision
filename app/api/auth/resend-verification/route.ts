@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     ).toString('base64')
 
     // Create the NEW verification URL with the NEW token
-    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://propsafehub.com'}/verify/${verificationToken}`
+    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://localhost:3000'}/verify/${verificationToken}`
 
     console.log('🔐 Generated NEW verification token:', {
       tokenPreview: verificationToken.substring(0, 30) + '...',
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
       <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Verify Your Email - PropSafeHub</title>
+          <title>Verify Your Email - propertyvision</title>
           <style>
               body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f9f9f9; }
               .container { max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
@@ -180,10 +180,9 @@ export async function POST(request: NextRequest) {
               <div class="header">
                   <img 
                       src="https://fra.cloud.appwrite.io/v1/storage/buckets/6917066d002198df0c33/files/692f3007003c9a8fc197/view?project=6916ed0c0019cfe6bd36" 
-                      alt="PropSafeHub Logo" 
+                      alt="propertyvision Logo" 
                       style="width: 160px; height: auto; display: block; margin: 0 auto; border: 0;"
                   />
-                  <p style="color: #64748b; margin: 10px 0 0 0;">Find Your Perfect Property Match</p>
               </div>
               
               <div class="content">
@@ -225,7 +224,7 @@ export async function POST(request: NextRequest) {
               
               <div class="footer">
                   <p>If you didn't request this email, please ignore it.</p>
-                  <p>&copy; ${new Date().getFullYear()} PropSafeHub. All rights reserved.</p>
+                  <p>&copy; ${new Date().getFullYear()} propertyvision. All rights reserved.</p>
               </div>
           </div>
       </body>
@@ -253,9 +252,9 @@ export async function POST(request: NextRequest) {
       }
 
       const { error } = await resend.emails.send({
-        from: 'PropSafeHub <noreply@notifications.propsafehub.com>',
+        from: 'propertyvision <onboarding@resend.dev>',
         to: email,
-        subject: 'Verify your email - PropSafeHub',
+        subject: 'Verify your email - propertyvision',
         html: emailHtml,
       })
 

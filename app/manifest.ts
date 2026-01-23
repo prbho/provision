@@ -2,9 +2,9 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'PropSafe Hub | Verified Real Estate Investments',
-    short_name: 'PropSafe Hub',
-    description: 'Your Secured Pathway to Verified Real Estate Investments',
+    name: 'PropertyVision | Verified Properties • Secure Transactions',
+    short_name: 'PropertyVision',
+    description: 'Invest in Nigerian real estate with confidence.',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',

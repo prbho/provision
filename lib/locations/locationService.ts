@@ -27,7 +27,7 @@ export class LocationService {
   }
   private static get collectionId(): string {
     return (
-      process.env.NEXT_PUBLIC_APPWRITE_LOCATIONS_COLLECTION_ID || 'locations'
+      process.env.NEXT_PUBLIC_APPWRITE_LOCATIONS_COLLECTION_ID || 'location'
     )
   }
 

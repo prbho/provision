@@ -10,20 +10,19 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Lead } from '@/types'
 import { Query } from 'appwrite'
 import {
-  Bed,
+  BadgePlus,
   Calendar,
   Clock,
-  DollarSign,
+  Contact,
   Filter,
-  Home,
   Mail,
-  MapPin,
-  MessageCircle,
   MoreHorizontal,
   Phone,
   Plus,
+  ReceiptText,
   Search,
   User,
+  UserStar,
 } from 'lucide-react'
 
 import { databases } from '@/lib/appwrite'
@@ -186,7 +185,7 @@ export default function AgentLeads() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-brand/5 p-6">
         <div className="mx-auto px-6 max-w-7xl">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
@@ -233,8 +232,8 @@ export default function AgentLeads() {
             </p>
           </div>
           <Link
-            href="/agent/leads/add"
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            href="#"
+            className="flex items-center gap-2 bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand/95 transition-colors"
           >
             <Plus className="w-5 h-5" />
             Add Lead
@@ -249,7 +248,7 @@ export default function AgentLeads() {
                 <p className="text-sm text-gray-600">Total Leads</p>
                 <p className="text-2xl font-bold text-gray-900">{totalLeads}</p>
               </div>
-              <User className="w-8 h-8 text-blue-600" />
+              <Contact className="w-8 h-8 text-brand" />
             </div>
           </div>
 
@@ -258,9 +257,9 @@ export default function AgentLeads() {
               <div>
                 <p className="text-sm text-gray-600">New Leads</p>
                 <p className="text-2xl font-bold text-gray-900">{newLeads}</p>
-                <p className="text-sm text-green-600">Need contact</p>
+                <p className="text-sm text-brand">Need contact</p>
               </div>
-              <Mail className="w-8 h-8 text-green-600" />
+              <BadgePlus className="w-8 h-8 text-brand" />
             </div>
           </div>
 
@@ -271,9 +270,9 @@ export default function AgentLeads() {
                 <p className="text-2xl font-bold text-gray-900">
                   {contactedLeads}
                 </p>
-                <p className="text-sm text-yellow-600">Follow up needed</p>
+                <p className="text-sm text-brand">Follow up needed</p>
               </div>
-              <MessageCircle className="w-8 h-8 text-yellow-600" />
+              <ReceiptText className="w-8 h-8 text-brand" />
             </div>
           </div>
 
@@ -286,7 +285,7 @@ export default function AgentLeads() {
                 </p>
                 <p className="text-sm text-blue-600">Hot leads</p>
               </div>
-              <Home className="w-8 h-8 text-purple-600" />
+              <UserStar className="w-8 h-8 text-brand" />
             </div>
           </div>
         </div>
@@ -355,8 +354,8 @@ export default function AgentLeads() {
             <div className="flex gap-4 justify-center">
               {leads.length === 0 && (
                 <Link
-                  href="/agent/leads/add"
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                  href="#"
+                  className="inline-flex items-center gap-2 bg-brand text-white px-6 py-3 rounded-lg hover:bg-brand/95 transition-colors"
                 >
                   <Plus className="w-5 h-5" />
                   Add Your First Lead

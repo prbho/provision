@@ -256,7 +256,7 @@ export default function DashboardPage() {
       {
         id: '4',
         type: 'system',
-        title: 'Welcome to PropSafe Hub!',
+        title: 'Welcome to PropertyVision!',
         message:
           'Your account has been successfully created and is ready to use.',
         timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
@@ -357,7 +357,7 @@ export default function DashboardPage() {
                 <Home className="w-4 h-4" />
                 My Properties
                 {userProperties > 0 && (
-                  <span className="bg-emerald-100 text-emerald-600 text-xs px-2 py-1 rounded-full">
+                  <span className="bg-brand/10 text-emerald-600 text-xs px-2 py-1 rounded-full">
                     {userProperties}
                   </span>
                 )}

@@ -5,16 +5,27 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import {
+  Award,
+  Bell,
   Briefcase,
+  Calendar,
   Camera,
+  Clock,
   DollarSign,
   Edit3,
   Eye,
+  Globe,
   Heart,
   Home,
+  Key,
+  LogOut,
   Mail,
+  MapPin,
   Phone,
   Save,
+  Shield,
+  Trash2,
+  TrendingUp,
   User,
   X,
 } from 'lucide-react'
@@ -25,6 +36,9 @@ import ImageCropperModal from '@/components/ImageCropperModal'
 import PremiumFeaturesSection from '@/components/PremiumFeaturesSection'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import {
   AGENTS_COLLECTION_ID,
   DATABASE_ID,
@@ -59,7 +73,6 @@ const checkUserPremiumStatus = async (userId: string) => {
 export default function DynamicProfilePage({}: {
   params: Promise<{ userType: string; id: string }>
 }) {
-  // Use useParams hook to get params
   const params = useParams()
   const userType = params.userType as string
   const id = params.id as string
@@ -74,6 +87,8 @@ export default function DynamicProfilePage({}: {
     email: '',
     phone: '',
     bio: '',
+    location: '',
+    website: '',
   })
   const [premiumStatus, setPremiumStatus] = useState({
     hasPremium: false,
@@ -93,14 +108,12 @@ export default function DynamicProfilePage({}: {
       router.push('/')
     }
 
-    // Validate user type matches the route
     if (!isLoading && user && user.userType !== userType) {
       const correctPath = `/profile/${user.userType}/${user.$id}`
       router.replace(correctPath)
     }
   }, [user, isLoading, id, userType, router])
 
-  // Move loadPremiumStatus inside useEffect and memoize it with useCallback
   const loadPremiumStatus = useCallback(async () => {
     if (!user) return
 
@@ -117,9 +130,10 @@ export default function DynamicProfilePage({}: {
         email: user.email || '',
         phone: user.phone || '',
         bio: user.bio || '',
+        location: user.city || '',
+        website: user.website || '',
       })
 
-      // Load premium status
       loadPremiumStatus()
     }
   }, [user, loadPremiumStatus])
@@ -128,16 +142,13 @@ export default function DynamicProfilePage({}: {
     if (!user) return
 
     try {
-      // Use appropriate update function based on user type
       if (user.userType === 'agent') {
         await updateAgentProfile(user.$id, formData)
       } else {
         await updateUserProfile(user.$id, formData)
       }
 
-      // Refresh the user data in AuthContext
       await refreshUser()
-
       setIsEditing(false)
       toast.success('Profile updated successfully!')
     } catch (error) {
@@ -150,9 +161,6 @@ export default function DynamicProfilePage({}: {
     const file = event.target.files?.[0]
     if (!file) return
 
-    console.log('📁 Selected file:', file.name, file.type, file.size)
-
-    // Validate file type and size
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file')
       return
@@ -163,29 +171,21 @@ export default function DynamicProfilePage({}: {
       return
     }
 
-    // Clean up previous URL if exists
     if (selectedImage && selectedImage.startsWith('blob:')) {
       URL.revokeObjectURL(selectedImage)
     }
 
-    // Use FileReader to convert to base64 instead of blob URL
     const reader = new FileReader()
-
     reader.onload = (e) => {
       const base64Image = e.target?.result as string
-      console.log('🖼️ Converted to base64, length:', base64Image?.length)
       setSelectedImage(base64Image)
       setShowCropper(true)
     }
-
     reader.onerror = () => {
-      console.error('❌ Error reading file')
       toast.error('Failed to read image file')
     }
-
     reader.readAsDataURL(file)
 
-    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -196,9 +196,6 @@ export default function DynamicProfilePage({}: {
 
     setIsUploading(true)
     try {
-      console.log('🔄 Uploading cropped avatar...')
-
-      // Convert blob to file
       const croppedFile = new File([croppedImageBlob], 'avatar.jpg', {
         type: 'image/jpeg',
         lastModified: Date.now(),
@@ -207,35 +204,24 @@ export default function DynamicProfilePage({}: {
       let avatarUrl
 
       if (user.userType === 'agent') {
-        console.log('👔 User is agent, updating AGENT document')
-
-        // Find or use agent document ID
         let agentDocId = user.agentDocumentId
-
         if (!agentDocId) {
-          console.log('🔍 Searching for agent document...')
           const agents = await databases.listDocuments(
             DATABASE_ID,
             AGENTS_COLLECTION_ID,
             [Query.equal('userId', user.$id)]
           )
-
           if (agents.total === 0) {
             throw new Error('Agent profile not found')
           }
-
           agentDocId = agents.documents[0].$id
         }
-
-        // ✅ Update AGENT document in AGENTS collection
         avatarUrl = await uploadAvatar(
           agentDocId,
           croppedFile,
           AGENTS_COLLECTION_ID
         )
       } else {
-        console.log('👤 User is regular user, updating USER document')
-        // ✅ Update USER document in USERS collection
         avatarUrl = await uploadAvatar(
           user.$id,
           croppedFile,
@@ -243,9 +229,8 @@ export default function DynamicProfilePage({}: {
         )
       }
 
-      // Refresh user data
       await refreshUser()
-      toast.success('Avatar updated successfully!')
+      toast.success('Profile picture updated!')
     } catch (error) {
       console.error('Error uploading cropped avatar:', error)
       toast.error('Failed to upload avatar')
@@ -260,7 +245,6 @@ export default function DynamicProfilePage({}: {
 
   const handleCancelCrop = () => {
     setShowCropper(false)
-    // Don't revoke immediately - wait a bit to ensure modal is closed
     setTimeout(() => {
       if (selectedImage) {
         URL.revokeObjectURL(selectedImage)
@@ -276,6 +260,8 @@ export default function DynamicProfilePage({}: {
         email: user.email || '',
         phone: user.phone || '',
         bio: user.bio || '',
+        location: user.city || '',
+        website: user.website || '',
       })
     }
     setIsEditing(false)
@@ -286,18 +272,13 @@ export default function DynamicProfilePage({}: {
 
     setIsDeleting(true)
     try {
-      console.log('🗑️ Starting account deletion process...')
-
       if (user.userType === 'agent') {
         await deleteAgentAccount(user.$id)
       } else {
         await deleteUserAccount(user.$id)
       }
 
-      // Logout and redirect
       await logout()
-
-      // Redirect to home page
       router.push('/')
       toast.success('Account deleted successfully')
     } catch (error) {
@@ -309,7 +290,6 @@ export default function DynamicProfilePage({}: {
     }
   }
 
-  // Get user type specific icon and color
   const getUserTypeConfig = () => {
     switch (userType) {
       case 'agent':
@@ -317,24 +297,28 @@ export default function DynamicProfilePage({}: {
           icon: <Briefcase className="w-4 h-4" />,
           color: 'bg-purple-100 text-purple-800',
           label: 'Real Estate Agent',
+          badgeColor: 'bg-gradient-to-r from-purple-500 to-purple-600',
         }
       case 'seller':
         return {
           icon: <DollarSign className="w-4 h-4" />,
           color: 'bg-amber-100 text-amber-800',
           label: 'Property Seller',
+          badgeColor: 'bg-gradient-to-r from-amber-500 to-amber-600',
         }
       case 'buyer':
         return {
           icon: <Home className="w-4 h-4" />,
           color: 'bg-blue-100 text-blue-800',
           label: 'Property Buyer',
+          badgeColor: 'bg-gradient-to-r from-blue-500 to-blue-600',
         }
       default:
         return {
           icon: <User className="w-4 h-4" />,
           color: 'bg-gray-100 text-gray-800',
           label: 'User',
+          badgeColor: 'bg-gradient-to-r from-gray-500 to-gray-600',
         }
     }
   }
@@ -343,10 +327,13 @@ export default function DynamicProfilePage({}: {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-b from-gray-50 to-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your profile...</p>
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-gray-200 rounded-full"></div>
+            <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin absolute top-0"></div>
+          </div>
+          <p className="mt-4 text-gray-600 font-medium">Loading profile...</p>
         </div>
       </div>
     )
@@ -354,465 +341,525 @@ export default function DynamicProfilePage({}: {
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <User className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Not Signed In
+      <div className="min-h-screen bg-linear-to-b from-gray-50 to-white flex items-center justify-center">
+        <div className="text-center max-w-md mx-4">
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <User className="w-10 h-10 text-gray-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">
+            Sign In Required
           </h2>
-          <p className="text-gray-600 mb-4">
-            Please sign in to view your profile
+          <p className="text-gray-600 mb-8">
+            Please sign in to access your profile and personalized settings
           </p>
-          <button
+          <Button
             onClick={() => router.push('/login')}
-            className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="bg-linear-to-r from-brand to-brand hover:from-brand hover:to-brand text-white px-8 py-3 rounded-xl shadow-lg"
           >
             Sign In
-          </button>
+          </Button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-linear-to-b from-gray-50 to-white py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex">
-              <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-              {/* User Type Badge */}
-              <div className="mb-6">
-                <div
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full `}
-                >
-                  <Badge>{userTypeConfig.label}</Badge>
+        <div className="mb-8 overflow-hidden">
+          <div className="p-0">
+            <div className="px-8 pb-4">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    My Profile
+                  </h1>
+                  <p className="text-gray-600 mt-2">
+                    Manage your account and preferences
+                  </p>
                 </div>
-              </div>
-            </div>
 
-            {!isEditing ? (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Edit3 className="w-4 h-4" />
-                Edit Profile
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={handleSave}
-                  className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <Save className="w-4 h-4" />
-                  Save
-                </button>
-                <button
-                  onClick={handleCancel}
-                  className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                  Cancel
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Profile Info */}
-          <div className="flex flex-col md:flex-row gap-8 items-start">
-            {/* Avatar */}
-            <div className="shrink-0">
-              <div className="relative">
-                <Avatar className="h-32 w-32">
-                  <AvatarImage src={user?.avatar} alt={user.name} />
-                  <AvatarFallback>
-                    <User className="w-12 h-12 text-gray-400" />
-                  </AvatarFallback>
-                </Avatar>
-
-                {/* Hidden File Input */}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageSelect}
-                  accept="image/*"
-                  className="hidden"
-                />
-
-                {/* Camera Button */}
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="absolute bottom-2 right-2 p-2 bg-emerald-600 text-white rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isUploading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="flex gap-3">
+                  {!isEditing ? (
+                    <Button
+                      onClick={() => setIsEditing(true)}
+                      className="bg-linear-to-r from-brand to-emerald-600 hover:from-brand/90 hover:to-brand text-white shadow-lg"
+                    >
+                      <Edit3 className="w-4 h-4 mr-2" />
+                      Edit Profile
+                    </Button>
                   ) : (
-                    <Camera className="w-4 h-4" />
+                    <>
+                      <Button
+                        onClick={handleSave}
+                        className="bg-linear-to-r from-brand/85 to-green-600 hover:from-brand hover:to-brand text-white shadow-lg"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Changes
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleCancel}
+                        className="border-gray-300 hover:bg-gray-50"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Cancel
+                      </Button>
+                    </>
                   )}
-                </button>
+                </div>
               </div>
-              {isUploading && (
-                <p className="text-sm text-gray-600 mt-2 text-center">
-                  Uploading...
-                </p>
-              )}
             </div>
 
-            {/* User Details */}
-            <div className="flex-1 space-y-4">
-              {isEditing ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Full Name
-                    </label>
+            <Separator className="my-0" />
+
+            {/* Profile Content */}
+            <div className="p-8">
+              <div className="flex flex-col lg:flex-row gap-8 items-start">
+                {/* Avatar Section */}
+                <div className="shrink-0">
+                  <div className="relative group">
+                    <div className="relative">
+                      <Avatar className="h-40 w-40 border-4 border-white shadow-xl">
+                        <AvatarImage
+                          src={user?.avatar}
+                          alt={user.name}
+                          className="object-cover"
+                        />
+                        <AvatarFallback className="bg-linear-to-br from-gray-100 to-gray-200">
+                          <User className="w-16 h-16 text-gray-400" />
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+
                     <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter your full name"
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageSelect}
+                      accept="image/*"
+                      className="hidden"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 cursor-not-allowed"
-                      disabled
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      Email cannot be changed
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter your phone number"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Bio
-                    </label>
-                    <textarea
-                      value={formData.bio}
-                      onChange={(e) =>
-                        setFormData({ ...formData, bio: e.target.value })
-                      }
-                      rows={3}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Tell us about yourself..."
-                      maxLength={500}
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      {formData.bio.length}/500 characters
-                    </p>
+
+                    <Button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="absolute bottom-4 right-4 p-3 bg-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-200"
+                      size="icon"
+                    >
+                      {isUploading ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-emerald-600 border-t-transparent" />
+                      ) : (
+                        <Camera className="w-5 h-5 text-gray-700" />
+                      )}
+                    </Button>
                   </div>
                 </div>
-              ) : (
-                <>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">
-                      {user.name}
-                    </h2>
-                    <p className="text-gray-600 mt-1">
-                      {user.bio || 'No bio yet.'}
-                    </p>
-                  </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3 text-gray-700">
-                      <Mail className="w-4 h-4" />
-                      <span>{user.email}</span>
-                      {user.emailVerified && (
-                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                          Verified
-                        </span>
-                      )}
-                    </div>
-                    {user.phone && (
-                      <div className="flex items-center gap-3 text-gray-700">
-                        <Phone className="w-4 h-4" />
-                        <span>{user.phone}</span>
+                {/* User Details */}
+                <div className="flex-1 space-y-6">
+                  {isEditing ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Full Name *
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.name}
+                            onChange={(e) =>
+                              setFormData({ ...formData, name: e.target.value })
+                            }
+                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                            placeholder="Enter your full name"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Email Address
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="email"
+                              value={formData.email}
+                              className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 text-gray-600"
+                              disabled
+                            />
+                            <Mail className="absolute right-3 top-3.5 w-4 h-4 text-gray-400" />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Contact support to change your email
+                          </p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Phone Number
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="tel"
+                              value={formData.phone}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  phone: e.target.value,
+                                })
+                              }
+                              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                              placeholder="+234 800 000 0000"
+                            />
+                            <Phone className="absolute right-3 top-3.5 w-4 h-4 text-gray-400" />
+                          </div>
+                        </div>
                       </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Location
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={formData.location}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  location: e.target.value,
+                                })
+                              }
+                              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                              placeholder="e.g., Lagos, Nigeria"
+                            />
+                            <MapPin className="absolute right-3 top-3.5 w-4 h-4 text-gray-400" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Website / Portfolio
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="url"
+                              value={formData.website}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  website: e.target.value,
+                                })
+                              }
+                              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                              placeholder="https://example.com"
+                            />
+                            <Globe className="absolute right-3 top-3.5 w-4 h-4 text-gray-400" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Bio / About
+                          </label>
+                          <textarea
+                            value={formData.bio}
+                            onChange={(e) =>
+                              setFormData({ ...formData, bio: e.target.value })
+                            }
+                            rows={4}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-none"
+                            placeholder="Tell us about yourself..."
+                            maxLength={500}
+                          />
+                          <div className="flex justify-between text-xs text-gray-500 mt-2">
+                            <span>Brief introduction about yourself</span>
+                            <span>{formData.bio.length}/500</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div>
+                        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                          {user.name}
+                        </h2>
+                        <div className="flex items-center gap-4 text-gray-600">
+                          {user.city && (
+                            <div className="flex items-center gap-2">
+                              <MapPin className="w-4 h-4" />
+                              <span>{user.city}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            <span>
+                              Joined{' '}
+                              {new Date(user.$createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-gray-700 leading-relaxed">
+                          {user.bio ||
+                            'Add a bio to tell others about yourself.'}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="flex items-center gap-3 p-4 bg-brand/5 rounded-xl">
+                          <div className="p-2 bg-white rounded-lg shadow-sm">
+                            <Mail className="w-5 h-5 text-brand" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-500">Email</div>
+                            <div className="font-medium text-gray-900">
+                              {user.email}
+                            </div>
+                          </div>
+                          {user.emailVerified && (
+                            <Badge className="ml-auto bg-brand/10 text-brand">
+                              Verified
+                            </Badge>
+                          )}
+                        </div>
+
+                        {user.phone && (
+                          <div className="flex items-center gap-3 p-4 bg-brand/5 rounded-xl">
+                            <div className="p-2 bg-white rounded-lg shadow-sm">
+                              <Phone className="w-5 h-5 text-brand" />
+                            </div>
+                            <div>
+                              <div className="text-sm text-gray-500">Phone</div>
+                              <div className="font-medium text-gray-900">
+                                {user.phone}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {user.website && (
+                          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl sm:col-span-2">
+                            <div className="p-2 bg-white rounded-lg shadow-sm">
+                              <Globe className="w-5 h-5 text-gray-600" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-sm text-gray-500">
+                                Website
+                              </div>
+                              <a
+                                href={
+                                  user.website.startsWith('http')
+                                    ? user.website
+                                    : `https://${user.website}`
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-emerald-600 hover:text-emerald-700 hover:underline"
+                              >
+                                {user.website}
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Card className="bg-white px-8">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div
+              className="border rounded-lg cursor-pointer"
+              onClick={() => router.push('/profile/saved')}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 bg-red-50 rounded-xl">
+                        <Heart className="w-6 h-6 text-red-500" />
+                      </div>
+                      <div>
+                        <div className="text-3xl font-bold text-gray-900">
+                          {user.favoriteProperties?.length || 0}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Saved Properties
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-emerald-600 font-medium text-sm flex items-center gap-1 group">
+                      View saved properties
+                      <TrendingUp className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </div>
+
+            <div
+              className="border rounded-lg cursor-pointer"
+              onClick={() => router.push('/profile/recent')}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 bg-blue-50 rounded-xl">
+                        <Eye className="w-6 h-6 text-blue-500" />
+                      </div>
+                      <div>
+                        <div className="text-3xl font-bold text-gray-900">
+                          {user.savedSearches?.length || 0}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Saved Searches
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-emerald-600 font-medium text-sm flex items-center gap-1 group">
+                      View search history
+                      <Clock className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </div>
+
+            <div className="border rounded-lg cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 bg-green-50 rounded-xl">
+                        <Award className="w-6 h-6 text-green-500" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-gray-900 capitalize">
+                          {user.userType || 'buyer'}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Account Type
+                        </div>
+                      </div>
+                    </div>
+                    {(user.userType === 'buyer' ||
+                      user.userType === 'seller') && (
+                      <Button
+                        variant="ghost"
+                        className="text-emerald-600 hover:text-emerald-700 px-0"
+                        onClick={() => router.push('/become-agent')}
+                      >
+                        Upgrade to Agent
+                        <TrendingUp className="w-4 h-4 ml-1" />
+                      </Button>
                     )}
                   </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* User Type Specific Content */}
-        {/* {userType === 'agent' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <Briefcase className="w-6 h-6 text-purple-600" />
-              Agent Dashboard
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="border border-purple-200 bg-purple-50 rounded-lg p-4">
-                <h3 className="font-semibold text-purple-900 mb-2">
-                  Properties Listed
-                </h3>
-                <p className="text-2xl font-bold text-purple-700">0</p>
-                <p className="text-sm text-purple-600 mt-2">
-                  View your listings
-                </p>
-              </div>
-              <div className="border border-purple-200 bg-purple-50 rounded-lg p-4">
-                <h3 className="font-semibold text-purple-900 mb-2">
-                  Client Reviews
-                </h3>
-                <p className="text-2xl font-bold text-purple-700">0</p>
-                <p className="text-sm text-purple-600 mt-2">
-                  Manage your reviews
-                </p>
-              </div>
-              <div className="border border-purple-200 bg-purple-50 rounded-lg p-4">
-                <h3 className="font-semibold text-purple-900 mb-2">
-                  Commission Earned
-                </h3>
-                <p className="text-2xl font-bold text-purple-700">$0</p>
-                <p className="text-sm text-purple-600 mt-2">View earnings</p>
-              </div>
-            </div>
-          </div>
-        )} */}
-
-        {/* {userType === 'seller' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <DollarSign className="w-6 h-6 text-amber-600" />
-              Seller Dashboard
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="border border-amber-200 bg-amber-50 rounded-lg p-4">
-                <h3 className="font-semibold text-amber-900 mb-2">
-                  Properties For Sale
-                </h3>
-                <p className="text-2xl font-bold text-amber-700">0</p>
-                <p className="text-sm text-amber-600 mt-2">
-                  List a new property
-                </p>
-              </div>
-              <div className="border border-amber-200 bg-amber-50 rounded-lg p-4">
-                <h3 className="font-semibold text-amber-900 mb-2">
-                  Property Views
-                </h3>
-                <p className="text-2xl font-bold text-amber-700">0</p>
-                <p className="text-sm text-amber-600 mt-2">
-                  Track property interest
-                </p>
-              </div>
-              <div className="border border-amber-200 bg-amber-50 rounded-lg p-4">
-                <h3 className="font-semibold text-amber-900 mb-2">Inquiries</h3>
-                <p className="text-2xl font-bold text-amber-700">0</p>
-                <p className="text-sm text-amber-600 mt-2">Respond to buyers</p>
-              </div>
-            </div>
-          </div>
-        )} */}
-
-        {/* {userType === 'buyer' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <Home className="w-6 h-6 text-blue-600" />
-              Buyer Dashboard
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">
-                  Saved Properties
-                </h3>
-                <p className="text-2xl font-bold text-blue-700">
-                  {user.favoriteProperties?.length || 0}
-                </p>
-                <p className="text-sm text-blue-600 mt-2">
-                  View your favorites
-                </p>
-              </div>
-              <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">
-                  Property Tours
-                </h3>
-                <p className="text-2xl font-bold text-blue-700">0</p>
-                <p className="text-sm text-blue-600 mt-2">Schedule viewings</p>
-              </div>
-              <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">
-                  Offers Made
-                </h3>
-                <p className="text-2xl font-bold text-blue-700">0</p>
-                <p className="text-sm text-blue-600 mt-2">Track your offers</p>
-              </div>
-            </div>
-          </div>
-        )} */}
-
-        {/* Premium Subscription Section */}
-
-        <PremiumFeaturesSection
-          premiumStatus={premiumStatus}
-          onExtendPlan={() => {
-            // Optional: Add custom extend plan logic
-            //   router.push('/pricing')
-          }}
-        />
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Saved Properties */}
-          <div
-            onClick={() => router.push('/profile/saved')}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-red-50 rounded-lg">
-                <Heart className="w-6 h-6 text-red-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {user.favoriteProperties?.length || 0}
                 </div>
-                <div className="text-sm text-gray-600">Saved Properties</div>
-              </div>
-            </div>
-            <div className="text-emerald-600 text-sm font-medium hover:text-blue-700">
-              View all →
+              </CardContent>
             </div>
           </div>
 
-          {/* Recent Views */}
-          <div
-            onClick={() => router.push('/profile/recent')}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <Eye className="w-6 h-6 text-emerald-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {user.savedSearches?.length || 0}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Premium Features */}
+            <div className="lg:col-span-2">
+              <PremiumFeaturesSection
+                premiumStatus={premiumStatus}
+                onExtendPlan={() => router.push('/pricing')}
+              />
+            </div>
+
+            {/* Quick Settings */}
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-6">
+                  Quick Settings
+                </h3>
+                <div className="space-y-4">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start hover:bg-gray-50"
+                    onClick={() => router.push('/settings#security')}
+                  >
+                    <Key className="w-4 h-4 mr-3 text-gray-500" />
+                    Change Password
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start hover:bg-gray-50"
+                    onClick={() => router.push('/settings#notifications')}
+                  >
+                    <Shield className="w-4 h-4 mr-3 text-gray-500" />
+                    Privacy Settings
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start hover:bg-gray-50"
+                    onClick={() => router.push('/settings#notifications')}
+                  >
+                    <Bell className="w-4 h-4 mr-3 text-gray-500" />
+                    Notifications
+                  </Button>
+
+                  {!user.emailVerified && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-700"
+                      onClick={() => router.push('/auth/verify-email')}
+                    >
+                      <Shield className="w-4 h-4 mr-3" />
+                      Verify Email
+                    </Button>
+                  )}
+
+                  <Separator className="my-4" />
+
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start hover:bg-gray-50 text-gray-600"
+                    onClick={logout}
+                  >
+                    <LogOut className="w-4 h-4 mr-3" />
+                    Sign Out
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start hover:bg-red-50 text-red-600"
+                    onClick={() => setShowDeleteModal(true)}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-600 border-t-transparent mr-3" />
+                    ) : (
+                      <Trash2 className="w-4 h-4 mr-3" />
+                    )}
+                    Delete Account
+                  </Button>
                 </div>
-                <div className="text-sm text-gray-600">Saved Searches</div>
-              </div>
-            </div>
-            <div className="text-emerald-600 text-sm font-medium hover:text-blue-700">
-              View searches →
-            </div>
+              </CardContent>
+            </Card>
           </div>
-
-          {/* Account Type */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-green-50 rounded-lg">
-                <Home className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-900 capitalize">
-                  {user.userType || 'buyer'}
-                </div>
-                <div className="text-sm text-gray-600">Account Type</div>
-              </div>
-            </div>
-            {(user.userType === 'buyer' || user.userType === 'seller') && (
-              <button
-                onClick={() => router.push('/become-agent')}
-                className="text-emerald-600 text-sm font-medium hover:text-blue-700"
-              >
-                Become an Agent →
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Account Settings */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">
-            Account Settings
-          </h2>
-          <div className="space-y-4">
-            <button className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="font-medium text-gray-900">Change Password</div>
-              <div className="text-sm text-gray-600">
-                Update your account password
-              </div>
-            </button>
-
-            <button className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="font-medium text-gray-900">Privacy Settings</div>
-              <div className="text-sm text-gray-600">
-                Manage your privacy preferences
-              </div>
-            </button>
-
-            {!user.emailVerified && (
-              <button
-                onClick={() => router.push('/auth/verify-email')}
-                className="w-full text-left p-4 border border-yellow-200 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
-              >
-                <div className="font-medium text-yellow-800">
-                  Verify Email Address
-                </div>
-                <div className="text-sm text-yellow-600">
-                  Complete your account verification
-                </div>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Delete Account */}
-        <button
-          onClick={() => setShowDeleteModal(true)}
-          disabled={isDeleting}
-          className="w-full text-left p-4 border border-red-200 rounded-lg hover:bg-red-50 transition-colors bg-white mt-6 text-red-600 disabled:opacity-50"
-        >
-          <div className="font-medium flex items-center gap-2">
-            {isDeleting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
-                Deleting Account...
-              </>
-            ) : (
-              'Delete Account'
-            )}
-          </div>
-          <div className="text-sm">
-            Permanently delete your account and all data
-          </div>
-        </button>
-
-        {showDeleteModal && (
-          <DeleteAccountModal
-            isOpen={showDeleteModal}
-            onClose={() => setShowDeleteModal(false)}
-            onConfirm={handleDeleteAccount}
-            userEmail={user?.email || ''}
-          />
-        )}
+        </Card>
       </div>
 
-      {/* Cropper Modal */}
+      {showDeleteModal && (
+        <DeleteAccountModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleDeleteAccount}
+          userEmail={user?.email || ''}
+        />
+      )}
+
       {showCropper && selectedImage && (
         <ImageCropperModal
           image={selectedImage}

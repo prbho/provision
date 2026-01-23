@@ -85,14 +85,14 @@ export default function SellPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-linear-to-br from-slate-900 via-slate-800 to-emerald-900">
+      <section className="relative bg-linear-to-br from-slate-900 via-slate-800 from-brand">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-40"></div>
 
         <div className="relative container mx-auto px-4 py-20 lg:py-28">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-6 text-white">
               Sell Your Home
-              <span className="block mt-2 bg-linear-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
+              <span className="block mt-2 bg-linear-to-r from-brand to-emerald-300 bg-clip-text text-transparent">
                 Smarter, Faster
               </span>
             </h1>
@@ -107,7 +107,7 @@ export default function SellPage() {
               <Button
                 asChild
                 size="lg"
-                className="bg-emerald-500 hover:bg-emerald-600 text-white text-base px-8 py-6 rounded-lg shadow-lg shadow-emerald-500/20"
+                className="bg-brand/5 hover:bg-emerald-600 text-white text-base px-8 py-6 rounded-lg shadow-lg shadow-emerald-500/20"
               >
                 <Link href="/list-property">
                   List Your Property Free
@@ -152,7 +152,7 @@ export default function SellPage() {
               </span>
             </div>
             <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-              Why Sell with PropSafeHub?
+              Why Sell with propertyvision?
             </h2>
             <p className="md:text-lg text-gray-600 max-w-2xl mx-auto">
               We provide everything you need to sell your property quickly and
@@ -167,7 +167,7 @@ export default function SellPage() {
                 className="border border-gray-200 hover:border-emerald-200 hover:shadow-lg transition-all group"
               >
                 <CardContent className="p-8">
-                  <div className="w-12 h-12 mx-auto bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 mb-5 group-hover:bg-emerald-100 transition-colors">
+                  <div className="w-12 h-12 mx-auto bg-brand/5 rounded-xl flex items-center justify-center text-emerald-600 mb-5 group-hover:bg-brand/10 transition-colors">
                     {feature.icon}
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3 text-center">
@@ -210,11 +210,11 @@ export default function SellPage() {
                 )}
 
                 <div className="relative">
-                  <div className="w-20 h-20 bg-linear-to-br from-emerald-500 to-emerald-600 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto mb-6 shadow-lg shadow-emerald-500/20">
+                  <div className="w-20 h-20 bg-linear-to-br from-brand to-emerald-600 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto mb-6 shadow-lg shadow-emerald-500/20">
                     {step.number}
                   </div>
 
-                  <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600 mx-auto mb-4">
+                  <div className="w-10 h-10 bg-brand/5 rounded-lg flex items-center justify-center text-emerald-600 mx-auto mb-4">
                     {step.icon}
                   </div>
 
@@ -232,7 +232,7 @@ export default function SellPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 lg:py-28 bg-linear-to-br from-emerald-600 via-emerald-500 to-emerald-600 relative overflow-hidden">
+      <section className="py-20 lg:py-28 bg-linear-to-br from-brand via-emerald-500 to-emerald-600 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-40"></div>
 
         <div className="container mx-auto px-4 relative">
@@ -241,7 +241,7 @@ export default function SellPage() {
               Ready to Sell Your Property?
             </h2>
             <p className="text-lg md:text-xl mb-10 text-emerald-50 max-w-2xl mx-auto leading-relaxed">
-              Join thousands of successful sellers who trusted PropSafeHub to
+              Join thousands of successful sellers who trusted propertyvision to
               get the best price for their property.
             </p>
 

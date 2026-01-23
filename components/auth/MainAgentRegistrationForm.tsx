@@ -255,7 +255,7 @@ export function MainAgentRegistrationForm({
         <div
           className={`border-2 border-dashed rounded-xl p-2 mb-4 transition-all ${
             isDragging
-              ? 'border-emerald-500 bg-emerald-50'
+              ? 'border-emerald-500 bg-brand/5'
               : 'border-gray-300 bg-gray-50'
           } ${isImageLoading ? 'opacity-50' : ''}`}
           onDragOver={handleDragOver}
@@ -294,7 +294,7 @@ export function MainAgentRegistrationForm({
                     </div>
 
                     {/* File info badge */}
-                    <Badge className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-emerald-500">
+                    <Badge className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-brand/5">
                       {uploadedFileName
                         ? truncateFileName(uploadedFileName, 10)
                         : 'Ready'}

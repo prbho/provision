@@ -28,7 +28,7 @@ export default function HeaderMobile({ openAuth }: HeaderMobileProps) {
           width={150}
           height={64}
           src="/logo.png"
-          alt="PropSafe Hub"
+          alt="PropertyVision"
           className="h-15 w-auto"
         />
       </Link>

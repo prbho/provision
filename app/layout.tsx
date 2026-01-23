@@ -11,7 +11,6 @@ import { LoadingProvider } from '@/contexts/LoadingContext'
 
 import Chatbot from '@/components/chatbot/Chatbot'
 import CookieConsent from '@/components/CookieConsent'
-// import { FloatingAccessibilityWidget } from '@/components/FloatingAccessibilityWidget'
 import Footer from '@/components/Footer'
 import Header from '@/components/Header'
 import { SEOProvider } from '@/components/SEOProvider'
@@ -32,28 +31,33 @@ const geistMono = Geist_Mono({
 
 // SEO Metadata
 export const metadata: Metadata = {
-  metadataBase: new URL('https://propsafehub.com'),
+  metadataBase: new URL('https://propertyvisionltd.com'),
   title: {
-    default: 'PropSafe Hub | Verified Real Estate Investments',
-    template: '%s | PropSafe Hub',
+    default:
+      'PropertyVision | Verified Nigerian Real Estate & Secure Property Investment',
+    template: '%s | PropertyVision',
   },
   description:
-    'Your Secured Pathway to Verified Real Estate Investments in Nigeria. 100% verified properties, title verification, investment advisory, and diaspora services.',
+    'PropertyVision is a trusted platform for verified Nigerian real estate—connecting buyers, investors, and diaspora clients with vetted companies, agents, and secure property opportunities.',
   keywords: [
-    'real estate Nigeria',
-    'property verification',
-    'verified properties Lagos',
-    'real estate investment Nigeria',
-    'property title check',
-    'diaspora real estate',
-    'safe property investment',
-    'land verification Nigeria',
-    'real estate advisory',
-    'mortgage financing Nigeria',
+    'verified real estate Nigeria',
+    'trusted real estate platform Nigeria',
+    'property verification Nigeria',
+    'verified properties in Lagos',
+    'secure real estate investment Nigeria',
+    'real estate investment in Nigeria',
+    'land verification services Nigeria',
+    'property title verification Nigeria',
+    'safe property investment in Nigeria',
+    'diaspora real estate investment Nigeria',
+    'trusted real estate companies in Nigeria',
+    'verified real estate agents in Lagos',
+    'buy property in Nigeria safely',
+    'Nigeria property due diligence',
   ],
-  authors: [{ name: 'PropSafe Hub', url: 'https://propsafehub.com' }],
-  creator: 'PropSafe Hub',
-  publisher: 'PropSafe Hub',
+  authors: [{ name: 'PropertyVision', url: 'https://propertyvisionltd.com' }],
+  creator: 'PropertyVision',
+  publisher: 'PropertyVision',
   formatDetection: {
     email: false,
     address: false,
@@ -73,28 +77,31 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_NG',
-    url: 'https://propsafehub.com',
-    title: 'PropSafe Hub | Verified Real Estate Investments',
-    description: 'Your Secured Pathway to Verified Real Estate Investments',
-    siteName: 'PropSafe Hub',
+    url: 'https://propertyvisionltd.com',
+    title:
+      'PropertyVision | Verified Nigerian Real Estate & Secure Property Investment',
+    description:
+      'PropertyVision is a trusted platform for verified Nigerian real estate—connecting buyers, investors, and diaspora clients with vetted companies, agents, and secure property opportunities.',
+    siteName: 'PropertyVision',
     images: [
       {
-        url: '/og-image.png',
+        url: 'https://propertyvisionltd.com/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'PropSafe Hub - Verified Real Estate Platform',
+        alt: 'PropertyVision – Nigeria’s Verified Real Estate Platform',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PropSafe Hub | Verified Real Estate Investments',
-    description: 'Your Secured Pathway to Verified Real Estate Investments',
-    images: ['/twitter-image.png'],
-    creator: '@propsafehub',
+    title: 'PropertyVision | Verified Nigerian Real Estate Investments',
+    description:
+      'Secure your real estate journey with PropertyVision — verified properties, vetted agents, and trusted investment opportunities in Nigeria.',
+    images: ['https://propertyvisionltd.com/twitter-image.png'],
+    creator: '@propertyvisionltd',
   },
   alternates: {
-    canonical: '/',
+    canonical: 'https://propertyvisionltd.com/',
   },
   verification: {
     google: 'your-google-verification-code',
@@ -119,30 +126,38 @@ export const viewport: Viewport = {
 // JSON-LD structured data for homepage
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'RealEstateAgent',
-  name: 'PropSafe Hub',
-  description: 'Verified Real Estate Investment Platform in Nigeria',
-  url: 'https://propsafehub.com',
-  logo: 'https://propsafehub.com/logo.png',
-  telephone: '+234-902-355-8992',
-  email: 'info@propsafehub.com',
+  '@type': ['Organization', 'RealEstateAgent'],
+  name: 'PropertyVision Limited',
+  legalName: 'PropertyVision Limited',
+  description:
+    'PropertyVision is a trusted platform for verified real estate in Nigeria.',
+  url: 'https://propertyvisionltd.com',
+  logo: 'https://propertyvisionltd.com/logo.png',
+  telephone: '+2349023558992',
+  email: 'info@propertyvisionltd.com',
   address: {
     '@type': 'PostalAddress',
-    streetAddress: '50, Emerald Avenue, Monastery Road',
+    streetAddress: 'Didi Mall, Suite LF6A, Adjacent Novare Mall',
     addressLocality: 'Sangotedo, Ajah',
-    addressRegion: 'Lagos',
+    addressRegion: 'Lagos State',
+    postalCode: '106104',
     addressCountry: 'NG',
   },
-  geo: {
-    '@type': 'GeoCoordinates',
-    latitude: '6.465422',
-    longitude: '3.406448',
-  },
+  areaServed: [
+    {
+      '@type': 'AdministrativeArea',
+      name: 'Lagos State',
+    },
+    {
+      '@type': 'Country',
+      name: 'Nigeria',
+    },
+  ],
   sameAs: [
-    'https://facebook.com/propsafehub',
-    'https://twitter.com/propsafehub',
-    'https://linkedin.com/company/propsafehub',
-    'https://instagram.com/propsafehub',
+    'https://facebook.com/propertyvisionltd',
+    'https://twitter.com/propertyvisionltd',
+    'https://linkedin.com/company/propertyvisionltd',
+    'https://instagram.com/propertyvisionltd',
   ],
   openingHoursSpecification: [
     {
@@ -159,13 +174,12 @@ const jsonLd = {
     },
   ],
   priceRange: '₦',
-  areaServed: ['Nigeria', 'Africa'],
   serviceType: [
     'Property Verification',
     'Real Estate Investment Advisory',
     'Diaspora Property Purchase',
-    'Mortgage Financing',
-    'Construction Management',
+    'Mortgage Financing Assistance',
+    'Land Title Verification',
   ],
 }
 
@@ -312,7 +326,9 @@ export default function RootLayout({
                     <div className="min-h-screen flex items-center justify-center">
                       <div className="flex flex-col items-center gap-4">
                         <div className="animate-spin rounded-full h-16 w-16 border-4 border-emerald-200 border-t-emerald-600"></div>
-                        <p className="text-gray-600">Loading PropSafe Hub...</p>
+                        <p className="text-gray-600">
+                          Loading PropertyVision...
+                        </p>
                       </div>
                     </div>
                   }

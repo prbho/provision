@@ -14,7 +14,7 @@ export default function BuyPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-linear-to-r from-emerald-600 to-blue-800 text-white">
+      <div className="bg-linear-to-r from-brand to-blue-800 text-white">
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-5xl font-bold mb-6">Find Your Dream Home</h1>
@@ -99,7 +99,7 @@ export default function BuyPage() {
         <div className="container mx-auto px-4 py-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Why Buy with PropSafeHub?
+              Why Buy with propertyvision?
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               We make finding and buying your dream home simple, secure, and
@@ -159,7 +159,7 @@ export default function BuyPage() {
             </h2>
             <p className="text-xl mb-8 opacity-90">
               Join thousands of happy homeowners who found their perfect
-              property through PropSafeHub.
+              property through propertyvision.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button

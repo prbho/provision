@@ -223,7 +223,7 @@ export default function AgentSearchFilters({
         <Filter className="w-5 h-5 text-gray-600" />
         <h3 className="text-lg font-semibold text-gray-900">Filter Agents</h3>
         {hasActiveFilters && (
-          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">
+          <span className="inline-flex items-center rounded-full bg-brand/10 px-2 py-1 text-xs font-medium text-emerald-700">
             Active Filters
           </span>
         )}

@@ -106,7 +106,7 @@ export default function AgentDashboardSidebar({
       }, 0)
       return () => clearTimeout(timer)
     }
-  }, [authLoading, user])
+  }, [authLoading, user, fetchNotificationCounts])
 
   const isAdmin = user?.userType === 'admin'
 
@@ -280,7 +280,7 @@ export default function AgentDashboardSidebar({
                       item.adminOnly
                         ? 'bg-purple-500 text-white'
                         : item.agentOnly
-                          ? 'bg-emerald-500 text-white'
+                          ? 'bg-brand/5 text-white'
                           : 'bg-red-500 text-white'
                     }`}
                   >
@@ -303,7 +303,7 @@ export default function AgentDashboardSidebar({
                   item.adminOnly
                     ? 'bg-purple-500 text-white'
                     : item.agentOnly
-                      ? 'bg-emerald-500 text-white'
+                      ? 'bg-brand/5 text-white'
                       : 'bg-red-500 text-white'
                 }`}
               >
@@ -331,7 +331,7 @@ export default function AgentDashboardSidebar({
               className={`w-8 h-8 rounded-full flex items-center justify-center ${
                 isAdmin
                   ? 'bg-purple-100 text-purple-600'
-                  : 'bg-emerald-100 text-emerald-600'
+                  : 'bg-brand/10 text-emerald-600'
               }`}
             >
               {isAdmin ? (

@@ -63,7 +63,7 @@ export default function ListPropertyPage() {
               <Button
                 asChild
                 variant="outline"
-                className="border-gray-300 hover:border-emerald-300 hover:bg-emerald-50"
+                className="border-gray-300 hover:border-emerald-300 hover:bg-brand/5"
               >
                 <Link href="/list-property" className="flex items-center gap-2">
                   <Home className="h-4 w-4" />
@@ -89,7 +89,7 @@ export default function ListPropertyPage() {
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-50 to-white">
       {/* Hero Section */}
-      <div className="relative bg-linear-to-br from-emerald-900 via-emerald-800 to-emerald-700 overflow-hidden">
+      <div className="relative bg-linear-to-br from-brand via-emerald-800 from-brand overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full -translate-x-32 -translate-y-32"></div>
@@ -142,7 +142,7 @@ export default function ListPropertyPage() {
 
           <div className="grid md:grid-cols-3 gap-8 mb-12">
             <div className="relative bg-white border p-10 rounded-2xl">
-              <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+              <div className="w-16 h-16 bg-brand/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
                 <span className="text-2xl font-bold text-emerald-600">1</span>
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3 text-center">
@@ -155,7 +155,7 @@ export default function ListPropertyPage() {
             </div>
 
             <div className="relative bg-white border p-10 rounded-2xl">
-              <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+              <div className="w-16 h-16 bg-brand/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
                 <span className="text-2xl font-bold text-emerald-600">2</span>
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3 text-center">
@@ -168,7 +168,7 @@ export default function ListPropertyPage() {
             </div>
 
             <div className="relative bg-white border p-10 rounded-2xl">
-              <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+              <div className="w-16 h-16 bg-brand/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
                 <span className="text-2xl font-bold text-emerald-600">3</span>
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3 text-center">
@@ -192,15 +192,15 @@ export default function ListPropertyPage() {
 
           {/* Optional: Add these benefit badges */}
           <div className="flex flex-wrap justify-center gap-4 mt-6">
-            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full text-sm font-medium">
+            <div className="flex items-center gap-2 bg-brand/5 text-emerald-700 px-4 py-2 rounded-full text-sm font-medium">
               <TrendingUp className="h-4 w-4" />
               Higher Visibility
             </div>
-            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full text-sm font-medium">
+            <div className="flex items-center gap-2 bg-brand/5 text-emerald-700 px-4 py-2 rounded-full text-sm font-medium">
               <Shield className="h-4 w-4" />
               Secure Transactions
             </div>
-            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full text-sm font-medium">
+            <div className="flex items-center gap-2 bg-brand/5 text-emerald-700 px-4 py-2 rounded-full text-sm font-medium">
               <BadgeCheck className="h-4 w-4" />
               Verified Users
             </div>
@@ -212,10 +212,10 @@ export default function ListPropertyPage() {
           <div className="border-gray-100 border rounded-2xl hover:border-emerald-200 group overflow-hidden bg-white">
             <div className="p-8 lg:p-10 relative">
               <div className="flex items-center justify-between mb-6">
-                <div className="w-14 h-14 bg-linear-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <div className="w-14 h-14 bg-linear-to-br from-brand to-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <Home className="h-7 w-7 text-white" />
                 </div>
-                <div className="bg-emerald-50 text-emerald-700 text-sm font-medium px-3 py-1 rounded-full">
+                <div className="bg-brand/5 text-emerald-700 text-sm font-medium px-3 py-1 rounded-full">
                   For Sale
                 </div>
               </div>
@@ -231,7 +231,7 @@ export default function ListPropertyPage() {
 
               <div className="space-y-4 mb-8">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-8 h-8 bg-brand/5 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
                     <TrendingUp className="h-4 w-4 text-emerald-600" />
                   </div>
                   <div>
@@ -244,7 +244,7 @@ export default function ListPropertyPage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-8 h-8 bg-brand/5 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
                     <Shield className="h-4 w-4 text-emerald-600" />
                   </div>
                   <div>
@@ -257,7 +257,7 @@ export default function ListPropertyPage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-8 h-8 bg-brand/5 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
                     <Eye className="h-4 w-4 text-emerald-600" />
                   </div>
                   <div>
@@ -274,7 +274,7 @@ export default function ListPropertyPage() {
               <div className="space-y-4">
                 <Button
                   onClick={() => setSelectedType('sale')}
-                  className="w-full bg-white text-gray-800 py-6 border-2 border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 group"
+                  className="w-full bg-white text-gray-800 py-6 border-2 border-gray-200 hover:border-emerald-300 hover:bg-brand/5 group"
                   size="lg"
                 >
                   <div className="flex items-center justify-center gap-3">
@@ -285,7 +285,7 @@ export default function ListPropertyPage() {
                 <Button
                   asChild
                   variant="outline"
-                  className="w-full bg-linear-to-r from-emerald-900 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white py-6 text-sm font-semibold shadow-lg hover:shadow-xl transition-all"
+                  className="w-full bg-linear-to-r from-brand from-brand hover:from-brand hover:from-brand text-white py-6 text-sm font-semibold shadow-lg hover:shadow-xl transition-all"
                   size="lg"
                 >
                   <Link
@@ -495,7 +495,7 @@ export default function ListPropertyPage() {
         <div className="border-t border-gray-200 pt-12">
           <div className="text-center mb-12">
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">
-              Why Choose PropSafe Hub?
+              Why Choose PropertyVision?
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
               We provide everything you need for a successful property listing
@@ -563,7 +563,7 @@ export default function ListPropertyPage() {
                 Ready to Get Started?
               </h3>
               <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-                Join thousands of property owners who trust PropSafe Hub for
+                Join thousands of property owners who trust PropertyVision for
                 their real estate needs
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -578,7 +578,7 @@ export default function ListPropertyPage() {
                   asChild
                   variant="outline"
                   size="lg"
-                  className="border border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-8 py-6"
+                  className="border border-emerald-600 text-emerald-600 hover:bg-brand/5 px-8 py-6"
                 >
                   <Link href="/contact">Need Help? Contact Us</Link>
                 </Button>

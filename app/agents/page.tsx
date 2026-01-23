@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Agent } from '@/types'
+import { Filter } from 'lucide-react'
 
 import AgentCard from '@/components/AgentCard'
 import SortSelect from '@/components/agents/SortSelect'
@@ -22,7 +23,6 @@ async function getUniqueValues(field: string): Promise<string[]> {
       [Query.select([field]), Query.limit(1000)]
     )
 
-    // Extract values and handle both strings and arrays
     const allValues: string[] = []
 
     response.documents.forEach((doc: any) => {
@@ -31,22 +31,17 @@ async function getUniqueValues(field: string): Promise<string[]> {
       if (value === undefined || value === null) return
 
       if (Array.isArray(value)) {
-        // Handle array values
         value.forEach((item) => {
           if (typeof item === 'string' && item.trim() !== '') {
             allValues.push(item.trim())
           }
         })
       } else if (typeof value === 'string' && value.trim() !== '') {
-        // Handle string values
         allValues.push(value.trim())
       }
     })
 
-    // Remove duplicates and sort
     const uniqueValues = [...new Set(allValues)].sort()
-
-    console.log(`✅ Found ${uniqueValues.length} unique values for ${field}`)
     return uniqueValues
   } catch (error) {
     console.error(`Error fetching unique ${field}:`, error)
@@ -62,8 +57,6 @@ async function getAgents(filters?: {
   sortBy?: string
 }): Promise<{ agents: Agent[]; error?: string }> {
   try {
-    console.log('🔍 Fetching agents with filters:', filters)
-
     const queries: any[] = [Query.limit(100)]
 
     if (filters?.city && filters.city.trim()) {
@@ -88,24 +81,23 @@ async function getAgents(filters?: {
       queries.push(Query.greaterThanEqual('rating', filters.minRating))
     }
 
-    // Handle sorting based on sortBy parameter
     switch (filters?.sortBy) {
       case 'experience':
         queries.push(Query.orderDesc('yearsExperience'))
-        queries.push(Query.orderDesc('rating')) // Secondary sort
+        queries.push(Query.orderDesc('rating'))
         break
       case 'listings':
         queries.push(Query.orderDesc('totalListings'))
-        queries.push(Query.orderDesc('rating')) // Secondary sort
+        queries.push(Query.orderDesc('rating'))
         break
       case 'name':
         queries.push(Query.orderAsc('name'))
-        queries.push(Query.orderDesc('rating')) // Secondary sort
+        queries.push(Query.orderDesc('rating'))
         break
       case 'rating':
       default:
         queries.push(Query.orderDesc('rating'))
-        queries.push(Query.orderDesc('yearsExperience')) // Secondary sort
+        queries.push(Query.orderDesc('yearsExperience'))
         break
     }
 
@@ -114,8 +106,6 @@ async function getAgents(filters?: {
       AGENTS_COLLECTION_ID,
       queries
     )
-
-    console.log(`✅ Found ${response.total} agents`)
 
     const agents: Agent[] = response.documents.map((doc: any) => ({
       $id: doc.$id,
@@ -145,7 +135,7 @@ async function getAgents(filters?: {
 
     return { agents }
   } catch (error: any) {
-    console.error('❌ Error fetching agents:', error)
+    console.error('Error fetching agents:', error)
     return {
       agents: [],
       error: error.message || 'Failed to fetch agents',
@@ -166,8 +156,6 @@ interface AgentsPageProps {
 export default async function AgentsPage({ searchParams }: AgentsPageProps) {
   const params = await searchParams
 
-  console.log('📋 Search params received:', params)
-
   const filters = {
     city: params.city,
     specialties: params.specialties ? params.specialties.split(',') : undefined,
@@ -178,8 +166,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
     sortBy: params.sortBy || 'rating',
   }
 
-  // Fetch agents data and unique values in parallel
-  const [agentsResult, uniqueCities, uniqueSpecialties] = await Promise.all([
+  const [agentsResult, uniqueCities] = await Promise.all([
     getAgents(filters),
     getUniqueValues('city'),
     getUniqueValues('specialties'),
@@ -187,114 +174,144 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
 
   const { agents, error } = agentsResult
 
-  console.log('📊 Unique values:', {
-    cities: uniqueCities.length,
-    specialties: uniqueSpecialties.length,
-  })
-
-  // If there's a database error, show it
   if (error) {
-    console.error('🚨 Page rendering error:', error)
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-white flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
             Database Error
           </h1>
-          <p className="text-gray-600 max-w-md mx-auto">{error}</p>
-          <p className="text-sm text-gray-500 mt-4">
-            Check your Appwrite console and database configuration.
-          </p>
+          <p className="text-gray-600">{error}</p>
         </div>
       </div>
     )
   }
 
-  // Function to build URL with sort parameter
-  // const buildSortUrl = (sortValue: string) => {
-  //   const params = new URLSearchParams()
-
-  //   if (filters.city) params.set('city', filters.city)
-  //   if (filters.specialties?.length)
-  //     params.set('specialties', filters.specialties.join(','))
-  //   if (filters.minExperience)
-  //     params.set('minExperience', filters.minExperience.toString())
-  //   if (filters.minRating) params.set('minRating', filters.minRating.toString())
-  //   params.set('sortBy', sortValue)
-
-  //   return `/agents?${params.toString()}`
-  // }
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900">
-              Find Your Perfect Agent
+      <div className="border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Connect with Trusted Real Estate Experts
             </h1>
-            <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
-              Connect with verified real estate professionals who understand
-              your local market
+            <p className="mt-2 text-gray-600">
+              Work with verified professionals who know your local market and
+              act in your best interest
             </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Filters Sidebar */}
-          <div className="lg:w-80 shrink-0">
-            <AgentsSearchFilters
-              initialFilters={{
-                city: filters.city,
-                specialty: filters.specialties?.[0],
-                minExperience: filters.minExperience,
-                minRating: filters.minRating,
-              }}
-              availableCities={uniqueCities}
-            />
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Mobile Filter Button */}
+        <div className="lg:hidden mb-6">
+          <details className="border border-gray-200 rounded-lg">
+            <summary className="px-4 py-3 flex items-center justify-between cursor-pointer">
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5 text-gray-600" />
+                <span className="font-medium text-gray-900">Filters</span>
+              </div>
+              <span className="text-sm text-gray-500">
+                {agents.length} agents
+              </span>
+            </summary>
+            <div className="p-4 border-t border-gray-200">
+              <AgentsSearchFilters
+                initialFilters={{
+                  city: filters.city,
+                  specialty: filters.specialties?.[0],
+                  minExperience: filters.minExperience,
+                  minRating: filters.minRating,
+                }}
+                availableCities={uniqueCities}
+              />
+            </div>
+          </details>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
+          {/* Filters Sidebar - Desktop */}
+          <div className="hidden lg:block lg:col-span-2">
+            <div className="sticky top-6">
+              <div className="mb-4">
+                <h2 className="font-semibold text-gray-900 mb-2">Filters</h2>
+                <p className="text-sm text-gray-600">
+                  {agents.length} agents found
+                </p>
+              </div>
+              <AgentsSearchFilters
+                initialFilters={{
+                  city: filters.city,
+                  specialty: filters.specialties?.[0],
+                  minExperience: filters.minExperience,
+                  minRating: filters.minRating,
+                }}
+                availableCities={uniqueCities}
+              />
+            </div>
           </div>
 
           {/* Agents Grid */}
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-8">
+          <div className="lg:col-span-6">
+            {/* Header with Sort */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Verified Agents ({agents.length})
+                <h2 className="text-xl font-bold text-gray-900">
+                  {filters.city
+                    ? `Agents in ${filters.city}`
+                    : 'Verified Agents'}
                 </h2>
-                {filters.city && (
-                  <p className="text-gray-600 mt-1">in {filters.city}</p>
-                )}
+                <p className="text-gray-600 mt-1">
+                  {agents.length} {agents.length === 1 ? 'agent' : 'agents'}{' '}
+                  available
+                </p>
               </div>
 
-              {/* Sort Options */}
               <SortSelect currentSort={filters.sortBy} />
             </div>
 
-            <>
-              {agents.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {agents.map((agent) => (
-                    <AgentCard key={agent.$id} agent={agent} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-16">
-                  <div className="text-gray-400 text-6xl mb-4">👨‍💼</div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                    No agents found
-                  </h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    {filters.city || filters.specialties
-                      ? 'No agents match your current filters. Try adjusting your search criteria.'
-                      : 'No agents found in the database. Please check your Appwrite configuration.'}
+            {/* Agents Grid */}
+            {agents.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {agents.map((agent) => (
+                  <AgentCard key={agent.$id} agent={agent} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-gray-400 text-6xl mb-4">👨‍💼</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  No agents found
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Try adjusting your search criteria
+                </p>
+              </div>
+            )}
+
+            {/* CTA Section */}
+            {agents.length > 0 && (
+              <div className="mt-12 border border-gray-200 rounded-lg p-8">
+                <div className="text-center max-w-2xl mx-auto">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">
+                    Still Unsure About Choosing an Agent?
+                  </h2>
+                  <p className="text-gray-600 mb-6">
+                    Our matching service can help you find the perfect agent
+                    based on your specific needs.
                   </p>
+                  <a
+                    href="/contact"
+                    className="inline-block bg-brand text-white px-6 py-3 rounded-lg hover:bg-brand/95 transition-colors font-medium"
+                  >
+                    Get Agent Recommendations
+                  </a>
                 </div>
-              )}
-            </>
+              </div>
+            )}
           </div>
         </div>
       </div>

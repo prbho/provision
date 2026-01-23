@@ -2,33 +2,26 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle, FileText, Percent, Shield, Users } from 'lucide-react'
-
-import { Button } from '@/components/ui/button'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Slider } from '@/components/ui/slider'
+  Calculator,
+  CheckCircle,
+  FileText,
+  Home,
+  Shield,
+  TrendingDown,
+  Users,
+} from 'lucide-react'
 
 export default function MortgageFinancingPage() {
   const [propertyPrice, setPropertyPrice] = useState(50000000)
   const [downPayment, setDownPayment] = useState(30)
   const [loanTerm, setLoanTerm] = useState(20)
-  const [income, setIncome] = useState('')
 
   const calculateMortgage = () => {
     const loanAmount = propertyPrice * ((100 - downPayment) / 100)
     const annualInterest = 0.18 // 18% annual interest
     const monthlyInterest = annualInterest / 12
     const numberOfPayments = loanTerm * 12
-
-    if (monthlyInterest === 0) {
-      return loanAmount / numberOfPayments
-    }
 
     const monthlyPayment =
       (loanAmount *
@@ -41,161 +34,115 @@ export default function MortgageFinancingPage() {
   const monthlyPayment = calculateMortgage()
   const loanAmount = propertyPrice * ((100 - downPayment) / 100)
 
-  const mortgagePartners = [
-    {
-      name: 'First Bank',
-      rate: '18%',
-      maxTerm: '25 years',
-      maxAmount: '₦100M',
-    },
-    {
-      name: 'Union Bank',
-      rate: '17.5%',
-      maxTerm: '20 years',
-      maxAmount: '₦80M',
-    },
-    {
-      name: 'Access Bank',
-      rate: '18.5%',
-      maxTerm: '30 years',
-      maxAmount: '₦150M',
-    },
-    {
-      name: 'Sterling Bank',
-      rate: '19%',
-      maxTerm: '15 years',
-      maxAmount: '₦50M',
-    },
-    {
-      name: 'Federal Mortgage Bank',
-      rate: '16%',
-      maxTerm: '30 years',
-      maxAmount: '₦15M',
-    },
-    {
-      name: 'Cooperative Mortgage',
-      rate: '15%',
-      maxTerm: '25 years',
-      maxAmount: '₦25M',
-    },
-  ]
-
   const mortgageTypes = [
     {
       type: 'nhf',
       title: 'National Housing Fund',
-      description: 'Government-backed mortgage for Nigerian workers',
-      interest: '6%',
-      features: ['Low interest rate', 'Long tenure', 'Strict eligibility'],
+      rate: '6%',
+      term: 'Up to 30 years',
+      features: ['Government-backed', 'Lowest rates', 'Long tenure'],
     },
     {
       type: 'commercial',
-      title: 'Commercial Bank Mortgage',
-      description: 'Standard mortgage from partner banks',
-      interest: '17-20%',
-      features: ['Wider eligibility', 'Flexible terms', 'Faster processing'],
+      title: 'Commercial Bank',
+      rate: '17-20%',
+      term: 'Up to 25 years',
+      features: ['Widely available', 'Flexible terms', 'Faster processing'],
     },
     {
       type: 'cooperative',
-      title: 'Cooperative Mortgage',
-      description: 'Group-based financing through cooperatives',
-      interest: '14-16%',
-      features: ['Lower rates', 'Community support', 'Shared risk'],
+      title: 'Cooperative',
+      rate: '14-16%',
+      term: 'Up to 25 years',
+      features: ['Lower rates', 'Community-based', 'Shared risk'],
     },
     {
       type: 'developer',
-      title: 'Developer Financing',
-      description: 'Direct financing from property developers',
-      interest: '15-25%',
+      title: 'Developer Finance',
+      rate: '15-25%',
+      term: 'Up to 10 years',
       features: [
+        'Direct financing',
         'Simplified process',
-        'Direct to developer',
         'Flexible down payment',
       ],
     },
   ]
 
-  const eligibilityCriteria = [
-    { requirement: 'Minimum Age', value: '21 years' },
-    { requirement: 'Maximum Age at Maturity', value: '65 years' },
-    { requirement: 'Minimum Income', value: '₦150,000/month' },
-    { requirement: 'Employment Type', value: 'Formal or verifiable business' },
-    { requirement: 'Credit History', value: 'Clean record required' },
-    { requirement: 'Down Payment', value: '30-50% typically' },
+  const requirements = [
+    { item: 'Minimum Age', value: '21 years' },
+    { item: 'Minimum Income', value: '₦150,000/month' },
+    { item: 'Down Payment', value: '30-50%' },
+    { item: 'Employment', value: 'Formal employment or business' },
+    { item: 'Credit History', value: 'Clean record required' },
+    { item: 'Maximum Age', value: '65 years at maturity' },
   ]
 
   return (
     <div className="min-h-screen bg-white">
       {/* Hero */}
-      <section className="bg-linear-to-r from-emerald-600 to-emerald-700 text-white py-20">
-        <div className="container mx-auto px-4 max-w-7xl">
+      <div className="bg-linear-to-b from-brand/5 to-white">
+        <div className="max-w-6xl mx-auto px-4 py-16">
           <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand/10 text-brand rounded-full text-sm font-medium mb-6">
+              <Home className="h-4 w-4" />
               Mortgage Financing Solutions
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-6">
+              Own Your Dream Home with
+              <span className="text-gold-600"> Affordable Mortgages</span>
             </h1>
-            <p className="text-xl text-emerald-100 max-w-3xl mx-auto mb-8">
-              Access affordable mortgage options through our trusted banking
-              partners. Own your dream home with flexible payment plans.
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-10">
+              Access competitive mortgage options through our trusted banking
+              partners. Flexible terms and expert guidance.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                asChild
-                size="lg"
-                className="bg-white text-emerald-700 hover:bg-gray-100 px-8"
-              >
-                <Link href="#calculator">Calculate Your Mortgage</Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="border-white bg-transparent text-white hover:bg-white/10"
-              >
-                <Link href="/schedule-meeting">Talk to Mortgage Advisor</Link>
-              </Button>
+              <button className="px-8 py-3 bg-brand text-white rounded-lg hover:bg-brand/95 font-medium">
+                Check Eligibility
+              </button>
+              <button className="px-8 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
+                Talk to Advisor
+              </button>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Mortgage Calculator */}
-      <section id="calculator" className="py-16">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Mortgage Calculator
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Estimate your monthly payments and see what you can afford
-            </p>
-          </div>
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        {/* Mortgage Calculator */}
+        <div className="mb-16">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-8 text-center">
+            Mortgage Calculator
+          </h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Inputs */}
+            <div className="p-6 border rounded-lg">
+              <div className="flex items-center gap-3 mb-6">
+                <Calculator className="h-6 w-6 text-brand" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Calculate Your Payment
+                </h3>
+              </div>
 
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Calculator Inputs */}
-            <div className="bg-emerald-50 rounded-2xl p-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">
-                Enter Your Details
-              </h3>
-
-              <div className="space-y-8">
+              <div className="space-y-6">
                 <div>
                   <div className="flex justify-between mb-2">
                     <label className="text-sm font-medium text-gray-700">
                       Property Price
                     </label>
-                    <span className="text-lg font-bold text-emerald-600">
+                    <span className="font-medium">
                       ₦{propertyPrice.toLocaleString()}
                     </span>
                   </div>
-                  <Slider
-                    value={[propertyPrice]}
-                    onValueChange={(value) => setPropertyPrice(value[0])}
-                    min={1000000}
-                    max={500000000}
-                    step={1000000}
-                    className="mb-2"
+                  <input
+                    type="range"
+                    min="1000000"
+                    max="500000000"
+                    value={propertyPrice}
+                    onChange={(e) => setPropertyPrice(parseInt(e.target.value))}
+                    className="w-full"
                   />
-                  <div className="flex justify-between text-sm text-gray-500">
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
                     <span>₦1M</span>
                     <span>₦500M</span>
                   </div>
@@ -206,19 +153,17 @@ export default function MortgageFinancingPage() {
                     <label className="text-sm font-medium text-gray-700">
                       Down Payment
                     </label>
-                    <span className="text-lg font-bold text-emerald-600">
-                      {downPayment}%
-                    </span>
+                    <span className="font-medium">{downPayment}%</span>
                   </div>
-                  <Slider
-                    value={[downPayment]}
-                    onValueChange={(value) => setDownPayment(value[0])}
-                    min={10}
-                    max={70}
-                    step={5}
-                    className="mb-2"
+                  <input
+                    type="range"
+                    min="10"
+                    max="70"
+                    value={downPayment}
+                    onChange={(e) => setDownPayment(parseInt(e.target.value))}
+                    className="w-full"
                   />
-                  <div className="flex justify-between text-sm text-gray-500">
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
                     <span>10%</span>
                     <span>70%</span>
                   </div>
@@ -229,344 +174,219 @@ export default function MortgageFinancingPage() {
                     <label className="text-sm font-medium text-gray-700">
                       Loan Term
                     </label>
-                    <span className="text-lg font-bold text-emerald-600">
-                      {loanTerm} years
-                    </span>
+                    <span className="font-medium">{loanTerm} years</span>
                   </div>
-                  <Slider
-                    value={[loanTerm]}
-                    onValueChange={(value) => setLoanTerm(value[0])}
-                    min={5}
-                    max={30}
-                    step={1}
-                    className="mb-2"
+                  <input
+                    type="range"
+                    min="5"
+                    max="30"
+                    value={loanTerm}
+                    onChange={(e) => setLoanTerm(parseInt(e.target.value))}
+                    className="w-full"
                   />
-                  <div className="flex justify-between text-sm text-gray-500">
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
                     <span>5 years</span>
                     <span>30 years</span>
                   </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Monthly Income
-                  </label>
-                  <Select onValueChange={setIncome}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select income range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="100-200">
-                        ₦100,000 - ₦200,000
-                      </SelectItem>
-                      <SelectItem value="200-500">
-                        ₦200,000 - ₦500,000
-                      </SelectItem>
-                      <SelectItem value="500-1000">
-                        ₦500,000 - ₦1,000,000
-                      </SelectItem>
-                      <SelectItem value="1000+">₦1,000,000+</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
             </div>
 
-            {/* Calculator Results */}
-            <div className="bg-linear-to-br from-emerald-600 to-emerald-700 rounded-2xl p-8 text-white">
-              <h3 className="text-xl font-bold mb-6">Your Mortgage Estimate</h3>
+            {/* Results */}
+            <div className="p-6 bg-linear-to-br from-brand to-brand/95 text-white rounded-lg">
+              <h3 className="text-lg font-semibold mb-6">
+                Your Monthly Payment
+              </h3>
 
-              <div className="space-y-6">
-                <div className="bg-white/10 p-6 rounded-xl">
-                  <div className="text-sm text-emerald-200 mb-1">
-                    Monthly Payment
-                  </div>
-                  <div className="text-4xl font-bold">
-                    ₦{monthlyPayment.toLocaleString()}
-                  </div>
+              <div className="text-center mb-8">
+                <div className="text-4xl font-bold mb-2">
+                  ₦{monthlyPayment.toLocaleString()}
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/10 p-4 rounded-lg">
-                    <div className="text-sm text-emerald-200 mb-1">
-                      Loan Amount
-                    </div>
-                    <div className="text-xl font-bold">
-                      ₦{Math.round(loanAmount).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="bg-white/10 p-4 rounded-lg">
-                    <div className="text-sm text-emerald-200 mb-1">
-                      Down Payment
-                    </div>
-                    <div className="text-xl font-bold">
-                      ₦{(propertyPrice * (downPayment / 100)).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="bg-white/10 p-4 rounded-lg">
-                    <div className="text-sm text-emerald-200 mb-1">
-                      Total Interest
-                    </div>
-                    <div className="text-xl font-bold">
-                      ₦
-                      {(
-                        monthlyPayment * loanTerm * 12 -
-                        loanAmount
-                      ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                    </div>
-                  </div>
-                  <div className="bg-white/10 p-4 rounded-lg">
-                    <div className="text-sm text-emerald-200 mb-1">
-                      Total Payment
-                    </div>
-                    <div className="text-xl font-bold">
-                      ₦
-                      {(monthlyPayment * loanTerm * 12).toLocaleString(
-                        undefined,
-                        { maximumFractionDigits: 0 }
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-6 border-t border-white/20">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Shield className="h-5 w-5" />
-                    <span className="font-medium">Affordability Check</span>
-                  </div>
-                  {income && (
-                    <div className="text-sm">
-                      Based on your income range, this mortgage is{' '}
-                      {monthlyPayment >
-                      parseInt(income.split('-')[0]) * 1000 * 0.4
-                        ? 'potentially difficult'
-                        : 'within affordable range'}
-                      .
-                    </div>
-                  )}
-                </div>
-
-                <Button
-                  asChild
-                  className="w-full bg-white text-emerald-700 hover:bg-gray-100 py-6 text-lg font-semibold"
-                >
-                  <Link href="/application">Apply Now</Link>
-                </Button>
+                <div className="text-brand/20">per month</div>
               </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <span className="text-brand/20">Loan Amount</span>
+                  <span className="font-medium">
+                    ₦{Math.round(loanAmount).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-brand/20">Down Payment</span>
+                  <span className="font-medium">
+                    ₦{(propertyPrice * (downPayment / 100)).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-brand/20">Total Interest</span>
+                  <span className="font-medium">
+                    ₦
+                    {(
+                      monthlyPayment * loanTerm * 12 -
+                      loanAmount
+                    ).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-brand/20">Total Payment</span>
+                  <span className="font-medium">
+                    ₦{(monthlyPayment * loanTerm * 12).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              <button className="mt-8 w-full py-3 bg-white text-brand rounded-lg hover:bg-gray-100 font-medium">
+                Apply Now
+              </button>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* Mortgage Types */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Types of Mortgage Plans
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Choose the mortgage option that best fits your situation
-            </p>
-          </div>
-
+        {/* Mortgage Types */}
+        <div className="mb-16">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-8 text-center">
+            Mortgage Options
+          </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {mortgageTypes.map((type) => (
-              <div
-                key={type.type}
-                className="bg-white rounded-xl p-6 border shadow-sm"
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-                    <Percent className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="text-lg font-semibold text-gray-900">
-                      {type.title}
-                    </div>
-                    <div className="text-emerald-600 font-bold">
-                      {type.interest} interest
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-gray-600 text-sm mb-4">{type.description}</p>
-
-                <ul className="space-y-2">
-                  {type.features.map((feature, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-center text-sm text-gray-700"
-                    >
-                      <CheckCircle className="h-3 w-3 text-emerald-500 mr-2" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Partners */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Our Mortgage Partners
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              We work with reputable financial institutions to get you the best
-              rates
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mortgagePartners.map((partner, idx) => (
-              <div
-                key={idx}
-                className="bg-white p-6 rounded-xl border shadow-sm"
-              >
+              <div key={type.type} className="p-5 border rounded-lg">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="text-lg font-semibold text-gray-900">
-                    {partner.name}
-                  </div>
-                  <div className="text-emerald-600 font-bold">
-                    {partner.rate}
+                  <h3 className="font-semibold text-gray-900">{type.title}</h3>
+                  <div className="px-3 py-1 bg-brand/10 text-brand text-sm rounded-full">
+                    {type.rate}
                   </div>
                 </div>
-
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex justify-between">
-                    <span>Max Term:</span>
-                    <span className="font-medium">{partner.maxTerm}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Max Amount:</span>
-                    <span className="font-medium">{partner.maxAmount}</span>
-                  </div>
+                <div className="text-sm text-gray-600 mb-4">{type.term}</div>
+                <div className="space-y-2">
+                  {type.features.map((feature, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span className="text-gray-700">{feature}</span>
+                    </div>
+                  ))}
                 </div>
-
-                <Button asChild variant="outline" className="w-full mt-4">
-                  <Link
-                    href={`/partners/${partner.name.toLowerCase().replace(' ', '-')}`}
-                  >
-                    Learn More
-                  </Link>
-                </Button>
               </div>
             ))}
           </div>
         </div>
-      </section>
 
-      {/* Eligibility */}
-      <section className="py-16 bg-emerald-50">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <div className="bg-white rounded-2xl p-8">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Mortgage Eligibility Criteria
-              </h2>
-              <p className="text-gray-600">
-                Basic requirements for mortgage approval with our partners
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {eligibilityCriteria.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg"
-                >
-                  <div className="shrink-0">
-                    <CheckCircle className="h-5 w-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-500">
-                      {item.requirement}
-                    </div>
-                    <div className="font-semibold text-gray-900">
-                      {item.value}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 text-center">
-              <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
-                <Link href="/eligibility-check">Check Your Eligibility</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Ready to Own Your Dream Home?
-            </h2>
-            <p className="text-gray-600 text-lg mb-8 max-w-2xl mx-auto">
-              Our mortgage advisors will guide you through the entire process,
-              from application to approval and property selection.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                asChild
-                size="lg"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-6"
-              >
-                <Link href="/application">
-                  <FileText className="mr-2 h-5 w-5" />
-                  Start Application
-                </Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-8 py-6"
-              >
-                <Link href="/schedule-meeting">
-                  <Users className="mr-2 h-5 w-5" />
-                  Talk to Advisor
-                </Link>
-              </Button>
-            </div>
-
-            <div className="mt-12 pt-8 border-t border-gray-200">
-              <div className="grid grid-cols-3 gap-8">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-600 mb-1">
-                    48hrs
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    Preliminary Approval
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-600 mb-1">
-                    90%
-                  </div>
-                  <div className="text-sm text-gray-600">Approval Rate</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-600 mb-1">
-                    0%
-                  </div>
-                  <div className="text-sm text-gray-600">Hidden Fees</div>
-                </div>
+        {/* Requirements */}
+        <div className="mb-16">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-8 text-center">
+            Basic Requirements
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {requirements.map((req, index) => (
+              <div key={index} className="p-4 border rounded-lg">
+                <div className="text-sm text-gray-600 mb-1">{req.item}</div>
+                <div className="font-medium text-gray-900">{req.value}</div>
               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="mb-12 p-8 bg-linear-to-r from-brand to-brand/95 rounded-2xl text-white">
+          <div className="max-w-3xl mx-auto text-center">
+            <Shield className="h-12 w-12 mx-auto mb-6" />
+            <h2 className="text-3xl font-bold mb-4">Ready to Own Your Home?</h2>
+            <p className="text-lg text-brand/10 mb-8 max-w-2xl mx-auto">
+              Our mortgage advisors will guide you from application to approval.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button className="px-8 py-3 bg-white text-brand rounded-lg hover:bg-gray-100 font-semibold">
+                Start Application
+              </button>
+              <a
+                href="tel:+2347048000553"
+                className="px-8 py-3 border-2 border-white rounded-lg hover:bg-white/10 font-medium"
+              >
+                Call Mortgage Team
+              </a>
             </div>
           </div>
         </div>
-      </section>
+
+        {/* Benefits */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-8 text-center">
+            Why Choose Our Mortgage Services?
+          </h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                title: 'Expert Guidance',
+                description:
+                  'Dedicated mortgage advisors throughout the process',
+                icon: Users,
+              },
+              {
+                title: 'Best Rates',
+                description: 'Access to competitive rates from multiple banks',
+                icon: TrendingDown,
+              },
+              {
+                title: 'Fast Approval',
+                description: 'Streamlined process with quick decisions',
+                icon: FileText,
+              },
+            ].map((benefit, index) => {
+              const Icon = benefit.icon
+              return (
+                <div key={index} className="p-5 border rounded-lg text-center">
+                  <div className="p-3 bg-brand/5 rounded-full inline-block mb-4">
+                    <Icon className="h-6 w-6 text-brand" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm">{benefit.description}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* FAQ */}
+        <div className="p-6 border rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">
+            Common Mortgage Questions
+          </h3>
+          <div className="space-y-6">
+            {[
+              {
+                q: 'How long does mortgage approval take?',
+                a: 'Preliminary approval takes 48 hours. Full approval takes 2-4 weeks.',
+              },
+              {
+                q: 'What documents are required?',
+                a: 'ID, proof of income, employment letter, bank statements, and property documents.',
+              },
+              {
+                q: 'Can diaspora Nigerians apply?',
+                a: 'Yes, we have special mortgage programs for Nigerians abroad.',
+              },
+            ].map((faq, index) => (
+              <div key={index}>
+                <div className="font-medium text-gray-900 mb-2">{faq.q}</div>
+                <p className="text-gray-600 text-sm">{faq.a}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6">
+            <Link
+              href="/faqs#mortgage"
+              className="text-brand hover:text-brand/95 font-medium"
+            >
+              View all mortgage FAQs →
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

@@ -478,8 +478,8 @@ export default function AnalyticsPage() {
               <p className="text-xs text-gray-500 mt-2">{description}</p>
             )}
           </div>
-          <div className={`p-3 rounded-lg bg-emerald-50`}>
-            <Icon className="w-6 h-6 text-emerald-600" />
+          <div className={`p-3 rounded-lg bg-brand/5`}>
+            <Icon className="w-6 h-6 text-brand" />
           </div>
         </div>
       </div>
@@ -586,7 +586,7 @@ export default function AnalyticsPage() {
                 onClick={() => setTimeRange(range)}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   timeRange === range
-                    ? 'bg-white text-blue-600 shadow-sm'
+                    ? 'bg-white text-brand/90 shadow-sm'
                     : 'text-gray-700 hover:text-gray-900'
                 }`}
               >
@@ -597,7 +597,7 @@ export default function AnalyticsPage() {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-brand/90 text-white rounded-lg hover:bg-brand disabled:opacity-50"
           >
             <RefreshCw
               className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`}

@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import {
+  AlertCircle,
   CheckCircle2,
   Clock,
-  Info,
+  HelpCircle,
   Mail,
   RefreshCw,
-  Shield,
+  ShieldCheck,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Progress } from '@/components/ui/progress'
 
 interface EmailVerificationModalProps {
   isOpen: boolean
@@ -40,6 +42,8 @@ export default function EmailVerificationModal({
   const [lastChecked, setLastChecked] = useState<Date | null>(null)
   const [resendMessage, setResendMessage] = useState('')
   const [isVerified, setIsVerified] = useState(false)
+  const [showProgress, setShowProgress] = useState(false)
+  const [progress, setProgress] = useState(0)
 
   // Auto-check verification status every 10 seconds when modal is open
   useEffect(() => {
@@ -54,6 +58,29 @@ export default function EmailVerificationModal({
 
     return () => clearInterval(checkInterval)
   }, [isOpen])
+
+  // Progress bar for auto-close countdown
+  useEffect(() => {
+    if (!isVerified) {
+      setShowProgress(false)
+      setProgress(0)
+      return
+    }
+
+    setShowProgress(true)
+    const duration = 3000 // 3 seconds
+    const interval = 50 // Update every 50ms
+    const steps = duration / interval
+    const increment = 100 / steps
+
+    let currentProgress = 0
+    const timer = setInterval(() => {
+      currentProgress += increment
+      setProgress(Math.min(currentProgress, 100))
+    }, interval)
+
+    return () => clearInterval(timer)
+  }, [isVerified])
 
   const checkVerificationStatus = async () => {
     if (isChecking) return
@@ -75,6 +102,8 @@ export default function EmailVerificationModal({
             setIsVerified(false)
             setIsSuccess(false)
             setResendMessage('')
+            setShowProgress(false)
+            setProgress(0)
           }, 500)
         }, 3000)
       }
@@ -105,6 +134,7 @@ export default function EmailVerificationModal({
         setResendMessage('')
       }, 5000)
     } catch {
+      // Error handling logic preserved
     } finally {
       setIsSending(false)
     }
@@ -125,114 +155,151 @@ export default function EmailVerificationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <Shield className="h-5 w-5 text-emerald-600" />
-            {isVerified ? 'Email Verified!' : 'Verify Your Email'}
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Success Message for Resend */}
-          {isSuccess && resendMessage && !isVerified && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-green-800">
-                <CheckCircle2 className="h-5 w-5" />
-                <div>
-                  <p className="font-medium">Email sent!</p>
-                  <p className="text-sm mt-1">{resendMessage}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Success Message for Verification */}
-          {isVerified && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-green-800">
-                <CheckCircle2 className="h-5 w-5" />
-                <div>
-                  <p className="font-medium">Email verified successfully!</p>
-                  <p className="text-sm mt-1">
-                    Your email has been verified. You now have full access to
-                    all features.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="text-red-800">
-                <p className="font-medium">Error</p>
-                <p className="text-sm mt-1">{error}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Info Message - Only show if not verified */}
-          {!isVerified && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <Info className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
-                <div className="text-sm text-blue-800">
-                  <p className="font-medium">You&apos;re signed in!</p>
-                  <p className="mt-1">
-                    Please verify your email to access all features. We&apos;ve
-                    sent a verification link to:
-                  </p>
-                  <p className="font-mono text-xs bg-blue-100 px-2 py-1 rounded mt-2">
-                    {userEmail}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Auto-check Status - Only show if not verified */}
-          {!isVerified && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-amber-600" />
-                  <span className="text-sm text-amber-800">
-                    {isChecking
-                      ? 'Checking...'
-                      : 'Auto-checking verification status...'}
-                  </span>
-                </div>
-                {isChecking && (
-                  <RefreshCw className="h-4 w-4 text-amber-600 animate-spin" />
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        {/* Header */}
+        <div className="bg-brand/5 px-6 py-5 border-b">
+          <DialogHeader className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand/10">
+                {isVerified ? (
+                  <CheckCircle2 className="h-5 w-5 text-brand" />
+                ) : (
+                  <ShieldCheck className="h-5 w-5 text-brand" />
                 )}
               </div>
-              {lastChecked && (
-                <p className="text-xs text-amber-700 mt-1">
-                  Last checked: {lastChecked.toLocaleTimeString()}
-                </p>
-              )}
+              <DialogTitle className="text-xl font-semibold text-gray-900">
+                {isVerified ? 'Email Verified!' : 'Verify Your Email'}
+              </DialogTitle>
             </div>
-          )}
+            <p className="text-sm text-gray-600">
+              {isVerified
+                ? 'Your email has been successfully verified.'
+                : 'Complete verification to access all features'}
+            </p>
+          </DialogHeader>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {/* Status Indicators */}
+          <div className="space-y-3">
+            {/* Success Messages */}
+            {isSuccess && resendMessage && !isVerified && (
+              <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50/50 p-4">
+                <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-medium text-green-900">Email sent!</p>
+                  <p className="text-sm text-green-700">{resendMessage}</p>
+                </div>
+              </div>
+            )}
+
+            {isVerified && (
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50/50 p-4">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-medium text-green-900">
+                      Email verified successfully!
+                    </p>
+                    <p className="text-sm text-green-700">
+                      Your email has been verified. You now have full access to
+                      all features.
+                    </p>
+                  </div>
+                </div>
+                {showProgress && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span>Redirecting to app...</span>
+                      <span>{Math.round(progress)}%</span>
+                    </div>
+                    <Progress value={progress} className="h-1.5" />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50/50 p-4">
+                <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-medium text-red-900">Error</p>
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Email Info - Only show if not verified */}
+            {!isVerified && (
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-start gap-3">
+                    <Mail className="h-5 w-5 text-brand shrink-0 mt-0.5" />
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-gray-900">
+                        Verification email sent to
+                      </p>
+                    </div>
+                  </div>
+                  <div className="inline-flex items-center rounded-full mt-3 bg-brand/5 px-3 py-1.5">
+                    <span className="text-sm font-medium text-gray-900">
+                      {userEmail}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Auto-check Status */}
+                <div className="rounded-lg border border-gold-600/20 bg-amber-50/50 p-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-gold-600" />
+                        <span className="text-sm font-medium text-amber-900">
+                          Auto-checking status
+                        </span>
+                      </div>
+                      {isChecking && (
+                        <RefreshCw className="h-4 w-4 text-amber-600 animate-spin" />
+                      )}
+                    </div>
+                    <p className="text-xs text-amber-700">
+                      {isChecking
+                        ? 'Checking verification status...'
+                        : "We'll check automatically every 10 seconds"}
+                    </p>
+                    {lastChecked && (
+                      <p className="text-xs text-amber-700/80">
+                        Last checked:{' '}
+                        {lastChecked.toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Action Buttons - Only show if not verified */}
           {!isVerified && (
-            <div className="flex flex-col gap-3">
-              <div className="flex gap-2">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 <Button
                   onClick={handleResendVerification}
                   disabled={isSending}
-                  className="flex-1 bg-emerald-600 hover:bg-blue-700"
+                  className="h-11 bg-brand hover:bg-brand/95 text-white"
                 >
                   {isSending ? (
                     <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                       Sending...
                     </>
                   ) : (
                     <>
-                      <Mail className="h-4 w-4 mr-2" />
+                      <Mail className="mr-2 h-4 w-4" />
                       Resend Email
                     </>
                   )}
@@ -242,7 +309,7 @@ export default function EmailVerificationModal({
                   onClick={handleManualCheck}
                   disabled={isChecking}
                   variant="outline"
-                  className="flex-1"
+                  className="h-11"
                 >
                   {isChecking ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
@@ -254,21 +321,25 @@ export default function EmailVerificationModal({
 
               <Button
                 onClick={handleClose}
-                variant="outline"
+                variant="ghost"
                 disabled={isSending || isChecking}
+                className="w-full h-10 border text-gray-600 hover:text-gray-900"
               >
-                I&apos;ll Verify Later
+                I&apos;ll verify later
               </Button>
             </div>
           )}
 
           {/* Help Information - Only show if not verified */}
           {!isVerified && (
-            <div className="border-t border-gray-200 pt-4">
-              <h4 className="text-sm font-medium text-gray-900 mb-2">
-                Didn&apos;t receive the email?
-              </h4>
-              <ul className="text-xs text-gray-600 space-y-1">
+            <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="h-4 w-4 text-gray-500" />
+                <h4 className="text-sm font-medium text-gray-900">
+                  Need help?
+                </h4>
+              </div>
+              <ul className="text-xs text-gray-600 space-y-2">
                 <li className="flex items-start gap-2">
                   <span className="text-gray-400 mt-0.5">•</span>
                   <span>Check your spam or junk folder</span>
@@ -276,31 +347,28 @@ export default function EmailVerificationModal({
                 <li className="flex items-start gap-2">
                   <span className="text-gray-400 mt-0.5">•</span>
                   <span>
-                    Make sure <strong>{userEmail}</strong> is correct
+                    Ensure <span className="font-medium">{userEmail}</span> is
+                    correct
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-gray-400 mt-0.5">•</span>
-                  <span>
-                    Wait a few minutes - emails can take time to arrive
-                  </span>
+                  <span>Allow a few minutes for delivery</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-gray-400 mt-0.5">•</span>
-                  <span>
-                    This modal will auto-close once you verify your email
-                  </span>
+                  <span>Modal auto-closes upon verification</span>
                 </li>
               </ul>
             </div>
           )}
 
-          {/* Close button for verified state */}
+          {/* Verified State Actions */}
           {isVerified && (
             <div className="flex justify-center pt-2">
               <Button
                 onClick={handleClose}
-                className="bg-green-600 hover:bg-green-700"
+                className="h-11 px-8 bg-brand hover:bg-brand/95 text-white"
               >
                 Continue to App
               </Button>

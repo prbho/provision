@@ -1,4 +1,4 @@
-# PropSafe Hub Robots.txt
+# PropertyVision Robots.txt
 # Last Updated: 2025-01-01
 
 User-agent: *
@@ -56,10 +56,10 @@ Disallow: /properties/post
 Crawl-delay: 2
 
 # Sitemap location
-Sitemap: https://propsafehub.com/sitemap.xml
+Sitemap: https://propertyvision.com/sitemap.xml
 
 # Host
-Host: https://propsafehub.com
+Host: https://propertyvision.com
 
 # Bot-specific rules
 User-agent: Googlebot

@@ -2,7 +2,6 @@
 'use client'
 
 import { useEffect } from 'react'
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle } from 'lucide-react'
 
@@ -26,7 +25,7 @@ export default function SuccessPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 text-center">
         <div className="bg-white py-8 px-6 shadow rounded-lg">
-          <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
+          <CheckCircle className="h-16 w-16 text-brand mx-auto mb-4" />
 
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             {type === 'registration' ? 'Registration Successful!' : 'Success!'}
@@ -41,7 +40,7 @@ export default function SuccessPage() {
           <div className="space-y-4">
             <Button
               onClick={() => router.push('/login')}
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              className="w-full bg-brand hover:bg-brand/95"
             >
               Go to Login
             </Button>

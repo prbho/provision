@@ -74,6 +74,7 @@ export type RegisterData = {
   }
 }
 
+// types/auth.ts
 export interface EmailCheckResult {
   exists: boolean
   user?: {
@@ -83,9 +84,12 @@ export interface EmailCheckResult {
     emailVerified: boolean
     isActive: boolean
     userType: 'buyer' | 'seller' | 'agent' | 'admin'
-    city: string
-    agency: string
+    city?: string // Make optional
+    agency?: string // Make optional
   }
+  warning?: string // Add this
+  error?: boolean // Add this
+  message?: string // Add this
 }
 
 export interface VerificationEmailResult {

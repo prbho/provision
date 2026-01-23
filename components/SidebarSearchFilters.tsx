@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { PropertyFilters } from '@/types'
-import { Filter, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 
 // shadcn components
 import { Button } from '@/components/ui/button'
@@ -155,7 +155,7 @@ export default function SidebarSearchFilters() {
   }
 
   return (
-    <div className="space-y-6 p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
+    <div className="space-y-6 bg-white">
       {/* Header */}
 
       {/* Status Filter - Fixed: Remove empty value SelectItem */}
@@ -337,7 +337,7 @@ export default function SidebarSearchFilters() {
       <div className="space-y-3 pt-4">
         <Button
           onClick={handleSearch}
-          className="w-full bg-emerald-600 hover:bg-emerald-700"
+          className="w-full bg-brand/90 hover:bg-brand"
         >
           <Search className="h-4 w-4 mr-2" />
           Apply Filters

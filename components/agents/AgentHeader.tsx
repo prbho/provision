@@ -39,7 +39,7 @@ export default function AgentHeader({ agent }: AgentHeaderProps) {
   const handleShare = async () => {
     const shareData = {
       title: `${agent.name} - Real Estate Agent`,
-      text: `Check out ${agent.name}'s profile on PropSafe Hub`,
+      text: `Check out ${agent.name}'s profile on PropertyVision`,
       url: window.location.href,
     }
 
@@ -56,7 +56,7 @@ export default function AgentHeader({ agent }: AgentHeaderProps) {
   }
 
   return (
-    <div className="bg-linear-to-r from-emerald-600 to-emerald-700 text-white">
+    <div className="bg-linear-to-r from-brand from-brand text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           {/* Agent Info */}

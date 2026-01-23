@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
@@ -9,14 +9,10 @@ import {
   BathIcon,
   BedIcon,
   CalculatorIcon,
-  Calendar,
-  Clock,
-  CrownIcon,
   Edit,
   Heart,
-  Key,
-  Moon,
   Ruler,
+  Trees,
 } from 'lucide-react'
 
 import { useFavorites } from '@/hooks/useFavorites'
@@ -33,77 +29,43 @@ interface PropertyCardProps {
   agentProfileId?: string
 }
 
-// Optimized time-ago function (called only when date changes)
-const getTimeAgo = (date: string | Date) => {
-  const now = new Date()
-  const past = new Date(date)
-  const diffInMs = now.getTime() - past.getTime()
-  const diffInSeconds = Math.floor(diffInMs / 1000)
-  const diffInMinutes = Math.floor(diffInSeconds / 60)
-  const diffInHours = Math.floor(diffInMinutes / 60)
-  const diffInDays = Math.floor(diffInHours / 24)
-  const diffInWeeks = Math.floor(diffInDays / 7)
-  const diffInMonths = Math.floor(diffInDays / 30)
-  const diffInYears = Math.floor(diffInDays / 365)
-
-  if (diffInSeconds < 60) return 'Just now'
-  if (diffInMinutes === 1) return '1 minute ago'
-  if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`
-  if (diffInHours === 1) return '1 hour ago'
-  if (diffInHours < 24) return `${diffInHours} hours ago`
-  if (diffInDays === 1) return 'Yesterday'
-  if (diffInDays < 7) return `${diffInDays} days ago`
-  if (diffInWeeks === 1) return '1 week ago'
-  if (diffInWeeks < 4) return `${diffInWeeks} weeks ago`
-  if (diffInMonths === 1) return '1 month ago'
-  if (diffInMonths < 12) return `${diffInMonths} months ago`
-  if (diffInYears === 1) return '1 year ago'
-  return `${diffInYears} years ago`
-}
-
 // Helper function to get status badge info
 const getStatusInfo = (status: string) => {
   switch (status) {
     case 'for-sale':
       return {
         label: 'For Sale',
-        bg: 'bg-linear-to-r from-red-800 to-red-500',
-        icon: null,
+        bg: 'bg-red-600',
         color: 'text-white',
       }
     case 'for-rent':
       return {
         label: 'For Rent',
-        bg: 'bg-linear-to-r from-emerald-600 to-teal-500',
-        icon: <Key className="w-3 h-3 mr-1" />,
+        bg: 'bg-emerald-600',
         color: 'text-white',
       }
     case 'short-let':
       return {
         label: 'Short-Let',
-        bg: 'bg-linear-to-r from-purple-600 to-purple-500',
-        icon: <Moon className="w-3 h-3 mr-1" />,
+        bg: 'bg-purple-600',
         color: 'text-white',
       }
     case 'sold':
       return {
         label: 'Sold',
-        bg: 'bg-linear-to-r from-gray-700 to-gray-600',
-        icon: null,
+        bg: 'bg-gray-600',
         color: 'text-white',
       }
     case 'rented':
       return {
         label: 'Rented',
-        bg: 'bg-linear-to-r from-blue-600 to-blue-500',
-        icon: null,
+        bg: 'bg-blue-600',
         color: 'text-white',
       }
     default:
       return {
         label: 'Available',
-        bg: 'bg-linear-to-r from-gray-600 to-gray-500',
-        icon: null,
+        bg: 'bg-gray-600',
         color: 'text-white',
       }
   }
@@ -117,29 +79,36 @@ const getPriceUnitLabel = (unit: string) => {
     case 'weekly':
       return '/week'
     case 'monthly':
-      return '/mo'
+      return '/month'
     case 'yearly':
-      return '/yr'
+      return '/year'
     default:
       return ''
   }
 }
 
-function PropertyCard({
-  property,
-  agentProfileId,
-  priority = false,
-}: PropertyCardProps) {
+// Check if property is land
+const isLandType = (propertyType: string): boolean => {
+  const landTypes = [
+    'land',
+    'plot',
+    'agricultural land',
+    'vacant land',
+    'acreage',
+  ]
+  return landTypes.some((type) =>
+    propertyType?.toLowerCase().includes(type.toLowerCase())
+  )
+}
+
+function PropertyCard({ property, priority = false }: PropertyCardProps) {
   const [showMortgageCalc, setShowMortgageCalc] = useState(false)
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false)
   const { isFavorited, toggleFavorite } = useFavorites()
   const { user, isAuthenticated } = useAuth()
 
-  // Memoize formatted time
-  const timeAgo = useMemo(
-    () => getTimeAgo(property.listDate),
-    [property.listDate]
-  )
+  // Determine if property is land
+  const isLand = isLandType(property.propertyType)
 
   // Memoized price formatter
   const formatPrice = useCallback((price: number, unit: string) => {
@@ -155,9 +124,8 @@ function PropertyCard({
 
   const mainImage = property.images?.[0] || '/placeholder-property.jpg'
   const statusInfo = getStatusInfo(property.status)
-  const isShortLet = property.status === 'short-let'
 
-  // Handlers wrapped with useCallback to prevent re-creation on every render
+  // Handlers
   const handleMortgageClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -181,15 +149,7 @@ function PropertyCard({
     [isAuthenticated, user, property, toggleFavorite]
   )
 
-  const isOwner =
-    user &&
-    // For agents: check if they listed the property
-    (property.agentId === user.$id ||
-      (agentProfileId && property.agentId === agentProfileId) ||
-      // For sellers: check if they own the property
-      (user.userType === 'seller' && property.ownerId === user.$id) ||
-      // Also check userId field (fallback check)
-      property.userId === user.$id)
+  const isOwner = user && property.agentId === user.$id
   const isFavoritedByUser = isFavorited(property)
 
   return (
@@ -198,7 +158,7 @@ function PropertyCard({
       {isOwner && (
         <Link
           href={`/dashboard/${user?.userType}/${user?.$id}/properties/edit/${property.$id}`}
-          className="absolute top-2 left-2 z-20 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md shadow-lg transition-all duration-200 flex items-center justify-center hover:scale-105"
+          className="absolute top-3 left-3 z-20 bg-white text-gray-700 hover:text-emerald-700 p-1.5 rounded-lg shadow-md transition-colors duration-200 hover:shadow-lg"
         >
           <Edit className="w-4 h-4" />
         </Link>
@@ -209,11 +169,11 @@ function PropertyCard({
         <button
           onClick={handleFavoriteClick}
           disabled={isFavoriteLoading}
-          className={`absolute top-2 right-2 z-20 bg-white hover:bg-red-50 p-2 rounded-md shadow-lg transition-all duration-200 flex items-center justify-center hover:scale-105 disabled:opacity-50 ${
+          className={`absolute top-3 right-3 z-20 bg-white p-1.5 rounded-lg shadow-md transition-all duration-200 ${
             isFavoritedByUser
-              ? 'text-red-600'
-              : 'text-gray-600 hover:text-red-600'
-          }`}
+              ? 'text-red-500'
+              : 'text-gray-400 hover:text-red-500'
+          } disabled:opacity-50`}
           title={
             isFavoritedByUser ? 'Remove from favorites' : 'Add to favorites'
           }
@@ -229,15 +189,9 @@ function PropertyCard({
       )}
 
       <Link href={`/properties/${property.$id}`} className="block">
-        <div
-          className={`bg-white/90 backdrop-blur-md rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 mb-6 relative ${
-            isShortLet
-              ? 'hover:border-purple-300/60 hover:shadow-purple-100/30 border border-transparent'
-              : 'hover:border-emerald-300/60 hover:shadow-emerald-100/30 border border-transparent'
-          }`}
-        >
+        <div className="bg-white rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300 border border-stone-200">
           {/* IMAGE */}
-          <div className="relative h-48 w-full bg-linear-to-br from-slate-200 to-slate-300">
+          <div className="relative h-48 w-full bg-gray-100">
             <Image
               src={mainImage}
               alt={property.title}
@@ -245,179 +199,121 @@ function PropertyCard({
               className="object-cover"
               priority={priority}
               loading={priority ? 'eager' : 'lazy'}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
-
-            {/* FEATURED BADGE */}
-            {property.isFeatured && (
-              <span className="absolute top-2 left-2 z-10 bg-linear-to-r from-amber-400 to-amber-500 text-white px-2 py-1 rounded-md text-xs font-semibold shadow-md flex items-center gap-1">
-                <CrownIcon className="w-3 h-3" />
-                Featured
-              </span>
-            )}
 
             {/* STATUS BADGE */}
             <span
-              className={`absolute bottom-2 left-2 px-3 py-1 rounded-md text-xs font-bold shadow z-10 flex items-center ${statusInfo.bg} ${statusInfo.color}`}
+              className={`absolute bottom-3 left-3 px-2 py-1 rounded text-xs font-medium ${statusInfo.bg} ${statusInfo.color}`}
             >
-              {statusInfo.icon}
               {statusInfo.label}
             </span>
-
-            {/* SHORT-LET SPECIFIC BADGES */}
-            {isShortLet && (
-              <>
-                {property.instantBooking && (
-                  <span className="absolute top-2 left-2 z-10 bg-emerald-600 text-white px-2 py-1 rounded-md text-xs font-semibold shadow-md flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    Instant Book
-                  </span>
-                )}
-                {/* {property.cancellationPolicy && (
-                  <span className="absolute top-10 right-2 z-10 bg-blue-600 text-white px-2 py-1 rounded-md text-xs font-semibold shadow-md flex items-center gap-1">
-                    <Shield className="w-3 h-3" />
-                    {property.cancellationPolicy === 'flexible'
-                      ? 'Flexible'
-                      : property.cancellationPolicy === 'moderate'
-                        ? 'Moderate'
-                        : 'Strict'}
-                  </span>
-                )} */}
-                {property.minimumStay && (
-                  <span className="absolute bottom-2 right-2 z-10 bg-purple-600 text-white px-2 py-1 rounded-md text-xs font-semibold shadow-md flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    Min {property.minimumStay} night
-                    {property.minimumStay > 1 ? 's' : ''}
-                  </span>
-                )}
-              </>
-            )}
           </div>
 
           {/* CONTENT */}
-          <div className="p-4 bg-linear-to-b from-white/90 to-slate-50/70">
-            {/* TITLE & RATING */}
-            {/* <div className="flex justify-between items-start mb-2">
-              <h3 className="text-lg font-semibold text-slate-800 line-clamp-1 flex-1">
-                {property.title}
-              </h3>
-              {isShortLet && property.rating && (
-                <span className="flex items-center bg-amber-50 text-amber-700 px-2 py-1 rounded text-sm">
-                  <Star className="w-3 h-3 mr-1 fill-current" />
-                  {property.rating.toFixed(1)}
-                </span>
-              )}
-            </div> */}
+          <div className="p-4">
+            {/* TITLE */}
+            <h3 className="font-semibold text-stone-900 line-clamp-2">
+              {property.title}
+            </h3>
 
+            {/* LOCATION */}
             <p className="text-gray-600 text-sm mb-3 line-clamp-1">
-              {property.address}, {property.city}, {property.state}
+              {property.address}, {property.city}
             </p>
 
             {/* PRICE */}
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-lg font-bold text-black">
+            <div className="mb-4">
+              <span className="text-lg font-bold text-stone-900">
                 {formatPrice(property.price, property.priceUnit)}
               </span>
-              {property.originalPrice &&
-                property.originalPrice > property.price && (
-                  <span className="text-xs text-gray-400 line-through">
-                    {formatPrice(property.originalPrice, property.priceUnit)}
-                  </span>
-                )}
             </div>
 
-            {/* SHORT-LET AVAILABILITY */}
-            {isShortLet &&
-              (property.availabilityStart || property.availabilityEnd) && (
-                <div className="mb-3 p-2 bg-emerald-50 rounded-lg">
-                  <div className="flex items-center text-sm text-emerald-600">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    {property.availabilityStart
-                      ? `Available ${new Date(property.availabilityStart).toLocaleDateString()}`
-                      : 'Check dates for availability'}
-                  </div>
-                </div>
-              )}
-
-            {/* META */}
-            <div className="flex items-center justify-between text-sm text-gray-700 border-t pt-3">
-              <span className="flex items-center gap-x-1">
-                <BedIcon className="w-4 h-4" />
-                {property.bedrooms} beds
-              </span>
-              <span className="flex items-center gap-x-1">
-                <BathIcon className="w-4 h-4" />
-                {property.bathrooms} baths
-              </span>
-              <span className="flex items-center gap-x-1">
-                <Ruler className="w-4 h-4" />
-                {property.squareFeet?.toLocaleString() || '0'} m²
-              </span>
-            </div>
-
-            {/* PAYMENT OPTIONS & CALCULATOR */}
-            <div className="flex items-center">
-              <div className="flex flex-wrap gap-2 my-3">
-                {property.outright && (
-                  <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-xs rounded-md">
-                    Outright
-                  </span>
-                )}
-                {property.paymentPlan && (
-                  <span className="px-2 py-1 bg-violet-50 text-violet-700 text-xs rounded-md">
-                    Payment Plan
-                  </span>
-                )}
-                {property.mortgageEligible && (
-                  <span className="px-2 py-1 bg-purple-100 text-black text-xs rounded-md">
-                    Mortgage
-                  </span>
-                )}
-                {/* SHORT-LET SPECIFIC TAGS */}
-                {isShortLet &&
-                  property.houseRules &&
-                  property.houseRules.length > 0 && (
-                    <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-md">
-                      {property.houseRules.length} rules
-                    </span>
-                  )}
-                {isShortLet && property.features?.includes('Free WiFi') && (
-                  <span className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded-md">
-                    WiFi
-                  </span>
+            {/* META INFO - Conditional based on property type */}
+            <div className="flex items-center justify-between text-sm text-gray-700 mb-4">
+              <div className="flex items-center gap-3">
+                {isLand ? (
+                  // Land-specific attributes
+                  <>
+                    <div className="flex items-center gap-1">
+                      <Trees className="w-4 h-4 text-emerald-600" />
+                      <span>Land</span>
+                    </div>
+                    {property.squareFeet && (
+                      <div className="flex items-center gap-1">
+                        <Ruler className="w-4 h-4 text-gray-500" />
+                        <span>{property.squareFeet.toLocaleString()} m²</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  // Building-specific attributes
+                  <>
+                    {property.bedrooms > 0 && (
+                      <div className="flex items-center gap-1">
+                        <BedIcon className="w-4 h-4 text-gray-500" />
+                        <span>{property.bedrooms}</span>
+                      </div>
+                    )}
+                    {property.bathrooms > 0 && (
+                      <div className="flex items-center gap-1">
+                        <BathIcon className="w-4 h-4 text-gray-500" />
+                        <span>{property.bathrooms}</span>
+                      </div>
+                    )}
+                    {property.squareFeet && (
+                      <div className="flex items-center gap-1">
+                        <Ruler className="w-4 h-4 text-gray-500" />
+                        <span>{property.squareFeet.toLocaleString()} m²</span>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
-              {property.mortgageEligible && !isShortLet && (
+
+              {property.mortgageEligible && !isLand && (
                 <button
                   onClick={handleMortgageClick}
-                  className="ml-auto hover:opacity-80 cursor-pointer transition relative"
+                  className="text-gray-500 hover:text-emerald-600 transition-colors"
+                  title="Calculate mortgage"
                 >
-                  <CalculatorIcon className="text-black w-5 h-5" />
+                  <CalculatorIcon className="w-4 h-4" />
                 </button>
               )}
             </div>
 
-            {/* FOOTER */}
-            <div className="flex items-center justify-between mt-3 text-xs text-gray-500 border-t pt-3">
-              <span className="capitalize">{property.propertyType}</span>
-              <div>
-                {isOwner && (
-                  <div className="flex items-center justify-between py-1 px-3 text-xs bg-blue-100 rounded-2xl">
-                    <span className="text-blue-800 rounded-full">
-                      Your Listing
-                    </span>
-                    <span className="text-gray-500">
-                      {property.views || 0} views
-                    </span>
-                  </div>
+            {/* PAYMENT OPTIONS */}
+            {/* {(property.outright ||
+              property.paymentPlan ||
+              property.mortgageEligible) && (
+              <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
+                {property.outright && (
+                  <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                    Outright
+                  </span>
+                )}
+                {property.paymentPlan && (
+                  <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                    Payment Plan
+                  </span>
+                )}
+                {property.mortgageEligible && !isLand && (
+                  <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                    Mortgage
+                  </span>
+                )}
+                {isLand && (
+                  <span className="px-2 py-1 bg-brand/10 text-emerald-700 text-xs rounded">
+                    Land
+                  </span>
                 )}
               </div>
-              <span>{timeAgo}</span>
-            </div>
+            )} */}
           </div>
         </div>
       </Link>
 
-      {/* MODAL */}
+      {/* MORTGAGE CALCULATOR MODAL */}
       {showMortgageCalc && (
         <Portal>
           <MortgageCalculator
@@ -432,5 +328,4 @@ function PropertyCard({
   )
 }
 
-// Memoized to prevent unnecessary re-renders in carousel
 export default React.memo(PropertyCard)

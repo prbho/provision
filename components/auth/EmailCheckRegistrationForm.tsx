@@ -383,7 +383,7 @@ export function EmailCheckRegistrationForm({
       toast.dismiss(loadingToast)
 
       let successMessage =
-        'Account created successfully! Welcome to PropSafe Hub.'
+        'Account created successfully! Welcome to PropertyVision.'
       if (userType === 'agent') {
         successMessage =
           'Agent account created successfully! You can now list properties.'
@@ -473,7 +473,7 @@ export function EmailCheckRegistrationForm({
           <Button
             type="button"
             variant="outline"
-            className="flex-1 h-12 border-gray-300 hover:bg-emerald-50 py-4 text-base font-semibold rounded-xl transition-all duration-200"
+            className="flex-1 h-12 border-gray-300 hover:bg-brand/5 py-4 text-base font-semibold rounded-xl transition-all duration-200"
             onClick={() => {
               setStep('basic-info')
               toast.info('Returning to registration')
@@ -484,7 +484,7 @@ export function EmailCheckRegistrationForm({
           </Button>
           <Button
             type="submit"
-            className="flex-1 h-12 bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
+            className="flex-1 h-12 bg-linear-to-r from-brand from-brand hover:from-brand hover:from-brand text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
             disabled={
               isLoading ||
               !agency.trim() ||
@@ -704,7 +704,7 @@ export function EmailCheckRegistrationForm({
                 type="button"
                 className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
                   userType === type
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                    ? 'border-emerald-500 bg-brand/5 text-emerald-700'
                     : 'border-gray-300 hover:border-gray-400 text-gray-700'
                 }`}
                 onClick={() => {
@@ -728,7 +728,7 @@ export function EmailCheckRegistrationForm({
             <Button
               type="button"
               variant="outline"
-              className="flex-1 h-12 border-gray-300 hover:bg-emerald-50 py-4 text-base font-semibold rounded-xl transition-all duration-200"
+              className="flex-1 h-12 border-gray-300 hover:bg-brand/5 py-4 text-base font-semibold rounded-xl transition-all duration-200"
               onClick={onBack}
               disabled={isLoading}
             >
@@ -737,7 +737,7 @@ export function EmailCheckRegistrationForm({
           )}
           <Button
             type="submit"
-            className={`${showBackButton ? 'flex-1' : 'w-full'} h-12 bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white py-4 text-base font-semibold rounded-xl transition-all duration-200`}
+            className={`${showBackButton ? 'flex-1' : 'w-full'} h-12 bg-linear-to-r from-brand from-brand hover:from-brand hover:from-brand text-white py-4 text-base font-semibold rounded-xl transition-all duration-200`}
             disabled={
               isLoading ||
               !name ||

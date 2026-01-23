@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-  const robotsTxt = `# PropSafe Hub Robots.txt
+  const robotsTxt = `# PropertyVision Robots.txt
 # Last Updated: ${new Date().toISOString().split('T')[0]}
 
 User-agent: *
@@ -64,10 +64,10 @@ Disallow: /properties/post
 Crawl-delay: 2
 
 # Sitemap location
-Sitemap: https://propsafehub.com/sitemap.xml
+Sitemap: https://propertyvision.com/sitemap.xml
 
 # Host
-Host: https://propsafehub.com
+Host: https://propertyvision.com
 
 # Bot-specific rules
 User-agent: Googlebot
@@ -121,8 +121,8 @@ User-agent: MauiBot
 Disallow: /
 
 # Sitewide sitemaps:
-Sitemap: https://propsafehub.com/sitemap.xml
-Sitemap: https://propsafehub.com/sitemap
+Sitemap: https://propertyvision.com/sitemap.xml
+Sitemap: https://propertyvision.com/sitemap
 
 # End of robots.txt`
 

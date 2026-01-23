@@ -247,7 +247,7 @@ export default function VerifyPage() {
             <CardTitle className="text-3xl font-bold text-gray-900">
               Email Verification
             </CardTitle>
-            <p className="text-gray-600">PropSafe Hub Account Verification</p>
+            <p className="text-gray-600">PropertyVision Account Verification</p>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -256,10 +256,10 @@ export default function VerifyPage() {
             <p className="text-xs text-gray-500 text-center">
               Need help? Contact{' '}
               <a
-                href="mailto:support@propsafehub.com"
+                href="mailto:onboarding@resend.dev"
                 className="text-blue-600 hover:underline font-medium"
               >
-                support@propsafehub.com
+                support@propertyvision.com
               </a>
             </p>
           </div>

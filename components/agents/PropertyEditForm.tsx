@@ -75,7 +75,7 @@ export default function PropertyEditForm({ property }: PropertyEditFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [, setIsDeleting] = useState(false)
 
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(
     null
@@ -94,15 +94,6 @@ export default function PropertyEditForm({ property }: PropertyEditFormProps) {
     null
   )
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
-
-  // Initialize DnD sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  )
 
   const [formData, setFormData] = useState({
     // Basic Information
@@ -482,7 +473,7 @@ export default function PropertyEditForm({ property }: PropertyEditFormProps) {
     setUploadingImages(files.map((file) => URL.createObjectURL(file)))
     setIsUploading(true)
 
-    for (const [index, file] of files.entries()) {
+    for (const [, file] of files.entries()) {
       try {
         const formData = new FormData()
         formData.append('image', file)
@@ -871,7 +862,7 @@ export default function PropertyEditForm({ property }: PropertyEditFormProps) {
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-100 rounded-lg">
+                  <div className="p-2 bg-brand/10 rounded-lg">
                     <Upload className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div>
@@ -950,9 +941,9 @@ export default function PropertyEditForm({ property }: PropertyEditFormProps) {
                 </div>
 
                 {/* Instructions */}
-                {/* <div className="rounded-lg bg-emerald-50 p-4 border border-emerald-50">
+                {/* <div className="rounded-lg bg-brand/5 p-4 border border-emerald-50">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-emerald-100 border-emerald-50 rounded-lg">
+                    <div className="p-2 bg-brand/10 border-emerald-50 rounded-lg">
                       <Upload className="w-5 h-5 text-emerald-600" />
                     </div>
                     <div>
@@ -1925,7 +1916,7 @@ export default function PropertyEditForm({ property }: PropertyEditFormProps) {
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-100 rounded-lg">
+                  <div className="p-2 bg-brand/10 rounded-lg">
                     <DollarSign className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div>
@@ -1939,7 +1930,7 @@ export default function PropertyEditForm({ property }: PropertyEditFormProps) {
                   <div
                     className={`space-y-4 p-4 rounded-lg border transition-colors ${
                       formData.paymentOutright
-                        ? 'bg-emerald-50 border-emerald-200'
+                        ? 'bg-brand/5 border-emerald-200'
                         : 'bg-gray-50 border-gray-200'
                     }`}
                   >
@@ -2236,7 +2227,7 @@ export default function PropertyEditForm({ property }: PropertyEditFormProps) {
                     type="button"
                     onClick={handlePublish}
                     disabled={isSubmitting || getCompletionPercentage() < 100}
-                    className="w-full bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
+                    className="w-full bg-linear-to-r from-brand to-emerald-600 hover:from-brand hover:from-brand text-white"
                     size="lg"
                   >
                     {isSubmitting ? (

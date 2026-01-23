@@ -1,20 +1,15 @@
-// components/Header/UserDropdown.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   Building2,
-  Calculator,
   ChevronDown,
-  ChevronDownIcon,
-  ChevronUpIcon,
   Heart,
-  HomeIcon,
-  Loader2,
+  Home,
+  ListPlus,
   LogOut,
-  PlusIcon,
   Settings,
   Shield,
   User,
@@ -34,26 +29,8 @@ import {
 import NotificationBell from '../NotificationBell'
 
 export default function UserDropdown() {
-  const { user, logout, isLoading: authLoading } = useAuth()
-  const [isCheckingRole, setIsCheckingRole] = useState(true)
+  const { user, logout } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
-
-  // Simulate role checking delay to prevent flash of wrong content
-  useEffect(() => {
-    if (!authLoading && user) {
-      // Add a small delay to ensure smooth transition
-      const timer = setTimeout(() => {
-        setIsCheckingRole(false)
-      }, 200)
-      return () => clearTimeout(timer)
-    } else if (!authLoading && !user) {
-      // Use setTimeout to avoid synchronous state update
-      const timer = setTimeout(() => {
-        setIsCheckingRole(false)
-      }, 0)
-      return () => clearTimeout(timer)
-    }
-  }, [authLoading, user])
 
   const handleLogout = async () => {
     try {
@@ -64,33 +41,26 @@ export default function UserDropdown() {
     }
   }
 
-  // Determine dashboard link based on user type - UPDATED for dynamic URLs
+  // Keep your original dynamic URL structure
   const getDashboardLink = () => {
     if (!user?.$id || !user?.userType) return '/dashboard'
-
-    // Use the dynamic URL pattern: /dashboard/[userType]/[id]
     return `/dashboard/${user.userType}/${user.$id}`
   }
 
-  // Get dashboard icon based on user type
-  const getDashboardIcon = () => {
-    if (!user) return <HomeIcon className="h-4 w-4 mr-2" />
-
-    switch (user.userType) {
-      case 'admin':
-        return <Shield className="h-4 w-4 mr-2" />
-      case 'agent':
-        return <Building2 className="h-4 w-4 mr-2" />
-      case 'seller':
-        return <HomeIcon className="h-4 w-4 mr-2" />
-      case 'buyer':
-        return <HomeIcon className="h-4 w-4 mr-2" />
-      default:
-        return <HomeIcon className="h-4 w-4 mr-2" />
-    }
+  const getProfileLink = () => {
+    if (!user?.$id || !user?.userType) return '/profile'
+    return `/profile/${user.userType}/${user.$id}`
   }
 
-  // Get dashboard label based on user type
+  const getListPropertyLink = () => {
+    if (user?.userType === 'agent') {
+      return '/properties/post'
+    } else if (user?.userType === 'seller') {
+      return '/properties/post'
+    }
+    return '/properties/post'
+  }
+
   const getDashboardLabel = () => {
     if (!user) return 'Dashboard'
 
@@ -108,161 +78,74 @@ export default function UserDropdown() {
     }
   }
 
-  // Get profile link based on user type - UPDATED for dynamic URLs
-  const getProfileLink = () => {
-    if (!user?.$id || !user?.userType) return '/profile'
+  const getDashboardIcon = () => {
+    if (!user) return <Home className="h-4 w-4" />
 
-    // Use the dynamic URL pattern: /profile/[userType]/[id]
-    return `/profile/${user.userType}/${user.$id}`
-  }
-
-  // Get list property link based on user type
-  const getListPropertyLink = () => {
-    if (user?.userType === 'agent') {
-      return '/properties/post' // Agents use the advanced property posting
-    } else if (user?.userType === 'seller') {
-      return '/list-property' // Regular sellers use simple listing
+    switch (user.userType) {
+      case 'admin':
+        return <Shield className="h-4 w-4" />
+      case 'agent':
+        return <Building2 className="h-4 w-4" />
+      default:
+        return <Home className="h-4 w-4" />
     }
-    return '/list-property' // Fallback
-  }
-
-  // Show loading state while checking user role
-  if (authLoading || isCheckingRole) {
-    return (
-      <div className="flex items-center space-x-4">
-        {/* Show "List Property" skeleton for sellers and agents (not admin) */}
-        <div className="hidden sm:block">
-          <Button variant="outline" disabled className="opacity-50">
-            <PlusIcon className="w-10 h-10" />
-          </Button>
-        </div>
-
-        <NotificationBell />
-
-        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-          <DropdownMenuTrigger asChild>
-            <div className="flex items-center space-x-1">
-              <Button
-                variant="ghost"
-                className="relative h-8 w-8 rounded-full"
-                disabled
-              >
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-gray-200 animate-pulse">
-                    <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-              <ChevronDown className="h-4 w-4 text-gray-400" />
-            </div>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-2">
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
-                <div className="h-3 bg-gray-200 rounded animate-pulse w-1/3"></div>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-
-            {/* Loading menu items */}
-            {[...Array(5)].map((_, i) => (
-              <DropdownMenuItem key={i} disabled>
-                <div className="flex items-center w-full">
-                  <div className="h-4 w-4 bg-gray-200 rounded animate-pulse mr-2"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse flex-1"></div>
-                </div>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    )
   }
 
   return (
-    <div className="flex items-center space-x-4">
+    <div className="flex items-center space-x-3">
       <NotificationBell />
 
-      {/* Show "List Property" for sellers and agents, hide for buyers and admin */}
-      {(user?.userType === 'seller' || user?.userType === 'agent') && (
-        <Button variant="outline" asChild>
-          <Link href={getListPropertyLink()} aria-label="List Property">
-            <PlusIcon className="w-10 font-bold h-10" />
-          </Link>
-        </Button>
+      {/* List Property Button - Only for agents and sellers */}
+      {(user?.userType === 'agent' || user?.userType === 'seller') && (
+        <Link href={getListPropertyLink()} className="hidden sm:block">
+          <Button size="sm" variant="outline" className="gap-2">
+            <ListPlus className="h-4 w-4" />
+            List Property
+          </Button>
+        </Link>
       )}
 
+      {/* User Dropdown */}
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
-          <div className="flex items-center space-x-1 cursor-pointer group">
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.avatar} alt={user?.name} />
-                <AvatarFallback className="bg-emerald-100 text-emerald-600 text-sm">
-                  {user?.name?.[0]?.toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-            {/* OPTION 1: Simple chevron (my recommendation) */}
-            {isOpen ? (
-              <ChevronUpIcon className="h-4 w-4 text-gray-400 transition-transform duration-200" />
-            ) : (
-              <ChevronDownIcon className="h-4 w-4 text-gray-400 transition-transform duration-200 group-hover:text-gray-700" />
-            )}
-
-            {/* OPTION 2: Circle with chevron (more visible) */}
-            {/* <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
-              {isOpen ? (
-                <ChevronUp className="h-3 w-3 text-gray-600" />
-              ) : (
-                <ChevronDown className="h-3 w-3 text-gray-500" />
-              )}
-            </div> */}
-
-            {/* OPTION 3: Simple arrow without animation */}
-            {/* <ChevronDown className="h-4 w-4 text-gray-500" /> */}
-
-            {/* OPTION 4: Text indicator (good for accessibility) */}
-            {/* <span className="sr-only">User menu</span>
-            <ChevronDown className="h-4 w-4 text-gray-500" aria-hidden="true" /> */}
-          </div>
+          <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user?.avatar} alt={user?.name} />
+              <AvatarFallback className="bg-brand/10 text-brand">
+                {user?.name?.[0]?.toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <ChevronDown
+              className={`h-4 w-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end" forceMount>
+
+        <DropdownMenuContent className="w-56" align="end">
+          {/* User Info */}
           <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user?.name}</p>
-              <p className="text-xs leading-none text-gray-500">
-                {user?.email}
-              </p>
-              <div className="flex items-center justify-between">
-                {user?.userType && (
-                  <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full mt-1">
+            <div className="flex flex-col">
+              <p className="font-medium text-gray-900 truncate">{user?.name}</p>
+              <p className="text-sm text-gray-500 truncate">{user?.email}</p>
+              {user?.userType && (
+                <div className="mt-1">
+                  <span className="inline-flex items-center gap-1 text-xs bg-brand/10 text-brand px-2 py-1 rounded-full">
                     {user.userType === 'admin' && (
                       <Shield className="h-3 w-3" />
                     )}
                     {user.userType === 'agent' && (
                       <Building2 className="h-3 w-3" />
                     )}
-                    {user.userType === 'seller' && <User className="h-3 w-3" />}
-                    {user.userType === 'buyer' && <Heart className="h-3 w-3" />}
                     {user.userType.charAt(0).toUpperCase() +
                       user.userType.slice(1)}
                   </span>
-                )}
-                {!user?.emailVerified && (
-                  <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
-                    <Shield className="h-3 w-3" />
-                    <span>Verify email</span>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
 
-          {/* Profile - UPDATED for dynamic URL */}
+          {/* Profile */}
           <DropdownMenuItem asChild onClick={() => setIsOpen(false)}>
             <Link href={getProfileLink()} className="cursor-pointer">
               <User className="h-4 w-4 mr-2" />
@@ -270,31 +153,29 @@ export default function UserDropdown() {
             </Link>
           </DropdownMenuItem>
 
-          {/* Dashboard - Dynamic based on user type - UPDATED for dynamic URL */}
+          {/* Dashboard */}
           <DropdownMenuItem asChild onClick={() => setIsOpen(false)}>
             <Link href={getDashboardLink()} className="cursor-pointer">
-              {getDashboardIcon()}
+              <div className="mr-2">{getDashboardIcon()}</div>
               {getDashboardLabel()}
             </Link>
           </DropdownMenuItem>
 
-          {/* User Type Specific Links */}
+          {/* User Type Specific Links - Keep your original structure */}
           {user?.userType === 'agent' && (
             <>
-              {/* Agent properties - Updated for dynamic URL if needed */}
               <DropdownMenuItem asChild onClick={() => setIsOpen(false)}>
                 <Link
-                  href={`/dashboard/agent/${user?.$id || ''}/properties`}
+                  href={`/dashboard/agent/${user.$id}/properties`}
                   className="cursor-pointer"
                 >
-                  <HomeIcon className="h-4 w-4 mr-2" />
+                  <Home className="h-4 w-4 mr-2" />
                   My Properties
                 </Link>
               </DropdownMenuItem>
-              {/* Agent leads - Updated for dynamic URL if needed */}
               <DropdownMenuItem asChild onClick={() => setIsOpen(false)}>
                 <Link
-                  href={`/dashboard/agent/${user?.$id || ''}/leads`}
+                  href={`/dashboard/agent/${user.$id}/leads`}
                   className="cursor-pointer"
                 >
                   <User className="h-4 w-4 mr-2" />
@@ -304,61 +185,46 @@ export default function UserDropdown() {
             </>
           )}
 
-          {/* Admin specific links */}
           {user?.userType === 'admin' && (
             <>
-              {/* Admin user management */}
               <DropdownMenuItem asChild onClick={() => setIsOpen(false)}>
                 <Link
-                  href={`/dashboard/admin/${user?.$id || ''}/users`}
+                  href={`/dashboard/admin/${user.$id}/users`}
                   className="cursor-pointer"
                 >
                   <User className="h-4 w-4 mr-2" />
                   User Management
                 </Link>
               </DropdownMenuItem>
-              {/* Admin approvals */}
               <DropdownMenuItem asChild onClick={() => setIsOpen(false)}>
                 <Link
-                  href={`/dashboard/admin/${user?.$id || ''}/approvals`}
+                  href={`/dashboard/admin/${user.$id}/properties`}
                   className="cursor-pointer"
                 >
-                  <Shield className="h-4 w-4 mr-2" />
-                  Approval Queue
-                </Link>
-              </DropdownMenuItem>
-              {/* Admin property management */}
-              <DropdownMenuItem asChild onClick={() => setIsOpen(false)}>
-                <Link
-                  href={`/dashboard/admin/${user?.$id || ''}/properties`}
-                  className="cursor-pointer"
-                >
-                  <HomeIcon className="h-4 w-4 mr-2" />
+                  <Home className="h-4 w-4 mr-2" />
                   Property Management
                 </Link>
               </DropdownMenuItem>
             </>
           )}
 
-          {/* Seller specific links */}
           {user?.userType === 'seller' && (
             <DropdownMenuItem asChild onClick={() => setIsOpen(false)}>
               <Link
-                href={`/dashboard/seller/${user?.$id || ''}/properties`}
+                href={`/dashboard/seller/${user.$id}/properties`}
                 className="cursor-pointer"
               >
-                <HomeIcon className="h-4 w-4 mr-2" />
+                <Home className="h-4 w-4 mr-2" />
                 My Listings
               </Link>
             </DropdownMenuItem>
           )}
 
-          {/* Buyer specific links */}
           {user?.userType === 'buyer' && (
             <>
               <DropdownMenuItem asChild onClick={() => setIsOpen(false)}>
                 <Link
-                  href={`/dashboard/${user?.userType}/${user?.$id || ''}/saved`}
+                  href={`/dashboard/buyer/${user.$id}/saved`}
                   className="cursor-pointer"
                 >
                   <Heart className="h-4 w-4 mr-2" />
@@ -367,20 +233,20 @@ export default function UserDropdown() {
               </DropdownMenuItem>
               <DropdownMenuItem asChild onClick={() => setIsOpen(false)}>
                 <Link
-                  href={`/dashboard/${user?.userType}/${user?.$id || ''}/searches`}
+                  href={`/dashboard/buyer/${user.$id}/searches`}
                   className="cursor-pointer"
                 >
-                  <HomeIcon className="h-4 w-4 mr-2" />
+                  <Home className="h-4 w-4 mr-2" />
                   Saved Searches
                 </Link>
               </DropdownMenuItem>
             </>
           )}
 
-          {/* Common Links for All Users */}
+          {/* Common Links */}
           <DropdownMenuItem asChild onClick={() => setIsOpen(false)}>
             <Link
-              href={`/dashboard/${user?.userType}/${user?.$id || ''}/favorites`}
+              href={`/dashboard/${user?.userType || ''}/${user?.$id || ''}/favorites`}
               className="cursor-pointer"
             >
               <Heart className="h-4 w-4 mr-2" />
@@ -388,17 +254,6 @@ export default function UserDropdown() {
             </Link>
           </DropdownMenuItem>
 
-          <DropdownMenuItem asChild onClick={() => setIsOpen(false)}>
-            <Link
-              href={`/dashboard/${user?.userType || ''}/${user?.$id || ''}/calculations/history`}
-              className="cursor-pointer"
-            >
-              <Calculator className="h-4 w-4 mr-2" />
-              Calculation History
-            </Link>
-          </DropdownMenuItem>
-
-          {/* Settings */}
           <DropdownMenuItem asChild onClick={() => setIsOpen(false)}>
             <Link href="/settings" className="cursor-pointer">
               <Settings className="h-4 w-4 mr-2" />
@@ -414,7 +269,7 @@ export default function UserDropdown() {
               setIsOpen(false)
               handleLogout()
             }}
-            className="cursor-pointer text-red-600 focus:text-red-600"
+            className="cursor-pointer text-red-600 hover:text-red-700"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Log out

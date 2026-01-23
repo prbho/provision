@@ -14,7 +14,7 @@ interface TrustCredibilitySectionProps {
 export default function TrustCredibilitySection({
   className = '',
   title = 'Trusted by Thousands of Investors',
-  description = 'Join over 50,000 Nigerians who trust PropSafe Hub for secure, profitable real estate investments.',
+  description = 'Join over 50,000 Nigerians who trust PropertyVision for secure, profitable real estate investments.',
 }: TrustCredibilitySectionProps) {
   const { user, isAuthenticated } = useAuth()
 
@@ -22,7 +22,7 @@ export default function TrustCredibilitySection({
     <div
       className={`mb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-4 ${className}`}
     >
-      <div className="bg-linear-to-br from-emerald-600 to-emerald-700 rounded-2xl p-8 md:p-12 text-white">
+      <div className="bg-linear-to-br from-brand from-brand rounded-2xl p-8 md:p-12 text-white">
         <div className="text-center mb-8 md:mb-10">
           <h3 className="text-2xl md:text-3xl font-bold mb-4">{title}</h3>
           <p className="text-emerald-100 text-base md:text-lg max-w-2xl mx-auto">
@@ -69,7 +69,7 @@ export default function TrustCredibilitySection({
                   asChild
                   className="bg-white text-emerald-700 hover:bg-gray-100 px-6 md:px-8 py-5 md:py-6 text-base md:text-lg font-semibold rounded-lg"
                 >
-                  <Link href="/signup">Create Free Account</Link>
+                  <Link href="/register">Create Free Account</Link>
                 </Button>
                 <Button
                   asChild

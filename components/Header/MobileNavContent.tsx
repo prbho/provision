@@ -54,42 +54,6 @@ export default function MobileNavContent({
     return `/dashboard/${user.userType}/${user.$id}`
   }
 
-  // Get dashboard icon based on user type
-  const getDashboardIcon = () => {
-    if (!user) return <HomeIcon className="h-4 w-4 mr-2" />
-
-    switch (user.userType) {
-      case 'admin':
-        return <Shield className="h-4 w-4 mr-2" />
-      case 'agent':
-        return <Building2 className="h-4 w-4 mr-2" />
-      case 'seller':
-        return <HomeIcon className="h-4 w-4 mr-2" />
-      case 'buyer':
-        return <HomeIcon className="h-4 w-4 mr-2" />
-      default:
-        return <HomeIcon className="h-4 w-4 mr-2" />
-    }
-  }
-
-  // Get dashboard label based on user type
-  const getDashboardLabel = () => {
-    if (!user) return 'Dashboard'
-
-    switch (user.userType) {
-      case 'admin':
-        return 'Admin Dashboard'
-      case 'agent':
-        return 'Agent Dashboard'
-      case 'seller':
-        return 'Seller Dashboard'
-      case 'buyer':
-        return 'Buyer Dashboard'
-      default:
-        return 'Dashboard'
-    }
-  }
-
   // Get profile link based on user type - UPDATED for dynamic URLs
   const getProfileLink = () => {
     if (!user?.$id || !user?.userType) return '/profile'
@@ -139,7 +103,7 @@ export default function MobileNavContent({
               className="flex items-center text-gray-700 hover:text-emerald-600 transition-colors py-2"
               onClick={closeSheet}
             >
-              <div className="h-2 w-2 rounded-full bg-emerald-500 mr-3" />
+              <div className="h-2 w-2 rounded-full bg-brand/5 mr-3" />
               Properties for Sale
             </Link>
             <Link
@@ -147,7 +111,7 @@ export default function MobileNavContent({
               className="flex items-center text-gray-700 hover:text-emerald-600 transition-colors py-2"
               onClick={closeSheet}
             >
-              <div className="h-2 w-2 rounded-full bg-emerald-500 mr-3" />
+              <div className="h-2 w-2 rounded-full bg-brand/5 mr-3" />
               Properties for Rent
             </Link>
             <Link
@@ -155,7 +119,7 @@ export default function MobileNavContent({
               className="flex items-center text-gray-700 hover:text-emerald-600 transition-colors py-2"
               onClick={closeSheet}
             >
-              <div className="h-2 w-2 rounded-full bg-emerald-500 mr-3" />
+              <div className="h-2 w-2 rounded-full bg-brand/5 mr-3" />
               Properties for Short-let
             </Link>
             <Link
@@ -163,7 +127,7 @@ export default function MobileNavContent({
               className="flex items-center text-gray-700 hover:text-emerald-600 transition-colors py-2"
               onClick={closeSheet}
             >
-              <div className="h-2 w-2 rounded-full bg-emerald-500 mr-3" />
+              <div className="h-2 w-2 rounded-full bg-brand/5 mr-3" />
               List Your Property
             </Link>
           </CollapsibleContent>
@@ -367,7 +331,7 @@ export default function MobileNavContent({
           <div className="flex items-center space-x-3">
             <Avatar className="h-12 w-12">
               <AvatarImage src={user?.avatar} alt={user?.name} />
-              <AvatarFallback className="bg-emerald-100 text-emerald-600 text-lg">
+              <AvatarFallback className="bg-brand/10 text-emerald-600 text-lg">
                 {user?.name?.[0]?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
@@ -439,7 +403,7 @@ export default function MobileNavContent({
           </Button>
           <Button
             variant="outline"
-            className="w-full border-emerald-600 text-emerald-600 hover:bg-emerald-50"
+            className="w-full border-emerald-600 text-emerald-600 hover:bg-brand/5"
             onClick={() => {
               openAuth()
               closeSheet()

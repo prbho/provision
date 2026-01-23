@@ -11,8 +11,12 @@ import {
 
 export class EmailService {
   private resend: Resend | null = null
+  private baseEmail: string
 
   constructor() {
+    // Get email configuration from environment
+    this.baseEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
+
     // Make sure RESEND_API_KEY is set in your .env.local file
     const apiKey = process.env.RESEND_API_KEY
 
@@ -147,7 +151,7 @@ export class EmailService {
         }
       }
 
-      const subject = 'Password Reset Successful - PropSafe Hub'
+      const subject = 'Password Reset Successful - PropertyVision'
 
       const html = `
         <!DOCTYPE html>
@@ -175,7 +179,7 @@ export class EmailService {
             </div>
             <div class="content">
               <h2>Hello${params.name ? ` ${params.name}` : ''},</h2>
-              <p>Your PropSafe Hub account password has been successfully reset.</p>
+              <p>Your PropertyVision account password has been successfully reset.</p>
               
               <div class="info-box">
                 <p><strong>Account Email:</strong> ${params.email}</p>
@@ -217,8 +221,8 @@ export class EmailService {
               <p>Need help? <a href="${process.env.NEXT_PUBLIC_APP_URL}/support" style="color: #059669;">Contact our support team</a>.</p>
             </div>
             <div class="footer">
-              <p>Best regards,<br>The PropSafe Hub Security Team</p>
-              <p>© ${new Date().getFullYear()} PropSafe Hub. All rights reserved.</p>
+              <p>Best regards,<br>The PropertyVision Security Team</p>
+              <p>© ${new Date().getFullYear()} PropertyVision. All rights reserved.</p>
               <p style="font-size: 12px; color: #9ca3af;">
                 This is an automated security notification. Please do not reply to this email.
               </p>
@@ -228,8 +232,10 @@ export class EmailService {
         </html>
       `
 
-      const fromAddress =
-        'PropSafeHub Account Security <security@notifications.propsafehub.com>'
+      // Get security email from env or use default
+      const securityFrom =
+        process.env.RESEND_SECURITY_FROM || 'propertyvision Account Security'
+      const fromAddress = `${securityFrom} <${this.baseEmail}>`
 
       console.log('📤 Sending password reset success email to:', params.email)
 
@@ -274,11 +280,14 @@ export class EmailService {
 
       console.log('📤 Sending test email to:', to)
 
+      // Get test email from env or use default
+      const testFrom = process.env.RESEND_TEST_FROM || 'propertyvision Test'
+
       const { data, error } = await this.resend.emails.send({
-        from: 'PropSafeHub Test <test@notifications.propsafehub.com>',
+        from: `${testFrom} <${this.baseEmail}>`,
         to,
-        subject: 'Test Email from PropSafeHub',
-        html: '<h1>Test Email</h1><p>This is a test email from PropSafeHub.</p>',
+        subject: 'Test Email from propertyvision',
+        html: '<h1>Test Email</h1><p>This is a test email from propertyvision.</p>',
       })
 
       if (error) {
@@ -299,25 +308,26 @@ export class EmailService {
     userType: 'buyer' | 'seller' | 'agent' | 'user' | 'admin',
     emailType: 'verification' | 'password-reset' | 'general' = 'general'
   ): string {
-    const baseEmail = 'noreply@notifications.propsafehub.com'
+    // Use the base email from environment
+    const baseEmail = this.baseEmail
 
     if (emailType === 'password-reset') {
       // Use the working format for password resets
-      return `PropSafeHub <${baseEmail}>`
+      return `propertyvision <${baseEmail}>`
     }
 
     switch (userType) {
       case 'agent':
-        return `PropSafeHub Agent Network <${baseEmail}>`
+        return `propertyvision Agent Network <${baseEmail}>`
       case 'seller':
-        return `PropSafeHub Seller Support <${baseEmail}>`
+        return `propertyvision Seller Support <${baseEmail}>`
       case 'buyer':
-        return `PropSafeHub <${baseEmail}>`
+        return `propertyvision <${baseEmail}>`
       case 'admin':
-        return `PropSafeHub <${baseEmail}>`
+        return `propertyvision <${baseEmail}>`
       case 'user':
       default:
-        return `PropSafeHub <${baseEmail}>`
+        return `propertyvision <${baseEmail}>`
     }
   }
 }

@@ -54,14 +54,13 @@ export default function ForgotPasswordPage() {
   }
 
   const renderForgotPasswordStep = () => (
-    <form
-      onSubmit={handleForgotPassword}
-      className="space-y-4 bg-white p-8 rounded-2xl shadow-xl border"
-    >
+    <form onSubmit={handleForgotPassword} className="space-y-4">
       <div className="mb-4">
         <p className="text-sm text-gray-600 mb-4">
-          Enter your email address and we&apos;ll send you a link to reset your
-          password.
+          {/* Enter your email address and we&apos;ll send you a link to reset your
+          password. */}
+          To reset your password, first enter the email address used to log in
+          to your account.
         </p>
       </div>
 
@@ -103,7 +102,7 @@ export default function ForgotPasswordPage() {
       <div className="flex space-x-3 pt-2">
         <Button
           type="submit"
-          className="flex-1 disabled:cursor-alias hover:cursor-pointer h-12 bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
+          className="flex-1 disabled:cursor-alias hover:cursor-pointer h-12 bg-linear-to-r from-brand to-brand/95 hover:from-brand hover:to-brand/90 text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
           disabled={isLoading || !resetEmail}
         >
           {isLoading ? 'Sending...' : 'Send Reset Link'}
@@ -123,15 +122,12 @@ export default function ForgotPasswordPage() {
         </div>
       }
     >
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
+      <div className="bg-white flex items-center justify-center py-6 sm:px-6 lg:px-8 border rounded-lg">
+        <div className="max-w-md w-full space-y-3">
           <div>
-            <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
-              Forgot your password?
+            <h2 className="text-xl font-bold tracking-tight text-gray-900">
+              Reset password
             </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Don&apos;t worry, we&apos;ll help you reset it
-            </p>
           </div>
 
           {renderForgotPasswordStep()}
@@ -141,10 +137,10 @@ export default function ForgotPasswordPage() {
               Remember your password?{' '}
               <Button
                 variant="link"
-                className="cursor-pointer text-emerald-600 hover:text-emerald-800 p-0 h-auto font-medium"
+                className="cursor-pointer text-stone-600 hover:text-blue-800 p-0 h-auto font-medium"
                 onClick={() => router.push('/login')}
               >
-                Sign in here
+                Sign in
               </Button>
             </p>
           </div>

@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
 
 import { ToastHandler } from '@/components/toast-handler'
@@ -17,8 +17,7 @@ import { Label } from '@/components/ui/label'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login, isAuthenticated } = useAuth()
-
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -42,8 +41,26 @@ export default function LoginPage() {
   }, [searchParams])
 
   // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push('/dashboard')
+    }
+  }, [isAuthenticated, authLoading, router])
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-brand mx-auto" />
+          <p className="mt-4 text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render anything if authenticated (will redirect)
   if (isAuthenticated) {
-    router.push('/')
     return null
   }
 
@@ -61,29 +78,41 @@ export default function LoginPage() {
 
     try {
       await login({ email, password })
-      router.push('/')
+      toast.success('Login successful! Redirecting...')
+      // Short delay to show success message
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 1000)
     } catch (err: any) {
-      setError(err.message || 'Invalid email or password. Please try again.')
+      let errorMessage = 'Invalid email or password. Please try again.'
+
+      if (err.message?.includes('inactive')) {
+        errorMessage = 'Your account is deactivated. Please contact support.'
+      } else if (err.message?.includes('verified')) {
+        errorMessage = 'Please verify your email before logging in.'
+      } else if (err.message?.includes('rate limit')) {
+        errorMessage = 'Too many login attempts. Please try again later.'
+      }
+
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 flex flex-col justify-center pb-12 sm:px-6 lg:px-8">
-      <Toaster position="top-right" expand={false} richColors closeButton />
-      <ToastHandler />
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
-          Welcome back
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Sign in to your account to continue
-        </p>
-      </div>
+    <div className="flex items-center p-4 mx-auto">
+      <div className="bg-white py-8 px-6 shadow rounded-lg w-full sm:w-96 max-w-md">
+        <Toaster position="top-right" expand={false} richColors closeButton />
+        <ToastHandler />
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <h2 className="text-xl font-bold text-gray-900 mb-2 text-center">
+            Sign in to your account
+          </h2>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg">
-        <div className="bg-white py-8 px-6 shadow-xl rounded-2xl sm:px-10 border border-gray-200">
+        <div className="mt-8">
           {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-start">
@@ -128,7 +157,7 @@ export default function LoginPage() {
                 </Label>
                 <Link
                   href="/forget-password"
-                  className="text-sm font-medium text-emerald-600 hover:text-emerald-500 transition-colors"
+                  className="text-sm font-medium text-brand hover:text-brand transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -167,7 +196,7 @@ export default function LoginPage() {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                className="h-4 w-4 text-brand focus:ring-brand border-gray-300 rounded"
                 disabled={isLoading}
               />
               <label
@@ -183,7 +212,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 text-base font-semibold bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
+                className="w-full h-12 text-base font-semibold bg-linear-to-r from-brand to-brand hover:from-brand hover:to-brand text-white rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center">
@@ -222,9 +251,9 @@ export default function LoginPage() {
               Don&apos;t have an account?{' '}
               <Link
                 href="/register"
-                className="font-semibold text-emerald-600 hover:text-emerald-500 transition-colors"
+                className="font-semibold text-stone-800 hover:text-blue-800 transition-colors"
               >
-                Create an account
+                Register an account
               </Link>
             </div>
           </div>

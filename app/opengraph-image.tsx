@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 
-export const alt = 'PropSafe Hub | Verified Real Estate Investments'
+export const alt = 'PropertyVision | Verified Properties • Secure Transactions'
 export const size = {
   width: 1200,
   height: 630,
@@ -31,7 +31,7 @@ export default async function Image() {
             textAlign: 'center',
           }}
         >
-          PropSafe Hub
+          PropertyVision
         </div>
         <div
           style={{
@@ -41,7 +41,7 @@ export default async function Image() {
             marginBottom: 40,
           }}
         >
-          Your Secured Pathway to Verified Real Estate Investments
+          Invest in Nigerian real estate with confidence.
         </div>
         <div
           style={{
@@ -52,7 +52,7 @@ export default async function Image() {
             textAlign: 'center',
           }}
         >
-          100% Verified Properties • Zero Hidden Risks • Expert Advisory
+          NIgeria&apos;s Trusted Real Estate Platform
         </div>
       </div>
     ),

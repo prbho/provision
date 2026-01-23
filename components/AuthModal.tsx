@@ -69,7 +69,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
 
   // Cropping state
-  const [imageToCrop, setImageToCrop] = useState<string | null>(null)
 
   // Password reset state
   const [resetToken, setResetToken] = useState('')
@@ -77,8 +76,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [newPassword, setNewPassword] = useState('') // Rename for clarity
   const [confirmNewPassword, setConfirmNewPassword] = useState('') // Add confirm for reset
   const [resetEmail, setResetEmail] = useState('')
-
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Agent-specific fields
   const [agency, setAgency] = useState('')
@@ -103,7 +100,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setShowConfirmPassword(false) // Reset confirm password visibility
     setAvatarFile(null)
     setAvatarPreview(null)
-    setImageToCrop(null)
 
     // Reset password reset fields
     setResetToken('')
@@ -331,7 +327,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       toast.dismiss(loadingToast)
 
       let successMessage =
-        'Account created successfully! Welcome to PropSafe Hub.'
+        'Account created successfully! Welcome to PropertyVision.'
       if (userType === 'agent') {
         successMessage =
           'Agent account created successfully! You can now list properties.'
@@ -451,7 +447,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       // Go back to email step
       setStep('email')
       setResetEmail('')
-    } catch (error: any) {
+    } catch (error) {
       toast.error('Failed to send recovery email. Please try again.')
     } finally {
       setIsLoading(false)
@@ -518,7 +514,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       setConfirmNewPassword('')
       setResetToken('')
       setUserId('')
-    } catch (error: any) {
+    } catch (error) {
       toast.error('Failed to reset password. Please try again.')
     } finally {
       setIsLoading(false)
@@ -528,7 +524,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const getStepTitle = () => {
     switch (step) {
       case 'initial':
-        return 'Welcome to PropSafe Hub'
+        return 'Welcome to PropertyVision'
       case 'email':
         return 'Sign in or create an account'
       case 'password':
@@ -542,7 +538,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       case 'reset-password':
         return 'Set new password'
       default:
-        return 'Welcome to PropSafe Hub'
+        return 'Welcome to PropertyVision'
     }
   }
 
@@ -557,7 +553,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <Button
           type="button"
           variant="outline"
-          className="w-full h-12 hover:text-emerald-50 cursor-pointer border-gray-300 bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
+          className="w-full h-12 hover:text-emerald-50 cursor-pointer border-gray-300 bg-linear-to-r from-brand from-brand hover:from-brand hover:from-brand text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
           onClick={() => setStep('email')}
           disabled={isLoading}
         >
@@ -611,7 +607,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <Button
           type="button"
           variant="outline"
-          className="flex-1 h-12 border-gray-300 cursor-pointer hover:bg-emerald-50 py-4 text-base font-semibold rounded-xl transition-all duration-200"
+          className="flex-1 h-12 border-gray-300 cursor-pointer hover:bg-brand/5 py-4 text-base font-semibold rounded-xl transition-all duration-200"
           onClick={() => setStep('initial')}
           disabled={isLoading}
         >
@@ -619,7 +615,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         </Button>
         <Button
           type="submit"
-          className="flex-1 disabled:cursor-alias hover:cursor-pointer h-12 bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
+          className="flex-1 disabled:cursor-alias hover:cursor-pointer h-12 bg-linear-to-r from-brand from-brand hover:from-brand hover:from-brand text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
           disabled={isLoading || !email}
         >
           {isLoading ? 'Checking...' : 'Continue'}
@@ -686,7 +682,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <Button
           type="button"
           variant="outline"
-          className="flex-1 h-12 border-gray-300 cursor-pointer hover:bg-emerald-50 py-4 text-base font-semibold rounded-xl transition-all duration-200"
+          className="flex-1 h-12 border-gray-300 cursor-pointer hover:bg-brand/5 py-4 text-base font-semibold rounded-xl transition-all duration-200"
           onClick={() => setStep('email')}
           disabled={isLoading}
         >
@@ -694,7 +690,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         </Button>
         <Button
           type="submit"
-          className="flex-1 disabled:cursor-alias hover:cursor-pointer h-12 bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
+          className="flex-1 disabled:cursor-alias hover:cursor-pointer h-12 bg-linear-to-r from-brand from-brand hover:from-brand hover:from-brand text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
           disabled={isLoading || !password}
         >
           {isLoading ? 'Signing in...' : 'Sign In'}
@@ -851,7 +847,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               type="button"
               className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
                 userType === type
-                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                  ? 'border-emerald-500 bg-brand/5 text-emerald-700'
                   : 'border-gray-300 hover:border-gray-400 text-gray-700'
               }`}
               onClick={() => {
@@ -874,7 +870,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <Button
           type="button"
           variant="outline"
-          className="flex-1 h-12 border-gray-300 hover:bg-emerald-50 py-4 text-base font-semibold rounded-xl transition-all duration-200"
+          className="flex-1 h-12 border-gray-300 hover:bg-brand/5 py-4 text-base font-semibold rounded-xl transition-all duration-200"
           onClick={() => setStep('email')}
           disabled={isLoading}
         >
@@ -882,7 +878,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         </Button>
         <Button
           type="submit"
-          className="flex-1 h-12 bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
+          className="flex-1 h-12 bg-linear-to-r from-brand from-brand hover:from-brand hover:from-brand text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
           disabled={
             isLoading ||
             !name ||
@@ -934,7 +930,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <Button
           type="button"
           variant="outline"
-          className="flex-1 h-12 border-gray-300 hover:bg-emerald-50 py-4 text-base font-semibold rounded-xl transition-all duration-200"
+          className="flex-1 h-12 border-gray-300 hover:bg-brand/5 py-4 text-base font-semibold rounded-xl transition-all duration-200"
           onClick={() => {
             setStep('register')
             toast.info('Returning to registration')
@@ -945,7 +941,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         </Button>
         <Button
           type="submit"
-          className="flex-1 h-12 bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
+          className="flex-1 h-12 bg-linear-to-r from-brand from-brand hover:from-brand hover:from-brand text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
           disabled={isLoading || !isAgentFormValid}
         >
           {isLoading ? 'Creating Account...' : 'Create Agent Account'}
@@ -987,7 +983,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <Button
           type="button"
           variant="outline"
-          className="flex-1 h-12 border-gray-300 cursor-pointer hover:bg-emerald-50 py-4 text-base font-semibold rounded-xl transition-all duration-200"
+          className="flex-1 h-12 border-gray-300 cursor-pointer hover:bg-brand/5 py-4 text-base font-semibold rounded-xl transition-all duration-200"
           onClick={() => {
             if (email) {
               setStep('password')
@@ -1002,7 +998,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         </Button>
         <Button
           type="submit"
-          className="flex-1 disabled:cursor-alias hover:cursor-pointer h-12 bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
+          className="flex-1 disabled:cursor-alias hover:cursor-pointer h-12 bg-linear-to-r from-brand from-brand hover:from-brand hover:from-brand text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
           disabled={isLoading || !resetEmail}
         >
           {isLoading ? 'Sending...' : 'Send Reset Link'}
@@ -1104,7 +1100,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <Button
           type="button"
           variant="outline"
-          className="flex-1 h-12 border-gray-300 cursor-pointer hover:bg-emerald-50 py-4 text-base font-semibold rounded-xl transition-all duration-200"
+          className="flex-1 h-12 border-gray-300 cursor-pointer hover:bg-brand/5 py-4 text-base font-semibold rounded-xl transition-all duration-200"
           onClick={() => setStep('email')}
           disabled={isLoading}
         >
@@ -1112,7 +1108,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         </Button>
         <Button
           type="submit"
-          className="flex-1 disabled:cursor-alias hover:cursor-pointer h-12 bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
+          className="flex-1 disabled:cursor-alias hover:cursor-pointer h-12 bg-linear-to-r from-brand from-brand hover:from-brand hover:from-brand text-white py-4 text-base font-semibold rounded-xl transition-all duration-200"
           disabled={
             isLoading ||
             !newPassword ||

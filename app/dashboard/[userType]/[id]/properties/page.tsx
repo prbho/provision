@@ -9,7 +9,15 @@ import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Property } from '@/types'
 import { Query } from 'appwrite'
-import { Eye, Heart, Home, List, Plus, Search } from 'lucide-react'
+import {
+  BirdhouseIcon,
+  Eye,
+  Heart,
+  Home,
+  List,
+  Plus,
+  Search,
+} from 'lucide-react'
 
 import PropertyCard from '@/components/PropertyCard'
 import { databases } from '@/lib/appwrite'
@@ -430,8 +438,8 @@ export default function DynamicPropertiesPage({}: {
                 {properties.length}
               </p>
             </div>
-            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-emerald-50 rounded-xl">
-              <Home className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
+            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-brand/5 rounded-xl">
+              <Home className="w-5 h-5 md:w-6 md:h-6 text-brand" />
             </div>
           </div>
         </div>
@@ -443,8 +451,8 @@ export default function DynamicPropertiesPage({}: {
                 {properties.filter((p) => p.isActive).length}
               </p>
             </div>
-            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-emerald-50 rounded-xl">
-              <List className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
+            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-brand/5 rounded-xl">
+              <List className="w-5 h-5 md:w-6 md:h-6 text-brand" />
             </div>
           </div>
         </div>
@@ -458,8 +466,8 @@ export default function DynamicPropertiesPage({}: {
                   .toLocaleString()}
               </p>
             </div>
-            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-emerald-50 rounded-xl">
-              <Eye className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
+            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-brand/5 rounded-xl">
+              <Eye className="w-5 h-5 md:w-6 md:h-6 text-brand" />
             </div>
           </div>
         </div>
@@ -473,8 +481,8 @@ export default function DynamicPropertiesPage({}: {
                   .toLocaleString()}
               </p>
             </div>
-            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-emerald-50 rounded-xl">
-              <Heart className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
+            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-brand/5 rounded-xl">
+              <Heart className="w-5 h-5 md:w-6 md:h-6 text-brand" />
             </div>
           </div>
         </div>
@@ -527,7 +535,7 @@ export default function DynamicPropertiesPage({}: {
       {/* Properties Grid */}
       {filteredProperties.length === 0 ? (
         <div className="bg-white rounded-lg border border-gray-200 p-8 md:p-12 text-center">
-          <Home className="w-12 h-12 md:w-16 md:h-16 text-gray-400 mx-auto mb-4" />
+          <BirdhouseIcon className="w-12 h-12 md:w-16 md:h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2">
             {properties.length === 0
               ? getEmptyStateMessage()
@@ -542,8 +550,8 @@ export default function DynamicPropertiesPage({}: {
           </p>
           {properties.length === 0 && (
             <Link
-              href={`/${userType}/${id}/properties/new`}
-              className="inline-flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors"
+              href={`/properties/post`}
+              className="inline-flex items-center gap-2 bg-brand/90 text-white px-6 py-3 rounded-lg hover:brand transition-colors"
             >
               <Plus className="w-5 h-5" />
               {getAddButtonText()}

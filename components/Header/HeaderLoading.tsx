@@ -9,12 +9,11 @@ import { Separator } from '@/components/ui/separator'
 
 export default function HeaderLoading() {
   return (
-    <div className="max-w-7xl mx-auto h-16 flex items-center">
+    <div className="max-w-11/12 mx-auto h-16 flex items-center">
       {/* Left Section (Logo + Search) */}
       <div className="flex items-center flex-1">
         {/* Logo */}
         <Link href="/" className="flex items-center">
-          <Shield className="h-36 w-12 text-gray-200 rounded animate-pulse" />
           <div className="grid space-y-1">
             <div className="flex space-x-1">
               <div className="h-4 w-18 bg-gray-200 rounded animate-pulse"></div>

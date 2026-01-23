@@ -14,8 +14,8 @@ export default function FeaturedPropertiesCarousel() {
     '/api/properties?isFeatured=true&limit=12',
     fetcher,
     {
-      revalidateOnFocus: false, // don't refetch when user focuses tab
-      dedupingInterval: 60000, // prevent multiple requests per minute
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
     }
   )
 
@@ -36,7 +36,7 @@ export default function FeaturedPropertiesCarousel() {
   return (
     <PropertyCarousel
       properties={featuredProperties}
-      title="Explore Verified Properties"
+      title="Featured Pre-Vetted & Verified Properties"
       userId={''}
     />
   )

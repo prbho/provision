@@ -45,7 +45,6 @@ export default function MortgageCalculator({
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('form')
   const [isAnimating, setIsAnimating] = useState(false)
-  const [showAmortization, setShowAmortization] = useState(false)
 
   useEffect(() => {
     if (property?.price) {
@@ -368,7 +367,7 @@ export default function MortgageCalculator({
                       key={percent}
                       className={`cursor-pointer px-2 py-1 rounded ${
                         downPaymentPercent === percent
-                          ? 'bg-emerald-100 text-emerald-700 font-semibold'
+                          ? 'bg-brand/10 text-emerald-700 font-semibold'
                           : 'hover:text-gray-700'
                       }`}
                       onClick={() => handleDownPaymentPercentChange(percent)}
@@ -537,7 +536,7 @@ export default function MortgageCalculator({
               <button
                 onClick={calculateMortgage}
                 disabled={loading || formData.loanAmount <= 0}
-                className="w-full bg-linear-to-r from-emerald-600 via-green-600 to-teal-600 text-white py-3 rounded-xl hover:from-emerald-700 hover:via-green-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:shadow-emerald-200 active:scale-[0.98] flex items-center justify-center gap-2"
+                className="w-full bg-linear-to-r from-brand via-green-600 to-teal-600 text-white py-3 rounded-xl hover:from-brand hover:via-green-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:shadow-emerald-200 active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -584,7 +583,7 @@ export default function MortgageCalculator({
 
                 {/* Main Results Grid */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center p-4 bg-linear-to-br from-emerald-500/10 to-green-500/10 rounded-xl border border-emerald-200 shadow-sm">
+                  <div className="text-center p-4 bg-linear-to-br from-brand/10 to-green-500/10 rounded-xl border border-emerald-200 shadow-sm">
                     <p className="text-xs font-medium text-gray-600 mb-1">
                       Monthly Payment
                     </p>
@@ -690,7 +689,7 @@ export default function MortgageCalculator({
                   </h5>
                   <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                      className="h-full bg-brand/5 rounded-full transition-all duration-500"
                       style={{
                         width: `${(result.loanAmount / result.totalPayment) * 100}%`,
                       }}
@@ -698,7 +697,7 @@ export default function MortgageCalculator({
                   </div>
                   <div className="flex justify-between text-xs text-gray-600">
                     <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                      <div className="w-2 h-2 bg-brand/5 rounded-full"></div>
                       <span>
                         Principal: {formatCurrency(result.loanAmount)}
                       </span>
@@ -722,7 +721,7 @@ export default function MortgageCalculator({
                   </button>
                   <button
                     onClick={handleClose}
-                    className="flex-1 bg-linear-to-r from-emerald-600 via-green-600 to-teal-600 text-white py-3 rounded-lg hover:from-emerald-700 hover:via-green-700 hover:to-teal-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                    className="flex-1 bg-linear-to-r from-brand via-green-600 to-teal-600 text-white py-3 rounded-lg hover:from-brand hover:via-green-700 hover:to-teal-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
                   >
                     Done
                   </button>

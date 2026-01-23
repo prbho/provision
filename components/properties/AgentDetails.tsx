@@ -112,7 +112,7 @@ export default function AgentDetails({ agent, property }: AgentDetailsProps) {
 
       <div className="flex items-start gap-4">
         {/* Agent Avatar */}
-        <div className="w-16 h-16 rounded-full overflow-hidden bg-linear-to-br from-emerald-400 to-blue-500 flex items-center justify-center shrink-0">
+        <div className="w-16 h-16 rounded-full overflow-hidden bg-linear-to-br from-brand to-blue-500 flex items-center justify-center shrink-0">
           {shouldShowAvatar ? (
             <Image
               src={getAvatarUrl()}

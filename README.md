@@ -1,52 +1,68 @@
-# 🏠 propertyvision - Modern Real Estate Platform
+# 🏠 PropertyVision
 
-![propertyvision](https://img.shields.io/badge/propertyvision-Real%20Estate%20Platform-emerald?style=for-the-badge&logo=homeassistantcommunitystore&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=for-the-badge&logo=nextdotjs&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+A trusted platform for discovering, verifying, and investing in Nigerian real estate — built to promote transparency, security, and confidence for both local and diaspora investors.
 
-A modern, full-stack real estate platform built with Next.js 15, featuring property listings, agent management, messaging system, and advanced search capabilities.
+![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=nextdotjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat-square&logo=tailwind-css)
 
-## ✨ Features
+---
 
-### 🏡 Property Management
+## ✨ What PropertyVision Does
 
-- **Advanced Property Search** - Filter by location, price, type, and amenities
-- **Property Listings** - Rich property cards with images, details, and virtual tours
-- **Favorite Properties** - Save and manage favorite listings
-- **Property Analytics** - Track views, favorites, and engagement metrics
+PropertyVision helps users:
 
-### 👥 User Roles & Authentication
+- Discover **verified properties**
+- Connect with **trusted agents**
+- Make **safer real estate decisions**
+- Reduce fraud through **due diligence & verification**
 
-- **Multi-role System** - Buyers, Sellers, Agents, and Administrators
-- **Secure Authentication** - Email/password with session management
-- **Profile Management** - Complete user profiles with preferences
-- **Role-based Access** - Different dashboards and capabilities per role
+The platform is designed with a strong focus on **trust, clarity, and accountability**.
 
-### 🤝 Agent & Client Tools
+---
 
-- **Agent Dashboard** - Comprehensive management portal
-- **Viewing Scheduling** - Book and manage property viewings
-- **Lead Management** - Track and convert potential clients
-- **Performance Analytics** - Monitor agent performance and metrics
+## 🔑 Key Features
 
-### 💬 Communication System
+- **Verified Property Listings**  
+  Only reviewed and validated properties are listed on the platform.
 
-- **Real-time Messaging** - Direct communication between users and agents
-- **Notification System** - Stay updated with important alerts
-- **Appointment Management** - Schedule and confirm property viewings
+- **Agent Verification**  
+  Real estate agents and firms are vetted before publishing listings.
 
-### 🎨 Modern UI/UX
+- **Advanced Property Search**  
+  Search by location, price range, property type, and purpose (buy / rent).
 
-- **Responsive Design** - Optimized for all devices
-- **Dark/Light Mode** - Customizable theme preferences
-- **Interactive Maps** - Property location visualization
-- **Image Galleries** - High-quality property images with zoom
+- **User & Agent Accounts**  
+  Secure authentication with role-based access.
 
-## 🚀 Quick Start
+- **Messaging & Enquiries**  
+  Direct communication between buyers and verified agents.
 
-### Prerequisites
+- **Modern UI**  
+  Fast, responsive interface built for web and mobile devices.
 
-- Node.js 18.17 or later
-- npm, yarn, pnpm, or bun
-- Appwrite account (for backend services)
+---
+
+## 🛠 Tech Stack
+
+- **Frontend:** Next.js 15, React, TypeScript
+- **Styling:** Tailwind CSS
+- **Backend:** Appwrite (Auth, Database, Storage, Functions)
+- **SEO & Performance:** Server Components, Metadata API, Structured Data
+
+---
+
+## 🚀 Getting Started
+
+### Requirements
+
+- Node.js **18+**
+- npm / yarn / pnpm / bun
+- Appwrite instance (cloud or self-hosted)
+
+### Install & Run
+
+```bash
+npm install
+npm run dev
+```

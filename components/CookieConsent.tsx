@@ -29,11 +29,11 @@ export default function CookieConsent() {
   if (!isVisible) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-emerald-50 border-t shadow-lg sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-md sm:rounded-lg sm:border">
+    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-brand/5 border-t shadow-lg sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-md sm:rounded-lg sm:border">
       <div className="flex items-start gap-3">
         <div className="flex-1">
           <div className="flex items-center mb-2 gap-2 relative">
-            <div className="p-2 bg-emerald-100 rounded-lg">
+            <div className="p-2 bg-brand/10 rounded-lg">
               <Cookie className="h-5 w-5 text-emerald-600" />
             </div>
             <h3 className="font-semibold text-gray-900">Cookie Preferences</h3>

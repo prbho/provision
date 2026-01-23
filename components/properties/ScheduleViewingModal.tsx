@@ -143,7 +143,7 @@ export default function ScheduleViewingModal({
 
         {/* Property Info */}
         <ScrollArea className="h-140">
-          <div className="p-6 bg-emerald-50">
+          <div className="p-6 bg-brand/5">
             <div className="flex items-start gap-3">
               {property.images && property.images.length > 0 && (
                 <Image

@@ -51,8 +51,6 @@ interface AmortizationEntry {
 }
 
 export default function MortgageCalculatorPage() {
-  const router = useRouter()
-
   // Default values matching your original component
   const defaultPropertyPrice = 50000000 // 50 million Naira as default
 
@@ -138,7 +136,6 @@ export default function MortgageCalculatorPage() {
         // Generate amortization schedule (first 5 years for performance)
         const schedule: AmortizationEntry[] = []
         const monthlyRate = formData.interestRate / 100 / 12
-        const totalMonths = formData.loanTerm * 12
         let remainingBalance = formData.loanAmount
 
         // Show first 5 years or entire term if less than 5 years
@@ -208,16 +205,6 @@ export default function MortgageCalculatorPage() {
       downPayment,
       loanAmount: Math.max(0, prev.propertyPrice - downPayment),
     }))
-  }
-
-  const handleQuickPropertySelect = (price: number) => {
-    setFormData({
-      propertyPrice: price,
-      downPayment: Math.round(price * 0.2),
-      loanAmount: Math.round(price * 0.8),
-      interestRate: 25,
-      loanTerm: 15,
-    })
   }
 
   const handleShare = () => {
@@ -361,14 +348,14 @@ export default function MortgageCalculatorPage() {
             <div className="flex items-center space-x-2">
               <button
                 onClick={handleShare}
-                className="hidden sm:flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all"
+                className="hidden sm:flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-700 hover:bg-brand/5 rounded-lg transition-all"
               >
                 <Share2 size={16} />
                 <span>Share</span>
               </button>
               <button
                 onClick={resetCalculator}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all"
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-700 hover:bg-brand/5 rounded-lg transition-all"
               >
                 Reset
               </button>
@@ -432,7 +419,7 @@ export default function MortgageCalculatorPage() {
                           }
                           className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
                             formData.propertyPrice === price
-                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-300 font-semibold'
+                              ? 'bg-brand/10 text-emerald-700 border border-emerald-300 font-semibold'
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                         >
@@ -451,7 +438,7 @@ export default function MortgageCalculatorPage() {
                       <label className="block text-sm font-semibold text-gray-900">
                         Down Payment
                       </label>
-                      <span className="text-sm font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+                      <span className="text-sm font-bold text-emerald-700 bg-brand/5 px-2 py-1 rounded">
                         {downPaymentPercent}%
                       </span>
                     </div>
@@ -476,7 +463,7 @@ export default function MortgageCalculatorPage() {
                             }
                             className={`px-2 py-1 rounded ${
                               downPaymentPercent === percent
-                                ? 'bg-emerald-100 text-emerald-700 font-semibold'
+                                ? 'bg-brand/10 text-emerald-700 font-semibold'
                                 : 'hover:text-gray-700'
                             }`}
                           >
@@ -744,7 +731,7 @@ export default function MortgageCalculatorPage() {
               {/* Results Summary */}
               {result && (
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
-                  <div className="px-6 py-4 border-b border-gray-100 bg-linear-to-r from-emerald-600 to-green-600">
+                  <div className="px-6 py-4 border-b border-gray-100 bg-linear-to-r from-brand to-green-600">
                     <h2 className="text-lg font-bold text-white flex items-center gap-2">
                       <BarChart3 size={20} />
                       Results
@@ -826,7 +813,7 @@ export default function MortgageCalculatorPage() {
                       </div>
                       <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-emerald-500"
+                          className="h-full bg-brand/5"
                           style={{
                             width: `${(result.loanAmount / result.totalPayment) * 100}%`,
                           }}
@@ -856,7 +843,7 @@ export default function MortgageCalculatorPage() {
                       {saveToHistory && (
                         <button
                           onClick={handleSaveCalculation}
-                          className="w-full px-4 py-3 bg-linear-to-r from-emerald-600 to-green-600 text-white rounded-xl hover:from-emerald-700 hover:to-green-700 transition-all font-medium shadow-lg hover:shadow-xl"
+                          className="w-full px-4 py-3 bg-linear-to-r from-brand to-green-600 text-white rounded-xl hover:from-brand hover:to-green-700 transition-all font-medium shadow-lg hover:shadow-xl"
                         >
                           Save Calculation
                         </button>
@@ -894,7 +881,7 @@ export default function MortgageCalculatorPage() {
                   </div>
                   <div className="p-6 space-y-4">
                     <div className="flex items-start gap-3">
-                      <div className="p-1.5 bg-emerald-100 rounded-lg">
+                      <div className="p-1.5 bg-brand/10 rounded-lg">
                         <Percent size={16} className="text-emerald-600" />
                       </div>
                       <div>
@@ -939,7 +926,7 @@ export default function MortgageCalculatorPage() {
             </div>
 
             {/* Call to Action */}
-            {/* <div className="bg-linear-to-r from-emerald-600 to-green-600 rounded-2xl p-6 text-white shadow-lg">
+            {/* <div className="bg-linear-to-r from-brand to-green-600 rounded-2xl p-6 text-white shadow-lg">
               <div className="text-center space-y-3">
                 <Shield size={24} className="mx-auto" />
                 <h3 className="font-bold text-lg">Ready to Buy?</h3>

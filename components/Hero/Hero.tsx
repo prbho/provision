@@ -1,175 +1,197 @@
-// components/Hero/Hero.tsx
+// app/components/hero-section.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
+import { JSX, useCallback, useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowRight, Home, Pause, Play, Shield, TrendingUp } from 'lucide-react'
 
-import HeroSearch from './HeroSearch'
+type Slide = {
+  title: string
+  highlight: string
+  description: string
+  trustBadges: string[]
+  cta: {
+    text: string
+    icon: JSX.Element
+    action: () => void
+  }
+}
 
 export default function Hero() {
-  const [searchType, setSearchType] = useState<'buy' | 'rent'>('buy')
   const [textIndex, setTextIndex] = useState(0)
-  const [fade, setFade] = useState(true)
+  const [isPaused, setIsPaused] = useState(false)
 
-  // Text variations to cycle through
-  const textVariations = [
+  const slides: Slide[] = [
     {
-      title: 'Your Trusted Path to Secure, Verified Real Estate.',
+      title: 'Verified Properties from Trusted Agents',
+      highlight: 'Trusted Agents',
       description:
-        'Search verified property listings for sale and rent—diligently checked for your safety.',
+        'We work exclusively with vetted real estate companies and licensed agents. Every listing is legally and physically verified.',
+      trustBadges: [
+        'Verified Agents Only',
+        'Legal & Physical Checks',
+        'Fraud Protected',
+      ],
+      cta: {
+        text: 'View Verified Homes',
+        icon: <Shield className="w-5 h-5" />,
+        action: () => (window.location.href = '/properties'),
+      },
     },
     {
-      title: 'PropSafe Hub: The first of its kind in West Africa',
-      // subtitle: 'The first of its kind in West Africa',
+      title: 'Secure and Transparent Property Listings',
+      highlight: 'Transparent',
       description:
-        'A secured real estate listing and investment platform built with embedded due diligence on property documentation before listing.',
+        'No anonymous sellers. Every property is listed under a verified company or accountable professional.',
+      trustBadges: [
+        'Documents Verified',
+        'Ownership Confirmed',
+        'Agent Accountability',
+      ],
+      cta: {
+        text: 'See How We Protect You',
+        icon: <Home className="w-5 h-5" />,
+        action: () => (window.location.href = '/how-it-works'),
+      },
     },
     {
-      title: 'Zero Investor Risk with Our Insurance Cover',
+      title: 'Invest Confidently with Lower Risk',
+      highlight: 'Confidently',
       description:
-        'Every investment is backed by comprehensive insurance coverage against fraud, title disputes, and market fluctuations.',
+        'Avoid common real estate fraud and make smarter investment decisions backed by verification.',
+      trustBadges: ['Verified Assets', 'Expert Review', 'Investor Safe'],
+      cta: {
+        text: 'Start Investing Safely',
+        icon: <TrendingUp className="w-5 h-5" />,
+        action: () => (window.location.href = '/properties'),
+      },
     },
   ]
 
+  const nextSlide = useCallback(
+    () => setTextIndex((p) => (p + 1) % slides.length),
+    [slides.length]
+  )
+
+  const prevSlide = useCallback(
+    () => setTextIndex((p) => (p - 1 + slides.length) % slides.length),
+    [slides.length]
+  )
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Start fade out
-      setFade(false)
-
-      // After fade out completes, change text and fade back in
-      setTimeout(() => {
-        setTextIndex((prev) => (prev + 1) % textVariations.length)
-        setFade(true)
-      }, 700) // Half of transition duration
-    }, 5000) // Change text every 5 seconds
-
+    if (isPaused) return
+    const interval = setInterval(nextSlide, 5000)
     return () => clearInterval(interval)
-  }, [])
+  }, [nextSlide, isPaused])
 
-  const handleSearch = (query: string, type: 'buy' | 'rent') => {
-    if (query.trim()) {
-      window.dispatchEvent(
-        new CustomEvent('propertySearch', {
-          detail: {
-            q: query,
-            status: type === 'buy' ? 'for-sale' : 'for-rent',
-            page: 1,
-          },
-        })
-      )
-
-      document.getElementById('properties-section')?.scrollIntoView({
-        behavior: 'smooth',
-      })
-    }
-  }
-
-  const currentText = textVariations[textIndex]
+  const slide = slides[textIndex]
 
   return (
-    <section className="relative bg-black min-h-[70vh] flex items-center justify-center border-b border-gray-200">
-      {/* Clean Background */}
+    <section className="relative min-h-[70vh] overflow-hidden">
+      {/* Background Image */}
       <div className="absolute inset-0">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-50"
-          style={{
-            backgroundImage: 'url(/luxury_home.webp)',
-          }}
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: 'url(/homepage/contemprary-building.png)' }}
         />
+        <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/50 to-black/70" />
       </div>
 
-      {/* Content Container */}
-      <div className="relative w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="flex flex-col items-center justify-center text-center">
-          {/* Main Heading Section with Fade Transition */}
-          <div className="mb-12 max-w-3xl mx-auto">
-            {/* Simple Headline */}
-            <div className="max-w-3xl mx-auto">
-              <h1
-                className={`text-3xl md:text-5xl font-bold mb-6 text-white leading-tight transition-all duration-500 ease-in-out ${
-                  fade ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                }`}
-              >
-                {currentText.title}
+      {/* Content */}
+      <div className="relative max-w-4xl mx-auto px-4 py-20">
+        <div
+          className="space-y-6 text-center"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+        >
+          {/* Headline */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={textIndex}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight mb-4">
+                {slide.title.split(slide.highlight).map((part, i, arr) => (
+                  <span key={i}>
+                    {part}
+                    {i < arr.length - 1 && (
+                      <span className="text-gold-600">{slide.highlight}</span>
+                    )}
+                  </span>
+                ))}
               </h1>
 
-              {/* Conditional subtitle for PropSafe Hub version */}
-              {/* {currentText.subtitle && (
-                <p
-                  className={`text-2xl md:text-4xl font-bold mb-4 text-white leading-tight transition-all duration-500 ease-in-out delay-100 ${
-                    fade
-                      ? 'opacity-100 translate-y-0'
-                      : 'opacity-0 translate-y-4'
-                  }`}
-                >
-                  {currentText.subtitle}
-                </p>
-              )} */}
-            </div>
+              <p className="text-lg text-gray-200 max-w-2xl mx-auto leading-relaxed">
+                {slide.description}
+              </p>
+            </motion.div>
+          </AnimatePresence>
 
-            {/* Clean Subtitle */}
-            <p
-              className={`text-xl text-white/80 max-w-2xl mx-auto leading-relaxed transition-all duration-500 ease-in-out delay-200 ${
-                fade ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              }`}
+          {/* Trust badges */}
+          <div className="flex flex-wrap justify-center gap-3">
+            {slide.trustBadges.map((badge, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-2 rounded-lg px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20"
+              >
+                <Shield className="w-4 h-4 text-brand" />
+                <span className="text-sm font-medium text-white">{badge}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="pt-3">
+            <button
+              onClick={slide.cta.action}
+              className="inline-flex cursor-pointer items-center gap-3 px-6 py-3 rounded-lg font-medium bg-brand text-white hover:bg-brand/90 transition-colors"
             >
-              {currentText.description}
+              {slide.cta.icon}
+              {slide.cta.text}
+              <ArrowRight className="w-5 h-5" />
+            </button>
+
+            <p className="mt-2 text-sm text-gray-300">
+              Only verified agents • No anonymous listings
             </p>
           </div>
 
-          {/* Search Section - Clean and Professional */}
-          <div className="w-full max-w-3xl mx-auto">
-            <div className="bg-white rounded-lg shadow-lg border border-gray-200">
-              {/* Simple Search Tabs */}
-              <div className="flex border-b border-gray-200">
-                <button
-                  onClick={() => setSearchType('buy')}
-                  className={`flex-1 py-5 px-6 font-semibold text-lg transition-colors duration-200 rounded-tl-lg ${
-                    searchType === 'buy'
-                      ? 'border-b-4 border-emerald-600 bg-blue-50/50'
-                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                  }`}
-                >
-                  Buy
-                </button>
-                <button
-                  onClick={() => setSearchType('rent')}
-                  className={`flex-1 py-5 px-6 font-semibold text-lg transition-colors duration-200 rounded-tr-lg ${
-                    searchType === 'rent'
-                      ? 'border-b-4 border-emerald-600 bg-blue-50/50'
-                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                  }`}
-                >
-                  Rent
-                </button>
-              </div>
+          {/* Controls */}
+          <div className="flex items-center justify-center gap-4 pt-2">
+            <button onClick={prevSlide} aria-label="Previous">
+              <ArrowRight className="rotate-180 text-white/70 hover:text-brand" />
+            </button>
 
-              {/* Search Component */}
-              <div className="p-6">
-                <HeroSearch searchType={searchType} onSearch={handleSearch} />
-              </div>
+            <div className="flex gap-2">
+              {slides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setTextIndex(i)}
+                  className={`h-2 rounded-full transition-all ${
+                    i === textIndex ? 'w-8 bg-brand' : 'w-2 bg-white/40'
+                  }`}
+                />
+              ))}
             </div>
-          </div>
 
-          {/* Optional: Add indicator dots */}
-          <div className="flex space-x-2 mt-8">
-            {textVariations.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  setFade(false)
-                  setTimeout(() => {
-                    setTextIndex(index)
-                    setFade(true)
-                  }, 500)
-                }}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === textIndex
-                    ? 'bg-white scale-125'
-                    : 'bg-white/50 hover:bg-white/75'
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
+            <button onClick={nextSlide} aria-label="Next">
+              <ArrowRight className="text-white/70 hover:text-brand" />
+            </button>
+
+            <button
+              onClick={() => setIsPaused(!isPaused)}
+              aria-label="Pause autoplay"
+              className="ml-3"
+            >
+              {isPaused ? (
+                <Play className="text-white/70 hover:text-brand" />
+              ) : (
+                <Pause className="text-white/70 hover:text-brand" />
+              )}
+            </button>
           </div>
         </div>
       </div>

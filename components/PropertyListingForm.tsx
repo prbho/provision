@@ -8,21 +8,15 @@ import {
   Bed,
   Calendar,
   Camera,
-  Clock,
-  Coffee,
   DollarSign,
   Home,
   Info,
   Key,
   MapPin,
   Shield,
-  Snowflake,
   Square,
-  Tv,
   Upload,
-  Waves,
   Wifi,
-  Wind,
 } from 'lucide-react'
 import { toast } from 'sonner'
 

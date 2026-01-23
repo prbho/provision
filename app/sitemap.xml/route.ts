@@ -46,7 +46,7 @@ const propertyTypes = [
 ]
 
 export async function GET(request: NextRequest) {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://propsafehub.com'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
   const now = new Date().toISOString()
 
   // Generate property type pages

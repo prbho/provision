@@ -101,7 +101,7 @@ export default function PropertyDetails({ property }: PropertyDetailsProps) {
                 />
                 <div className="absolute top-4 left-4 flex gap-2">
                   {property.isFeatured && (
-                    <span className="bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-lg">
+                    <span className="bg-brand/5 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-lg">
                       Featured
                     </span>
                   )}
@@ -157,7 +157,7 @@ export default function PropertyDetails({ property }: PropertyDetailsProps) {
             {/* Key Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="bg-white rounded-xl border border-gray-200 p-5 text-center">
-                <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <div className="w-10 h-10 bg-brand/5 rounded-lg flex items-center justify-center mx-auto mb-3">
                   <Bed className="h-5 w-5 text-emerald-600" />
                 </div>
                 <div className="text-2xl font-bold text-gray-900">
@@ -213,7 +213,7 @@ export default function PropertyDetails({ property }: PropertyDetailsProps) {
                 {property.features.length > 0 && (
                   <div>
                     <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                      <div className="w-1 h-6 bg-emerald-500 rounded-full mr-3"></div>
+                      <div className="w-1 h-6 bg-brand/5 rounded-full mr-3"></div>
                       Features
                     </h3>
                     <div className="space-y-3">
@@ -280,7 +280,7 @@ export default function PropertyDetails({ property }: PropertyDetailsProps) {
               {/* Map Placeholder */}
               <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
                 <div className="text-center text-gray-500">
-                  <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <div className="w-12 h-12 bg-brand/5 rounded-full flex items-center justify-center mx-auto mb-3">
                     <MapPin className="h-6 w-6 text-emerald-600" />
                   </div>
                   <p className="font-medium">Interactive Map</p>

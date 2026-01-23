@@ -36,11 +36,13 @@ export default function VerificationEmail({
             </Button>
           </Section>
           <Text style={text}>
-            If you didn&apos;t create an account with PropSafeHub, please ignore
-            this email.
+            If you didn&apos;t create an account with propertyvision, please
+            ignore this email.
           </Text>
           <Hr style={hr} />
-          <Text style={footer}>PropSafeHub - Secure Property Management</Text>
+          <Text style={footer}>
+            propertyvision - Secure Property Management
+          </Text>
         </Container>
       </Body>
     </Html>

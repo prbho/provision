@@ -54,13 +54,13 @@ const sitemapData: SitemapCategory[] = [
       {
         title: 'Home',
         href: '/',
-        description: 'PropSafe Hub homepage',
+        description: 'PropertyVision homepage',
         icon: Home,
       },
       {
         title: 'About Us',
         href: '/about',
-        description: 'Learn about PropSafe Hub',
+        description: 'Learn about PropertyVision',
       },
       {
         title: 'Contact Us',
@@ -202,7 +202,7 @@ const sitemapData: SitemapCategory[] = [
       },
       {
         title: 'ROI Calculator',
-        href: '/roi-calculator',
+        href: '/resources/roi-calculator',
         description: 'Calculate potential returns',
       },
       {
@@ -444,14 +444,14 @@ export default function SitemapPage() {
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-50 to-white">
       {/* Hero Section */}
-      <div className="bg-linear-to-r from-emerald-600 to-emerald-800 text-white">
+      <div className="bg-linear-to-r from-brand from-brand text-white">
         <div className="container mx-auto px-4 py-16 md:py-20">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex p-4 bg-white/10 backdrop-blur-sm rounded-2xl mb-6">
               <Map className="h-12 w-12" />
             </div>
             <h1 className="text-2xl md:text-4xl font-bold mb-6">
-              PropSafe Hub Sitemap
+              PropertyVision Sitemap
             </h1>
             <p className="text-xl text-emerald-100 mb-8 max-w-2xl mx-auto">
               Explore all pages and sections of our real estate platform. Find
@@ -593,11 +593,11 @@ export default function SitemapPage() {
                           <Link
                             key={linkIndex}
                             href={link.href}
-                            className="group flex items-center justify-between p-3 rounded-lg hover:bg-emerald-50 transition-colors border border-transparent hover:border-emerald-100"
+                            className="group flex items-center justify-between p-3 rounded-lg hover:bg-brand/5 transition-colors border border-transparent hover:border-emerald-100"
                           >
                             <div className="flex items-center gap-3">
                               {link.icon && (
-                                <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-emerald-100 transition-colors">
+                                <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-brand/10 transition-colors">
                                   <link.icon className="h-4 w-4 text-gray-600 group-hover:text-emerald-600" />
                                 </div>
                               )}
@@ -682,7 +682,7 @@ export default function SitemapPage() {
 
                             <div className="flex items-start gap-4">
                               {link.icon ? (
-                                <div className="p-3 bg-emerald-50 rounded-lg group-hover:bg-emerald-100 transition-colors">
+                                <div className="p-3 bg-brand/5 rounded-lg group-hover:bg-brand/10 transition-colors">
                                   <link.icon className="h-6 w-6 text-emerald-600" />
                                 </div>
                               ) : (
@@ -741,7 +741,7 @@ export default function SitemapPage() {
                   Our comprehensive sitemap ensures search engines can easily
                   crawl and index all our content, improving visibility and
                   helping users find exactly what they&apos;re looking for on
-                  PropSafe Hub.
+                  PropertyVision.
                 </p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white p-4 rounded-lg border">

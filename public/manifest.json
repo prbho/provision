@@ -1,6 +1,6 @@
 {
-  "name": "PropSafe Hub | Verified Real Estate Investments",
-  "short_name": "PropSafe Hub",
+  "name": "PropertyVision | Verified Real Estate Investments",
+  "short_name": "PropertyVision",
   "description": "Your Secured Pathway to Verified Real Estate Investments in Nigeria",
   "start_url": "/",
   "display": "standalone",
@@ -94,14 +94,14 @@
       "sizes": "1280x800",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "PropSafe Hub Desktop View"
+      "label": "PropertyVision Desktop View"
     },
     {
       "src": "/screenshot-mobile.png",
       "sizes": "750x1334",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "PropSafe Hub Mobile View"
+      "label": "PropertyVision Mobile View"
     }
   ],
   "related_applications": [],

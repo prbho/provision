@@ -234,9 +234,9 @@ export function AgentRegistrationForm({
 
         {/* Drop Zone */}
         <div
-          className={`border-2 border-dashed rounded-xl p-2 mb-4 transition-all ${
+          className={`rounded-xl p-2 mb-4 transition-all ${
             isDragging
-              ? 'border-emerald-500 bg-emerald-50'
+              ? 'border-brand bg-brand/5'
               : 'border-gray-300 bg-gray-50'
           } ${isImageLoading ? 'opacity-50' : ''}`}
           onDragOver={handleDragOver}
@@ -245,7 +245,7 @@ export function AgentRegistrationForm({
         >
           {isImageLoading ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-10 w-12 border-b-2 border-emerald-600 mb-4"></div>
+              <div className="animate-spin rounded-full h-10 w-12 border-b-2 border-brand mb-4"></div>
               <p className="text-gray-600">Processing image...</p>
             </div>
           ) : (
@@ -275,7 +275,7 @@ export function AgentRegistrationForm({
                     </div>
 
                     {/* File info badge */}
-                    <Badge className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-emerald-500">
+                    <Badge className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-brand/5">
                       {uploadedFileName
                         ? truncateFileName(uploadedFileName, 10)
                         : 'Ready'}
@@ -340,7 +340,7 @@ export function AgentRegistrationForm({
                     <Button
                       type="button"
                       variant="default"
-                      className="cursor-pointer bg-emerald-600 hover:bg-emerald-700"
+                      className="cursor-pointer bg-brand hover:bg-brand/95"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isLoading}
                     >
@@ -390,7 +390,7 @@ export function AgentRegistrationForm({
           <div className="space-y-4">
             {avatarPreview ? (
               <div className="text-center">
-                <div className="relative w-48 h-48 mx-auto overflow-hidden rounded-lg border-2 border-emerald-300">
+                <div className="relative w-48 h-48 mx-auto overflow-hidden rounded-lg border-2 border-brand/30">
                   <img
                     src={avatarPreview}
                     alt="Image to crop"
@@ -408,9 +408,9 @@ export function AgentRegistrationForm({
               </div>
             ) : (
               <div className="text-center">
-                <div className="w-48 h-48 mx-auto bg-linear-to-br from-emerald-100 to-blue-100 rounded-lg flex items-center justify-center">
+                <div className="w-48 h-48 mx-auto bg-linear-to-br from-brand/10 to-brand/5 rounded-lg flex items-center justify-center">
                   <div className="text-center">
-                    <Crop className="h-12 w-12 text-emerald-600 mx-auto mb-4" />
+                    <Crop className="h-12 w-12 text-brand mx-auto mb-4" />
                     <p className="text-sm text-gray-600">
                       Image will be cropped to square (1:1)
                     </p>
@@ -453,7 +453,7 @@ export function AgentRegistrationForm({
                 type="button"
                 onClick={handleCropImage}
                 disabled={isCropping}
-                className="bg-emerald-600 hover:bg-emerald-700"
+                className="bg-brand hover:bg-brand/95"
               >
                 {isCropping ? 'Cropping...' : 'Crop & Use This'}
               </Button>
@@ -605,19 +605,19 @@ export function AgentRegistrationForm({
                   <SelectLabel>Areas of Expertise</SelectLabel>
                   <SelectItem value="Residential">Residential</SelectItem>
                   <SelectItem value="Commercial">Commercial</SelectItem>
-                  <SelectItem value="Commercial">Industrial</SelectItem>
-                  <SelectItem value="Commercial">Land/Raw Land</SelectItem>
-                  <SelectItem value="Commercial">Luxury Homes</SelectItem>
-                  <SelectItem value="Luxury Homes">
+                  <SelectItem value="Industrial">Industrial</SelectItem>
+                  <SelectItem value="Land/Raw Land">Land/Raw Land</SelectItem>
+                  <SelectItem value="Luxury Homes">Luxury Homes</SelectItem>
+                  <SelectItem value="Green/Eco-Friendly">
                     Green/Eco-Friendly
                   </SelectItem>
-                  <SelectItem value="Luxury Homes">
+                  <SelectItem value="Foreclosures and Short Sales">
                     Foreclosures and Short Sales
                   </SelectItem>
-                  <SelectItem value="Luxury Homes">
+                  <SelectItem value="Buyer Representation">
                     Buyer Representation
                   </SelectItem>
-                  <SelectItem value="Luxury Homes">
+                  <SelectItem value="Seller Representation">
                     Seller Representation
                   </SelectItem>
                   <SelectItem value="Property Management">

@@ -42,7 +42,7 @@ export default function ScheduleMeetingPage() {
   // Formspree integration
   const [state, handleSubmit] = useForm('xyzrpvdb', {
     data: {
-      _subject: `PropSafe Hub Meeting Request: ${formData.meetingType} - ${formData.name}`,
+      _subject: `PropertyVision Meeting Request: ${formData.meetingType} - ${formData.name}`,
       meetingType: formData.meetingType,
       contactMethod: formData.contactMethod,
       timezone: formData.timezone,
@@ -135,7 +135,7 @@ export default function ScheduleMeetingPage() {
   return (
     <div className="min-h-screen bg-linear-to-b from-white to-gray-50">
       {/* Hero */}
-      <section className="bg-linear-to-r from-emerald-600 to-emerald-700 text-white py-16">
+      <section className="bg-linear-to-r from-brand from-brand text-white py-16">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex p-4 bg-white/10 rounded-2xl mb-6">
@@ -176,7 +176,7 @@ export default function ScheduleMeetingPage() {
 
           {isSubmitted ? (
             <div className="text-center py-12">
-              <div className="inline-flex p-4 bg-emerald-100 text-emerald-600 rounded-full mb-6">
+              <div className="inline-flex p-4 bg-brand/10 text-emerald-600 rounded-full mb-6">
                 <CheckCircle className="h-16 w-16" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
@@ -435,7 +435,7 @@ export default function ScheduleMeetingPage() {
               <input
                 type="hidden"
                 name="_subject"
-                value={`PropSafe Hub Meeting Request: ${formData.meetingType} - ${formData.name}`}
+                value={`PropertyVision Meeting Request: ${formData.meetingType} - ${formData.name}`}
               />
               <input type="hidden" name="_format" value="plain" />
               <input
@@ -454,7 +454,7 @@ export default function ScheduleMeetingPage() {
                   className="h-4 w-4 text-emerald-600 rounded mt-1 mr-3"
                 />
                 <label htmlFor="consent" className="text-sm text-gray-600">
-                  I agree to receive communication from PropSafe Hub regarding
+                  I agree to receive communication from PropertyVision regarding
                   my meeting request. By submitting this form, I consent to
                   being contacted via the method I selected above. I understand
                   that this is a request for a meeting and actual scheduling
@@ -501,7 +501,7 @@ export default function ScheduleMeetingPage() {
                     href="tel:+2349023558992"
                     className="text-emerald-600 hover:text-emerald-700 font-medium"
                   >
-                    +234 704 800 0553
+                    +234 906 8425 841
                   </a>
                 </p>
               </div>

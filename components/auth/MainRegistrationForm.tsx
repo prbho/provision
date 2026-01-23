@@ -410,7 +410,7 @@ export function MainRegistrationForm({
           <Button
             type="button"
             variant="outline"
-            className="flex-1 h-12 border-gray-300 hover:bg-emerald-50"
+            className="flex-1 h-12 border-gray-300 hover:bg-brand/5"
             onClick={() => setStep('basic-info')}
             disabled={isLoading}
           >
@@ -626,7 +626,7 @@ export function MainRegistrationForm({
               type="button"
               className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
                 userType === type
-                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                  ? 'border-emerald-500 bg-brand/5 text-emerald-700'
                   : 'border-gray-300 hover:border-gray-400 text-gray-700'
               }`}
               onClick={() => setUserType(type)}
@@ -645,7 +645,7 @@ export function MainRegistrationForm({
           <Button
             type="button"
             variant="outline"
-            className="flex-1 h-12 border-gray-300 hover:bg-emerald-50"
+            className="flex-1 h-12 border-gray-300 hover:bg-brand/5"
             onClick={onBack}
             disabled={isLoading}
           >
