@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
         email: email,
         resetUrl: resetUrl,
         userType: user.userType || (collection === 'agents' ? 'agent' : 'user'),
-        userAgent: userAgent,
+        // userAgent: userAgent,
       }
 
       console.log('📤 Sending email via Resend...')

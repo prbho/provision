@@ -223,10 +223,10 @@ export default function Footer() {
                   Terms
                 </Link>
                 <Link
-                  href="/contact"
+                  href="/site-map"
                   className="text-gray-500 hover:text-brand transition-colors"
                 >
-                  Contact
+                  Sitemap
                 </Link>
               </div>
             </div>

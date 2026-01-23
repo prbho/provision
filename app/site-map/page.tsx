@@ -1,433 +1,535 @@
+// app/site-map/page.tsx
 'use client'
 
-import { useState } from 'react' // Remove useEffect import
+import { useState } from 'react'
 import Link from 'next/link'
 import {
+  Accessibility,
+  AlertCircle,
+  Bell,
   Building,
+  Calculator,
   Calendar,
   ChevronRight,
+  Contact,
+  Cookie,
+  DollarSign,
   FileText,
   Globe,
-  Handshake,
-  HelpCircle,
   Home,
+  Key,
   Lock,
-  Map,
+  MapPin,
   MessageSquare,
-  Phone,
   Search,
   Settings,
   Shield,
+  Sparkles,
   TrendingUp,
   User,
   Users,
 } from 'lucide-react'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+interface SitemapLink {
+  title: string
+  href: string
+  description: string
+  icon: React.ElementType
+  personality: string
+  tagline?: string
+}
 
 interface SitemapCategory {
   title: string
   description: string
   icon: React.ElementType
   color: string
-  links: {
-    title: string
-    href: string
-    description: string
-    badge?: 'New' | 'Popular' | 'Featured'
-    icon?: React.ElementType
-  }[]
+  personality: string
+  links: SitemapLink[]
 }
 
-// Move data outside component (static data)
 const sitemapData: SitemapCategory[] = [
   {
-    title: 'Home & Main Pages',
-    description: 'Primary navigation and essential pages',
+    title: 'Welcome & Getting Started',
+    description: 'Begin your property journey with us',
     icon: Home,
-    color: 'bg-emerald-600',
+    color: 'bg-brand/5',
+    personality: 'Warm & Inviting',
     links: [
       {
         title: 'Home',
         href: '/',
-        description: 'PropertyVision homepage',
-        icon: Home,
+        description: 'Start your property discovery journey',
+        icon: Sparkles,
+        personality: 'Your starting point',
+        tagline: 'Where dreams find addresses',
       },
       {
         title: 'About Us',
         href: '/about',
-        description: 'Learn about PropertyVision',
+        description: 'Learn about our mission and team',
+        icon: Users,
+        personality: 'Get to know us',
+        tagline: 'Building trust in real estate',
       },
       {
-        title: 'Contact Us',
+        title: 'How It Works',
+        href: '/how-it-works',
+        description: 'See how we make property hunting stress-free',
+        icon: TrendingUp,
+        personality: 'Our simple process',
+        tagline: 'Property made simple',
+      },
+      {
+        title: 'Contact',
         href: '/contact',
-        description: 'Get in touch with our team',
-        icon: Phone,
-      },
-      {
-        title: 'Schedule Meeting',
-        href: '/schedule-meeting',
-        description: 'Book a consultation',
-        badge: 'New',
-        icon: Calendar,
+        description: 'Reach out to our friendly support team',
+        icon: MessageSquare,
+        personality: "We're here to help",
+        tagline: 'Real humans, real help',
       },
     ],
   },
   {
-    title: 'Properties',
-    description: 'Browse verified real estate listings',
+    title: 'Find Properties',
+    description: 'Browse verified properties across Nigeria',
     icon: Building,
-    color: 'bg-emerald-600',
+    color: 'bg-blue-50',
+    personality: 'Adventurous & Exciting',
     links: [
       {
         title: 'All Properties',
         href: '/properties',
-        description: 'View all verified properties',
-        badge: 'Popular',
-        icon: Building,
+        description: 'Browse our complete collection of verified listings',
+        icon: Search,
+        personality: 'Your property playground',
+        tagline: 'Discover your next home',
       },
       {
         title: 'Buy Properties',
         href: '/buy',
-        description: 'Properties for sale',
+        description: 'Find properties ready for their new owners',
+        icon: Key,
+        personality: 'Ready to own',
+        tagline: 'Your keys are waiting',
       },
       {
         title: 'Rent Properties',
         href: '/rent',
-        description: 'Properties for rent',
+        description: 'Beautiful rental properties across Nigeria',
+        icon: Home,
+        personality: 'Your temporary palace',
+        tagline: 'Find your perfect rental',
       },
       {
         title: 'Sell Property',
         href: '/sell',
-        description: 'List your property for sale',
-      },
-      {
-        title: 'Serviced Plots',
-        href: '/properties/type/serviced-plots',
-        description: 'Ready-to-build land',
-      },
-      {
-        title: 'Luxury Homes',
-        href: '/properties/type/luxury-homes',
-        description: 'Premium residential properties',
-      },
-      {
-        title: 'Affordable Housing',
-        href: '/properties/type/affordable-housing',
-        description: 'Budget-friendly options',
-      },
-      {
-        title: 'Waterfront Properties',
-        href: '/properties/type/waterfront',
-        description: 'Properties near water bodies',
-      },
-      {
-        title: 'Investment Plots',
-        href: '/properties/type/agricultural-plots',
-        description: 'Agricultural and investment land',
+        description: 'Ready to sell? We make it easy',
+        icon: DollarSign,
+        personality: 'Turn property into cash',
+        tagline: 'Get the best price',
       },
     ],
   },
   {
-    title: 'Services',
-    description: 'Our real estate solutions and offerings',
+    title: 'List Your Property',
+    description: 'Showcase your property to qualified buyers',
+    icon: MapPin,
+    color: 'bg-purple-50',
+    personality: 'Smart & Professional',
+    links: [
+      {
+        title: 'List Property',
+        href: '/list-property',
+        description: 'Quick and easy property listing',
+        icon: Sparkles,
+        personality: 'Show off your space',
+        tagline: 'List in minutes',
+      },
+      {
+        title: 'List for Sale',
+        href: '/list-property/sale',
+        description: 'Sell your property with confidence',
+        icon: DollarSign,
+        personality: 'Sell smart',
+        tagline: 'Maximum value, minimum stress',
+      },
+      {
+        title: 'List for Rent',
+        href: '/list-property/rent',
+        description: 'Find reliable tenants quickly',
+        icon: Key,
+        personality: 'Rent with peace of mind',
+        tagline: 'Quality tenants only',
+      },
+      {
+        title: 'Post Property',
+        href: '/properties/post',
+        description: 'Create a detailed property listing',
+        icon: Building,
+        personality: 'Detailed listings',
+        tagline: 'The more details, the better',
+      },
+    ],
+  },
+  {
+    title: 'Our Services',
+    description: 'Professional real estate solutions',
     icon: Shield,
-    color: 'bg-emerald-600',
+    color: 'bg-amber-50',
+    personality: 'Trustworthy & Expert',
     links: [
       {
         title: 'All Services',
         href: '/services',
-        description: 'Overview of all services',
+        description: 'Comprehensive real estate solutions',
         icon: Shield,
+        personality: 'Your property toolkit',
+        tagline: 'Everything you need',
       },
       {
         title: 'Property Verification',
-        href: '/services/verification',
-        description: 'Document and title verification',
-        badge: 'Featured',
+        href: '/services/property-verification',
+        description: 'Verify property documents and titles',
+        icon: Shield,
+        personality: 'Sleep well at night',
+        tagline: 'No surprises, just truth',
       },
       {
-        title: 'Investment Advisory',
-        href: '/services/advisory',
-        description: 'Personalized investment strategies',
+        title: 'Due Diligence',
+        href: '/services/due-diligence',
+        description: 'Thorough property investigation',
+        icon: Search,
+        personality: 'Investigate before you invest',
+        tagline: 'Leave no stone unturned',
       },
       {
         title: 'Diaspora Services',
         href: '/services/diaspora',
-        description: 'Overseas investor support',
+        description: 'Property support for overseas Nigerians',
         icon: Globe,
+        personality: 'Home from afar',
+        tagline: 'Buying from anywhere',
       },
       {
-        title: 'Mortgage Financing',
+        title: 'Mortgage Assistance',
         href: '/services/mortgage',
-        description: 'Home loan assistance',
+        description: 'Home loan guidance and support',
+        icon: DollarSign,
+        personality: 'Finance made friendly',
+        tagline: 'Demystifying mortgages',
       },
       {
-        title: 'Construction Management',
-        href: '/services/construction',
-        description: 'Turnkey building projects',
-      },
-      {
-        title: 'PropSafe Score™',
-        href: '/propsafe-score',
-        description: 'Property risk assessment system',
-      },
-      {
-        title: 'PropSafe Verify™',
-        href: '/verify',
-        description: 'Property verification tool',
-      },
-    ],
-  },
-  {
-    title: 'For Investors & Partners',
-    description: 'Investment opportunities and partnerships',
-    icon: TrendingUp,
-    color: 'bg-emerald-600',
-    links: [
-      {
-        title: 'Investor Portal',
-        href: '/investors',
-        description: 'Investment opportunities',
+        title: 'Investment Advisory',
+        href: '/services/investment',
+        description: 'Smart property investment strategies',
         icon: TrendingUp,
+        personality: 'Grow your wealth',
+        tagline: 'Smart money moves',
       },
       {
-        title: 'Portfolio Management',
-        href: '/investors/portfolio',
-        description: 'Manage your investments',
+        title: 'Construction Services',
+        href: '/services/construction',
+        description: 'Build and construction management',
+        icon: Building,
+        personality: 'Build your dream',
+        tagline: 'From ground to greatness',
       },
       {
-        title: 'ROI Calculator',
-        href: '/resources/roi-calculator',
-        description: 'Calculate potential returns',
-      },
-      {
-        title: 'Partner with Us',
-        href: '/partners',
-        description: 'Business collaboration',
-        icon: Handshake,
-      },
-      {
-        title: 'For Developers',
-        href: '/developers',
-        description: 'Developer partnership program',
-      },
-      {
-        title: 'Referral Program',
-        href: '/referral',
-        description: 'Earn through referrals',
-      },
-    ],
-  },
-  {
-    title: 'Agents & Professionals',
-    description: 'Real estate agent resources',
-    icon: Users,
-    color: 'bg-emerald-600',
-    links: [
-      {
-        title: 'Find Agents',
-        href: '/agents',
-        description: 'Browse verified agents',
+        title: 'Agent Verification',
+        href: '/services/agent-verification',
+        description: 'Verify your credentials as an agent',
         icon: Users,
-      },
-      {
-        title: 'Become an Agent',
-        href: '/become-agent',
-        description: 'Join our agent network',
-      },
-      {
-        title: 'Agent Dashboard',
-        href: '/agent/dashboard',
-        description: 'Agent management portal',
-      },
-      {
-        title: 'List Property',
-        href: '/list-property',
-        description: 'Post new listings',
-      },
-      {
-        title: 'Agent Resources',
-        href: '/agent/resources',
-        description: 'Tools and guides for agents',
-      },
-      {
-        title: 'Agent Training',
-        href: '/agent/training',
-        description: 'Training and certification',
+        personality: 'Trusted professionals',
+        tagline: 'Earn your badge of trust',
       },
     ],
   },
   {
-    title: 'Resources & Learning',
-    description: 'Educational content and guides',
+    title: 'Helpful Guides',
+    description: 'Educational resources for smart decisions',
     icon: FileText,
-    color: 'bg-emerald-600',
+    color: 'bg-cyan-50',
+    personality: 'Educational & Supportive',
     links: [
       {
-        title: 'Blog',
-        href: '/blog',
-        description: 'Real estate insights and articles',
-        icon: FileText,
+        title: 'First-Time Buyer Guide',
+        href: '/guides/first-time-buyer',
+        description: 'Essential tips for new property buyers',
+        icon: Key,
+        personality: 'Avoid rookie mistakes',
+        tagline: 'Start smart',
+      },
+      {
+        title: 'Diaspora Guide',
+        href: '/guides/diaspora',
+        description: 'Buying property from overseas',
+        icon: Globe,
+        personality: 'Global property expert',
+        tagline: 'Home buying from anywhere',
+      },
+      {
+        title: 'Inspection Checklist',
+        href: '/guides/inspection-checklist',
+        description: 'Comprehensive property inspection guide',
+        icon: Search,
+        personality: 'Inspect like a pro',
+        tagline: "Don't miss a thing",
+      },
+      {
+        title: 'Negotiation Guide',
+        href: '/guides/negotiation',
+        description: 'Get the best price for your property',
+        icon: DollarSign,
+        personality: 'Negotiate with confidence',
+        tagline: 'Get the deal you deserve',
       },
       {
         title: 'FAQs',
         href: '/faqs',
-        description: 'Frequently asked questions',
-        badge: 'Popular',
-        icon: HelpCircle,
-      },
-      {
-        title: 'Property Guides',
-        href: '/guides',
-        description: 'Buying and selling guides',
-      },
-      {
-        title: 'Market Reports',
-        href: '/market-reports',
-        description: 'Real estate market analysis',
-      },
-      {
-        title: 'Legal Guides',
-        href: '/legal-guides',
-        description: 'Property law and documentation',
-      },
-      {
-        title: 'Diaspora Investor Guide',
-        href: '/diaspora-guide',
-        description: 'Guide for overseas investors',
-      },
-      {
-        title: 'Scam Prevention',
-        href: '/scam-prevention',
-        description: 'Avoid real estate fraud',
-      },
-      {
-        title: 'Property Verification Guide',
-        href: '/verification-guide',
-        description: 'How to verify properties',
+        description: 'Answers to common questions',
+        icon: FileText,
+        personality: 'Quick answers',
+        tagline: 'Got questions? We have answers',
       },
     ],
   },
   {
-    title: 'Account & Settings',
-    description: 'User account management',
+    title: 'Useful Tools',
+    description: 'Calculators and resources',
+    icon: Calculator,
+    color: 'bg-orange-50',
+    personality: 'Helpful & Practical',
+    links: [
+      {
+        title: 'Mortgage Calculator',
+        href: '/mortgage-calculator',
+        description: 'Calculate your monthly mortgage payments',
+        icon: Calculator,
+        personality: 'Crunch the numbers',
+        tagline: 'Budget with confidence',
+      },
+      {
+        title: 'ROI Calculator',
+        href: '/resources/roi-calculator',
+        description: 'Calculate property investment returns',
+        icon: TrendingUp,
+        personality: 'Invest smart',
+        tagline: 'See your potential returns',
+      },
+      {
+        title: 'Payment History',
+        href: '/calculations/history',
+        description: 'View your payment calculations',
+        icon: DollarSign,
+        personality: 'Track your finances',
+        tagline: 'Keep tabs on your budget',
+      },
+    ],
+  },
+  {
+    title: 'Account & Profile',
+    description: 'Manage your account and preferences',
     icon: User,
-    color: 'bg-emerald-600',
+    color: 'bg-pink-50',
+    personality: 'Personal & Secure',
     links: [
       {
         title: 'Login',
         href: '/login',
         description: 'Sign in to your account',
+        icon: Key,
+        personality: 'Welcome back',
+        tagline: 'Your property journey awaits',
+      },
+      {
+        title: 'Register',
+        href: '/register',
+        description: 'Create your free account',
         icon: User,
+        personality: 'Join the family',
+        tagline: 'Start your property story',
       },
       {
         title: 'Sign Up',
         href: '/signup',
-        description: 'Create a new account',
+        description: 'Alternative signup option',
+        icon: Sparkles,
+        personality: 'Quick signup',
+        tagline: 'Get started in seconds',
       },
       {
         title: 'Dashboard',
         href: '/dashboard',
-        description: 'User dashboard',
+        description: 'Your personal property dashboard',
+        icon: TrendingUp,
+        personality: 'Your command center',
+        tagline: 'Everything in one place',
       },
       {
-        title: 'My Profile',
+        title: 'Profile',
         href: '/profile',
-        description: 'Manage your profile',
-      },
-      {
-        title: 'Favorites',
-        href: '/favorites',
-        description: 'Saved properties',
-      },
-      {
-        title: 'Messages',
-        href: '/messages',
-        description: 'Your conversations',
-        icon: MessageSquare,
-      },
-      {
-        title: 'Notifications',
-        href: '/notifications',
-        description: 'Account notifications',
+        description: 'Manage your personal information',
+        icon: User,
+        personality: 'Your digital identity',
+        tagline: 'Make it yours',
       },
       {
         title: 'Settings',
         href: '/settings',
-        description: 'Account settings',
+        description: 'Account settings and preferences',
         icon: Settings,
+        personality: 'Tailor your experience',
+        tagline: 'Make it work for you',
+      },
+      {
+        title: 'Favorites',
+        href: '/favorites',
+        description: 'Save and track your favorite properties',
+        icon: Sparkles,
+        personality: 'Your wishlist',
+        tagline: 'Properties you love',
+      },
+      {
+        title: 'Messages',
+        href: '/messages',
+        description: 'Chat with agents and sellers',
+        icon: MessageSquare,
+        personality: 'Stay connected',
+        tagline: 'Communicate easily',
+      },
+      {
+        title: 'Notifications',
+        href: '/notifications',
+        description: 'Stay updated on property alerts',
+        icon: Bell,
+        personality: 'Never miss out',
+        tagline: 'Stay in the know',
       },
     ],
   },
   {
-    title: 'Legal & Compliance',
-    description: 'Legal information and policies',
+    title: 'For Real Estate Professionals',
+    description: 'Tools and resources for agents',
+    icon: Users,
+    color: 'bg-indigo-50',
+    personality: 'Professional & Empowering',
+    links: [
+      {
+        title: 'Find Agents',
+        href: '/agents',
+        description: 'Browse verified real estate agents',
+        icon: Users,
+        personality: 'Find your expert',
+        tagline: 'Connect with professionals',
+      },
+      {
+        title: 'Become an Agent',
+        href: '/become-agent',
+        description: 'Join our network of verified agents',
+        icon: Shield,
+        personality: 'Join our team',
+        tagline: 'Build your reputation',
+      },
+      {
+        title: 'Schedule Meeting',
+        href: '/schedule-meeting',
+        description: 'Book professional consultations',
+        icon: Calendar,
+        personality: 'Get expert advice',
+        tagline: 'Talk to the pros',
+      },
+    ],
+  },
+  {
+    title: 'Account Recovery',
+    description: 'Secure access to your account',
     icon: Lock,
-    color: 'bg-emerald-600',
+    color: 'bg-red-50',
+    personality: 'Secure & Helpful',
+    links: [
+      {
+        title: 'Forgot Password',
+        href: '/forget-password',
+        description: 'Reset your password if forgotten',
+        icon: Key,
+        personality: 'Locked out? No problem',
+        tagline: 'Get back in quickly',
+      },
+      {
+        title: 'Reset Password',
+        href: '/reset-password',
+        description: 'Set a new password for your account',
+        icon: Lock,
+        personality: 'Fresh start',
+        tagline: 'Secure your account',
+      },
+    ],
+  },
+  {
+    title: 'Legal & Policies',
+    description: 'Important documents and policies',
+    icon: FileText,
+    color: 'bg-gray-50',
+    personality: 'Transparent & Clear',
     links: [
       {
         title: 'Privacy Policy',
         href: '/privacy',
-        description: 'Data protection and privacy',
-        icon: Lock,
+        description: 'How we protect your data',
+        icon: Shield,
+        personality: 'Your privacy matters',
+        tagline: 'We value your trust',
       },
       {
         title: 'Terms of Service',
         href: '/terms',
-        description: 'Terms and conditions',
+        description: 'Platform terms and conditions',
+        icon: FileText,
+        personality: 'The fine print',
+        tagline: 'Clear and fair terms',
       },
       {
         title: 'Disclaimer',
         href: '/disclaimer',
-        description: 'Legal disclaimer',
+        description: 'Legal disclaimer and limitations',
+        icon: AlertCircle,
+        personality: 'Important notices',
+        tagline: 'Know what to expect',
       },
       {
         title: 'Cookie Policy',
         href: '/cookies',
-        description: 'Cookie usage information',
+        description: 'How we use cookies',
+        icon: Cookie,
+        personality: 'Tech transparency',
+        tagline: 'How our site works',
       },
       {
         title: 'Accessibility',
         href: '/accessibility',
-        description: 'Accessibility statement',
-      },
-      {
-        title: 'Code of Conduct',
-        href: '/code-of-conduct',
-        description: 'Community guidelines',
-      },
-      {
-        title: 'Anti-Scam Policy',
-        href: '/anti-scam',
-        description: 'Fraud prevention measures',
+        description: 'Our accessibility commitment',
+        icon: Accessibility,
+        personality: 'For everyone',
+        tagline: 'Inclusive by design',
       },
     ],
   },
 ]
 
 export default function SitemapPage() {
-  // Remove useEffect and useState for sitemapData, use static data directly
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeCategory, setActiveCategory] = useState<string>('all')
 
-  // Filter links based on search and active category
+  // Filter links based on search
   const filteredData = sitemapData
-    .filter(
-      (category) =>
-        activeCategory === 'all' || category.title === activeCategory
-    )
     .map((category) => ({
       ...category,
       links: category.links.filter(
         (link) =>
           searchQuery === '' ||
           link.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          link.description.toLowerCase().includes(searchQuery.toLowerCase())
+          link.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          link.personality.toLowerCase().includes(searchQuery.toLowerCase())
       ),
     }))
     .filter((category) => category.links.length > 0)
@@ -438,408 +540,309 @@ export default function SitemapPage() {
     0
   )
 
-  // The rest of your component remains the same...
-  // [Keep all the JSX code exactly as you have it]
+  // Add missing icons
+  const Bell = ({ className }: { className?: string }) => (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+      />
+    </svg>
+  )
+
+  const Calendar = ({ className }: { className?: string }) => (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
+    </svg>
+  )
+
+  const AlertCircle = ({ className }: { className?: string }) => (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  )
+
+  const Cookie = ({ className }: { className?: string }) => (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+      />
+    </svg>
+  )
+
+  const Accessibility = ({ className }: { className?: string }) => (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      />
+    </svg>
+  )
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-gray-50 to-white">
-      {/* Hero Section */}
-      <div className="bg-linear-to-r from-brand from-brand text-white">
-        <div className="container mx-auto px-4 py-16 md:py-20">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex p-4 bg-white/10 backdrop-blur-sm rounded-2xl mb-6">
-              <Map className="h-12 w-12" />
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 py-12">
+          <div className="text-center max-w-3xl mx-auto">
+            <div className="inline-flex p-3 bg-brand/10 rounded-xl mb-4">
+              <MapPin className="h-8 w-8 text-brand" />
             </div>
-            <h1 className="text-2xl md:text-4xl font-bold mb-6">
+
+            <h1 className="text-3xl font-bold text-gray-900 mb-3">
               PropertyVision Sitemap
             </h1>
-            <p className="text-xl text-emerald-100 mb-8 max-w-2xl mx-auto">
-              Explore all pages and sections of our real estate platform. Find
-              exactly what you&apos;re looking for quickly and easily.
+
+            <p className="text-gray-600 mb-8">
+              Your comprehensive guide to every corner of our real estate
+              platform. We've organized everything so you can find your way
+              around with a smile.
             </p>
 
-            {/* Search Bar */}
+            {/* Search */}
             <div className="max-w-xl mx-auto mb-8">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <Input
+                <input
                   type="search"
-                  placeholder="Search pages (e.g., 'properties', 'contact', 'verification')"
-                  className="pl-12 text-gray-900 py-6 rounded-full border-0 shadow-lg bg-white/90 backdrop-blur-sm"
+                  placeholder="Looking for something specific? Type here..."
+                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand outline-none shadow-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+              <p className="text-sm text-gray-500 mt-2">
+                Search by page name, description, or even personality type!
+              </p>
             </div>
 
-            <div className="flex flex-wrap gap-4 justify-center">
-              <Button
-                asChild
-                size="lg"
-                className="bg-white text-emerald-700 hover:bg-gray-100"
-              >
-                <Link href="/">Back to Home</Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="border-white bg-transparent hover:text-white text-white hover:bg-white/10"
-              >
-                <a href="/sitemap.xml" download>
-                  Download XML Sitemap
-                </a>
-              </Button>
+            {/* Quick Stats */}
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-brand rounded-full"></div>
+                <span>
+                  <span className="font-medium text-gray-900">
+                    {sitemapData.length}
+                  </span>{' '}
+                  categories
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span>
+                  <span className="font-medium text-gray-900">
+                    {totalLinks}
+                  </span>{' '}
+                  helpful pages
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span>
+                  All{' '}
+                  <span className="font-medium text-gray-900">verified</span> &
+                  safe
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="max-w-7xl mx-auto px-4 -mt-8 mb-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="border-0 shadow-lg bg-white">
-            <CardContent className="p-6 text-center">
-              <div className="text-3xl font-bold text-emerald-600 mb-2">
-                {sitemapData.length}
-              </div>
-              <div className="text-sm text-gray-600">Categories</div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-lg bg-white">
-            <CardContent className="p-6 text-center">
-              <div className="text-3xl font-bold text-emerald-600 mb-2">
-                {totalLinks}
-              </div>
-              <div className="text-sm text-gray-600">Total Pages</div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-lg bg-white">
-            <CardContent className="p-6 text-center">
-              <div className="text-3xl font-bold text-emerald-600 mb-2">
-                100%
-              </div>
-              <div className="text-sm text-gray-600">Verified Content</div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-lg bg-white">
-            <CardContent className="p-6 text-center">
-              <div className="text-3xl font-bold text-emerald-600 mb-2">
-                24/7
-              </div>
-              <div className="text-sm text-gray-600">Updated</div>
-            </CardContent>
-          </Card>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 pb-16">
-        {/* Category Tabs */}
-        <div className="mb-12">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Browse by Category
-            </h2>
-            <div className="text-sm text-gray-500">
-              Showing{' '}
-              {filteredData.reduce((total, cat) => total + cat.links.length, 0)}{' '}
-              of {totalLinks} pages
-            </div>
+      <main className="max-w-7xl mx-auto px-4 py-12">
+        {filteredData.length === 0 ? (
+          <div className="text-center py-16 border border-gray-200 rounded-lg">
+            <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              No pages found for "{searchQuery}"
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Try searching with different keywords or browse our categories
+              below
+            </p>
+            <button
+              onClick={() => setSearchQuery('')}
+              className="text-brand hover:text-brand/95 font-medium"
+            >
+              Clear search and show all pages
+            </button>
           </div>
-
-          <Tabs defaultValue="all" className="w-full">
-            <TabsList className="flex flex-wrap h-auto p-1 bg-gray-100 rounded-xl mb-8">
-              <TabsTrigger
-                value="all"
-                className="rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-              >
-                All Pages
-              </TabsTrigger>
-              {sitemapData.map((category) => (
-                <TabsTrigger
-                  key={category.title}
-                  value={category.title}
-                  className="rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-                >
-                  {category.title}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            <TabsContent value="all" className="mt-0">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredData.map((category, index) => (
-                  <Card
-                    key={index}
-                    className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300"
-                  >
-                    <CardHeader className="border-b">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className={`${category.color} p-2.5 rounded-lg`}>
-                          <category.icon className="h-5 w-5 text-white" />
-                        </div>
-                        <CardTitle className="text-lg">
-                          {category.title}
-                        </CardTitle>
-                      </div>
-                      <p className="text-sm text-gray-600">
+        ) : (
+          <div className="space-y-8">
+            {filteredData.map((category, index) => (
+              <div key={index} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className={`p-3 ${category.color} rounded-lg`}>
+                    <category.icon className="h-6 w-6 text-gray-700" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      {category.title}
+                    </h2>
+                    <div className="flex items-center gap-3 mt-1">
+                      <p className="text-gray-600 text-sm">
                         {category.description}
                       </p>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      <div className="space-y-3">
-                        {category.links.map((link, linkIndex) => (
-                          <Link
-                            key={linkIndex}
-                            href={link.href}
-                            className="group flex items-center justify-between p-3 rounded-lg hover:bg-brand/5 transition-colors border border-transparent hover:border-emerald-100"
-                          >
-                            <div className="flex items-center gap-3">
-                              {link.icon && (
-                                <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-brand/10 transition-colors">
-                                  <link.icon className="h-4 w-4 text-gray-600 group-hover:text-emerald-600" />
-                                </div>
-                              )}
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-gray-900 group-hover:text-emerald-700">
-                                    {link.title}
-                                  </span>
-                                  {link.badge && (
-                                    <Badge
-                                      variant={
-                                        link.badge === 'Featured'
-                                          ? 'default'
-                                          : 'secondary'
-                                      }
-                                      className=" text-xs bg-transparent border border-gray-300 text-gray-500"
-                                    >
-                                      {link.badge}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-sm text-gray-600 mt-1 truncate">
-                                  {link.description}
-                                </p>
-                              </div>
+                      <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full">
+                        {category.personality}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {category.links.map((link, linkIndex) => (
+                    <Link
+                      key={linkIndex}
+                      href={link.href}
+                      className="group p-4 border border-gray-200 rounded-lg hover:border-brand/30 hover:shadow-sm transition-all duration-200"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`p-2 ${category.color} rounded-lg group-hover:bg-brand/5 transition-colors`}
+                        >
+                          <link.icon className="h-5 w-5 text-gray-600 group-hover:text-brand" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="font-medium text-gray-900 group-hover:text-brand">
+                                {link.title}
+                              </h3>
+                              <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                {link.description}
+                              </p>
                             </div>
-                            <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-emerald-500 transition-colors" />
-                          </Link>
-                        ))}
+                            <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-brand transition-colors ml-2 flex-shrink-0" />
+                          </div>
+
+                          <div className="flex items-center justify-between mt-3">
+                            <span className="text-xs px-2 py-1 bg-gray-50 text-gray-600 rounded-full">
+                              {link.personality}
+                            </span>
+                            {link.tagline && (
+                              <span className="text-xs text-gray-500 italic">
+                                "{link.tagline}"
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </TabsContent>
-
-            {/* Individual category tabs */}
-            {sitemapData.map((category) => (
-              <TabsContent
-                key={category.title}
-                value={category.title}
-                className="mt-0"
-              >
-                <Card className="border-0 shadow-lg">
-                  <CardHeader className="bg-linear-to-r from-emerald-50 to-green-50 border-b">
-                    <div className="flex items-center gap-4">
-                      <div className={`${category.color} p-3 rounded-lg`}>
-                        <category.icon className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-2xl">
-                          {category.title}
-                        </CardTitle>
-                        <p className="text-gray-600 mt-1">
-                          {category.description}
-                        </p>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-8">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {category.links
-                        .filter(
-                          (link) =>
-                            searchQuery === '' ||
-                            link.title
-                              .toLowerCase()
-                              .includes(searchQuery.toLowerCase()) ||
-                            link.description
-                              .toLowerCase()
-                              .includes(searchQuery.toLowerCase())
-                        )
-                        .map((link, linkIndex) => (
-                          <Link
-                            key={linkIndex}
-                            href={link.href}
-                            className="group relative p-6 rounded-xl border border-gray-200 bg-white hover:border-emerald-300 hover:shadow-lg transition-all duration-300"
-                          >
-                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <ChevronRight className="h-5 w-5 text-emerald-500" />
-                            </div>
-
-                            <div className="flex items-start gap-4">
-                              {link.icon ? (
-                                <div className="p-3 bg-brand/5 rounded-lg group-hover:bg-brand/10 transition-colors">
-                                  <link.icon className="h-6 w-6 text-emerald-600" />
-                                </div>
-                              ) : (
-                                <div
-                                  className={`p-3 ${category.color.replace('bg-', 'bg-')} bg-opacity-10 rounded-lg`}
-                                >
-                                  <category.icon className="h-6 w-6 text-gray-600" />
-                                </div>
-                              )}
-
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h3 className="font-semibold text-lg text-gray-900 group-hover:text-emerald-700">
-                                    {link.title}
-                                  </h3>
-                                  {link.badge && (
-                                    <Badge
-                                      variant={
-                                        link.badge === 'Featured'
-                                          ? 'default'
-                                          : 'secondary'
-                                      }
-                                      className="text-xs bg-transparent border border-gray-300 text-gray-500"
-                                    >
-                                      {link.badge}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-gray-600 text-sm mb-4">
-                                  {link.description}
-                                </p>
-                                <div className="text-xs text-gray-400 truncate">
-                                  {link.href}
-                                </div>
-                              </div>
-                            </div>
-                          </Link>
-                        ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
             ))}
-          </Tabs>
-        </div>
+          </div>
+        )}
 
-        {/* SEO Information */}
-        <Card className="border-0 shadow-xl bg-linear-to-r from-emerald-50 to-emerald-50">
-          <CardContent className="p-8">
-            <div className="grid lg:grid-cols-2 gap-8 items-center">
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                  SEO & Website Structure
-                </h3>
-                <p className="text-gray-700 mb-6">
-                  Our comprehensive sitemap ensures search engines can easily
-                  crawl and index all our content, improving visibility and
-                  helping users find exactly what they&apos;re looking for on
-                  PropertyVision.
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white p-4 rounded-lg border">
-                    <div className="text-lg font-semibold text-emerald-600 mb-1">
-                      Fast Indexing
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Quick discovery by search engines
-                    </div>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg border">
-                    <div className="text-lg font-semibold text-emerald-600 mb-1">
-                      Mobile Optimized
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Perfect experience on all devices
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">
-                    Technical Details
-                  </h4>
-                  <div className="bg-white p-6 rounded-xl border">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between border-b pb-3">
-                        <span className="text-gray-600">Sitemap Format</span>
-                        <span className="font-medium">XML & HTML</span>
-                      </div>
-                      <div className="flex items-center justify-between border-b pb-3">
-                        <span className="text-gray-600">Encoding</span>
-                        <span className="font-medium">UTF-8</span>
-                      </div>
-                      <div className="flex items-center justify-between border-b pb-3">
-                        <span className="text-gray-600">Update Frequency</span>
-                        <span className="font-medium text-emerald-600">
-                          Daily
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Status</span>
-                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                          ✓ Active & Indexed
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <Button asChild className="flex-1">
-                    <a
-                      href="/sitemap.xml"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      View XML Sitemap
-                    </a>
-                  </Button>
-                  <Button asChild variant="outline" className="flex-1">
-                    <a
-                      href="/robots.txt"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      View Robots.txt
-                    </a>
-                  </Button>
-                </div>
-              </div>
+        {/* CTA Section */}
+        <div className="mt-16 border border-brand/20 bg-brand/5 rounded-xl p-8">
+          <div className="text-center max-w-2xl mx-auto">
+            <div className="inline-flex p-3 bg-brand/10 rounded-full mb-4">
+              <Sparkles className="h-6 w-6 text-brand" />
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Quick Links */}
-        <div className="mt-12 text-center">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6">
-            Need Help Finding Something?
-          </h3>
-          <div className="flex flex-wrap gap-3 justify-center">
-            <Button asChild variant="outline">
-              <Link href="/contact">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Contact Support
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">
+              Found what you're looking for?
+            </h3>
+
+            <p className="text-gray-600 mb-6">
+              If not, our friendly support team is always here to help you
+              navigate.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/contact"
+                className="px-6 py-3 bg-brand text-white rounded-lg hover:bg-brand transition-colors font-medium flex items-center justify-center gap-2"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Chat with Support
               </Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/faqs">
-                <HelpCircle className="h-4 w-4 mr-2" />
-                Visit FAQ
+              <Link
+                href="/"
+                className="px-6 py-3 border border-gray-300 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Back to Homepage
               </Link>
-            </Button>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-brand/20">
+              <p className="text-sm text-gray-500">
+                Pro tip: Bookmark this page for quick reference!
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Quick Links */}
+        <div className="mt-8 text-center">
+          <div className="inline-flex items-center gap-6 text-sm text-gray-500">
+            <a
+              href="/sitemap.xml"
+              className="hover:text-brand transition-colors flex items-center gap-1"
+            >
+              <FileText className="h-4 w-4" />
+              XML Sitemap
+            </a>
+            <span className="text-gray-300">•</span>
+            <Link href="/faqs" className="hover:text-brand transition-colors">
+              Need help? Check FAQs
+            </Link>
+            <span className="text-gray-300">•</span>
+            <Link
+              href="/how-it-works"
+              className="hover:text-brand transition-colors"
+            >
+              How our platform works
+            </Link>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }
