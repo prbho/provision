@@ -29,17 +29,17 @@ export default function CookieConsent() {
   if (!isVisible) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-brand/5 border-t shadow-lg sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-md sm:rounded-lg sm:border">
+    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-brand border-t shadow-lg sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-md sm:rounded-lg sm:border">
       <div className="flex items-start gap-3">
         <div className="flex-1">
           <div className="flex items-center mb-2 gap-2 relative">
             <div className="p-2 bg-brand/10 rounded-lg">
-              <Cookie className="h-5 w-5 text-emerald-600" />
+              <Cookie className="h-5 w-5 text-white" />
             </div>
-            <h3 className="font-semibold text-gray-900">Cookie Preferences</h3>
+            <h3 className="font-semibold text-white">Cookie Preferences</h3>
             <button
               onClick={rejectCookies}
-              className="p-1 text-gray-400 absolute -top-2 right-0 hover:text-gray-600 ml-auto cursor-pointer"
+              className="p-1 text-white/90 absolute -top-2 right-0 hover:text-white0 ml-auto cursor-pointer"
               aria-label="Close cookie consent"
             >
               <X className="h-4 w-4" />
@@ -54,19 +54,19 @@ export default function CookieConsent() {
             <Button
               onClick={acceptCookies}
               size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
+              className="bg-stone-950 hover:bg-stone-900 cursor-pointer"
             >
               Accept All Cookies
             </Button>
             <Button
-              className="border border-emerald-600 bg-transparent cursor-pointer"
+              className="border border-brand/85 bg-white cursor-pointer"
               onClick={rejectCookies}
               variant="outline"
               size="sm"
             >
               Reject Non-Essential
             </Button>
-            <Button asChild variant="ghost" size="sm">
+            <Button className="bg-white" asChild variant="ghost" size="sm">
               <Link href="/cookies">Learn More</Link>
             </Button>
           </div>
