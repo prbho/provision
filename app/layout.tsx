@@ -5,6 +5,7 @@ import Script from 'next/script'
 
 import './globals.css'
 
+import Image from 'next/image'
 import { AccessibilityProvider } from '@/contexts/AccessibilityContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { LoadingProvider } from '@/contexts/LoadingContext'
@@ -325,10 +326,13 @@ export default function RootLayout({
                   fallback={
                     <div className="min-h-screen flex items-center justify-center">
                       <div className="flex flex-col items-center gap-4">
-                        <div className="animate-spin rounded-full h-16 w-16 border-4 border-emerald-200 border-t-emerald-600"></div>
-                        <p className="text-gray-600">
-                          Loading PropertyVision...
-                        </p>
+                        <Image
+                          src="/logot.png"
+                          alt="PropertyVision Logo"
+                          width={100}
+                          height={50}
+                        />
+                        <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand/20 border-t-brand"></div>
                       </div>
                     </div>
                   }

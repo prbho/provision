@@ -43,6 +43,9 @@ export default async function AgentProfilePage({
                   src={agent.avatar}
                   alt={agent.name}
                   className="w-full h-full object-cover"
+                  width={128}
+                  height={128}
+                  unoptimized
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-50">

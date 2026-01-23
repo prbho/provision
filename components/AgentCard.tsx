@@ -20,7 +20,7 @@ export default function AgentCard({ agent }: AgentCardProps) {
             alt={agent.name}
             fill
             className="object-cover"
-            unoptimized // Keep this for Appwrite images
+            unoptimized
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             priority={false}
           />

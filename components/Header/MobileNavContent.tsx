@@ -3,21 +3,19 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   BadgeQuestionMark,
   Building,
-  Building2,
-  Calculator,
   ChevronRight,
   FileCheck,
   Globe,
-  Handshake,
   Heart,
-  HomeIcon,
   Plane,
   Shield,
   TrendingUp,
+  User,
   Users,
 } from 'lucide-react'
 
@@ -41,6 +39,7 @@ export default function MobileNavContent({
   openAuth,
   isAuthenticated,
 }: MobileNavContentProps) {
+  const router = useRouter()
   const { user, logout } = useAuth()
   const [openProperties, setOpenProperties] = useState(false)
   const [openServices, setOpenServices] = useState(false)
@@ -67,9 +66,9 @@ export default function MobileNavContent({
     if (user?.userType === 'agent') {
       return '/properties/post' // Agents use the advanced property posting
     } else if (user?.userType === 'seller') {
-      return '/list-property' // Regular sellers use simple listing
+      return '/properties/post' // Regular sellers use simple listing
     }
-    return '/list-property' // Fallback
+    return '/properties/post' // Fallback
   }
 
   const handleLogout = () => {
@@ -123,7 +122,7 @@ export default function MobileNavContent({
               Properties for Short-let
             </Link>
             <Link
-              href="/list-property"
+              href="/properties/post"
               className="flex items-center text-gray-700 hover:text-emerald-600 transition-colors py-2"
               onClick={closeSheet}
             >
@@ -153,23 +152,26 @@ export default function MobileNavContent({
             >
               <FileCheck className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
               <div>
-                <p className="font-medium">Property Verification</p>
+                <p className="font-medium">Verification & Due Diligence</p>
+                <p className="text-xs text-gray-500">Property Verification</p>
                 <p className="text-xs text-gray-500">
-                  Title checks & due diligence
+                  Comprehensive Due Diligence
                 </p>
+                <p className="text-xs text-gray-500">Physical Inspection</p>
+                <p className="text-xs text-gray-500">Fraud Risk Assessment</p>
               </div>
             </Link>
             <Link
-              href="/services/advisory"
+              href="/services/investment"
               className="flex items-start space-x-3 text-gray-700 hover:text-emerald-600 transition-colors py-2"
               onClick={closeSheet}
             >
               <TrendingUp className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
               <div>
                 <p className="font-medium">Investment Advisory</p>
-                <p className="text-xs text-gray-500">
-                  Personalized strategy & planning
-                </p>
+                <p className="text-xs text-gray-500">Investment Strategy</p>
+                <p className="text-xs text-gray-500">Market Intelligence</p>
+                <p className="text-xs text-gray-500">Wealth Management</p>
               </div>
             </Link>
             <Link
@@ -179,10 +181,25 @@ export default function MobileNavContent({
             >
               <Globe className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
               <div>
-                <p className="font-medium">Diaspora Support</p>
+                <p className="font-medium">Diaspora Services</p>
                 <p className="text-xs text-gray-500">
-                  Buy from abroad securely
+                  Remote Property Purchase
                 </p>
+                <p className="text-xs text-gray-500">International Payments </p>
+              </div>
+            </Link>
+            <Link
+              href="/services/mortage"
+              className="flex items-start space-x-3 text-gray-700 hover:text-emerald-600 transition-colors py-2"
+              onClick={closeSheet}
+            >
+              <Globe className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium">Mortgage & Financing</p>
+                <p className="text-xs text-gray-500">
+                  Mortgage Pre-Qualification
+                </p>
+                <p className="text-xs text-gray-500">Loan Optimization</p>
               </div>
             </Link>
             <Link
@@ -192,10 +209,9 @@ export default function MobileNavContent({
             >
               <Building className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
               <div>
-                <p className="font-medium">Construction Management</p>
-                <p className="text-xs text-gray-500">
-                  Turnkey building projects
-                </p>
+                <p className="font-medium">Development & Construction</p>
+                <p className="text-xs text-gray-500">Project Management</p>
+                <p className="text-xs text-gray-500">Design & Planning</p>
               </div>
             </Link>
             <Link
@@ -207,17 +223,18 @@ export default function MobileNavContent({
                 ₦
               </div>
               <div>
-                <p className="font-medium">Mortgage Access</p>
+                <p className="font-medium">Mortgage & Financing</p>
                 <p className="text-xs text-gray-500">
-                  Financing through partners
+                  Mortgage Pre-Qualification
                 </p>
+                <p className="text-xs text-gray-500">Loan Optimization</p>
               </div>
             </Link>
           </CollapsibleContent>
         </Collapsible>
 
         {/* Agents Dropdown */}
-        <Collapsible
+        {/* <Collapsible
           open={openAgents}
           onOpenChange={setOpenAgents}
           className="border-b border-gray-100 last:border-0"
@@ -252,7 +269,7 @@ export default function MobileNavContent({
               </div>
             </Link>
           </CollapsibleContent>
-        </Collapsible>
+        </Collapsible> */}
 
         {/* Resources Dropdown */}
         <Collapsible
@@ -268,23 +285,39 @@ export default function MobileNavContent({
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-2 pl-4 pb-3">
             <Link
-              href="/mortgage"
+              href="/how-it-works"
               className="flex items-center text-gray-700 hover:text-emerald-600 transition-colors py-2"
               onClick={closeSheet}
             >
-              <Calculator className="h-5 w-5 text-emerald-600 mr-3 shrink-0" />
-              Mortgage Calculator
+              <User className="h-5 w-5 text-emerald-600 mr-3 shrink-0" />
+              How It Works
             </Link>
             <Link
-              href="/faqs"
+              href="/guides/first-time-buyer"
+              className="flex items-center text-gray-700 hover:text-emerald-600 transition-colors py-2"
+              onClick={closeSheet}
+            >
+              <User className="h-5 w-5 text-emerald-600 mr-3 shrink-0" />
+              First-Time Buyer Guide
+            </Link>
+            <Link
+              href="/resources/roi-calculator"
               className="flex items-center text-gray-700 hover:text-emerald-600 transition-colors py-2"
               onClick={closeSheet}
             >
               <BadgeQuestionMark className="h-5 w-5 text-emerald-600 mr-3 shrink-0" />
-              Frequently Asked Questions
+              Property Inspection Checklist
             </Link>
             <Link
-              href="/resources/diaspora"
+              href="/guides/inspection-checklist"
+              className="flex items-center text-gray-700 hover:text-emerald-600 transition-colors py-2"
+              onClick={closeSheet}
+            >
+              <BadgeQuestionMark className="h-5 w-5 text-emerald-600 mr-3 shrink-0" />
+              ROI Calculator
+            </Link>
+            <Link
+              href="/guides/diaspora"
               className="flex items-center text-gray-700 hover:text-emerald-600 transition-colors py-2"
               onClick={closeSheet}
             >
@@ -300,7 +333,7 @@ export default function MobileNavContent({
           className="py-3 text-lg font-medium text-gray-900 hover:text-emerald-600 transition-colors border-b border-gray-100"
           onClick={closeSheet}
         >
-          Company
+          About
         </Link>
         <Link
           href="/contact"
@@ -376,7 +409,6 @@ export default function MobileNavContent({
                 href={`/dashboard/agent/${user?.$id || ''}/properties`}
                 onClick={closeSheet}
               >
-                {' '}
                 My Properties
               </Link>
             </Button>
@@ -393,23 +425,21 @@ export default function MobileNavContent({
       ) : (
         <div className="flex flex-col space-y-3 px-4">
           <Button
-            className="w-full bg-emerald-600 hover:bg-emerald-700"
-            onClick={() => {
-              openAuth()
-              closeSheet()
-            }}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+            asChild
           >
-            Sign In
+            <Link href="/login" onClick={closeSheet}>
+              Sign In
+            </Link>
           </Button>
           <Button
             variant="outline"
-            className="w-full border-emerald-600 text-emerald-600 hover:bg-brand/5"
-            onClick={() => {
-              openAuth()
-              closeSheet()
-            }}
+            className="w-full border-emerald-600 text-emerald-600 hover:bg-emerald-50"
+            asChild
           >
-            Sign Up
+            <Link href="/register" onClick={closeSheet}>
+              Sign Up
+            </Link>
           </Button>
         </div>
       )}

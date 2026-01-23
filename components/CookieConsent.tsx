@@ -45,7 +45,7 @@ export default function CookieConsent() {
               <X className="h-4 w-4" />
             </button>
           </div>
-          <p className="text-sm text-white/90 mb-4">
+          <p className="text-sm text-white mb-4">
             We use cookies to enhance your browsing experience, analyze site
             traffic, and personalize content. By continuing to use our site, you
             consent to our use of cookies.
@@ -64,15 +64,12 @@ export default function CookieConsent() {
               variant="outline"
               size="sm"
             >
-              Reject Non-Essential
+              <span className="text-stone-900">Reject Non-Essential</span>
             </Button>
-            <Button
-              className="bg-white text-stone-900"
-              asChild
-              variant="ghost"
-              size="sm"
-            >
-              <Link href="/cookies">Learn More</Link>
+            <Button className="bg-white " asChild variant="ghost" size="sm">
+              <Link className="text-stone-900" href="/cookies">
+                Learn More
+              </Link>
             </Button>
           </div>
         </div>
