@@ -27,7 +27,7 @@ export default function HeaderMobile({ openAuth }: HeaderMobileProps) {
         <Image
           width={150}
           height={64}
-          src="/logot.png"
+          src="/logo.png"
           alt="PropertyVision"
           className="h-15 w-auto"
         />
