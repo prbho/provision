@@ -187,7 +187,7 @@ export default function TermsOfServicePage() {
               <h3 className="font-medium text-gray-900 mb-2">
                 Legal Department
               </h3>
-              <p className="text-gray-600">legal@propertyvision.com</p>
+              <p className="text-gray-600">legal@propertyvisionltd.com</p>
               <p className="text-gray-600">+234 906 8425 841</p>
             </div>
             <div>

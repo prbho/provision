@@ -430,7 +430,7 @@ export default function PropertyVerificationPage() {
 
                 <div className="space-y-3">
                   <a
-                    href="mailto:verification@propertyvision.com"
+                    href="mailto:verification@propertyvisionltd.com"
                     className="flex items-center justify-center gap-2 px-4 py-3 bg-white border rounded-lg hover:border-brand/30 transition-colors"
                   >
                     <Mail className="h-5 w-5 text-gray-600" />

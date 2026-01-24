@@ -368,7 +368,7 @@ export default function DisclaimerPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button asChild className="bg-gray-900 hover:bg-gray-700">
-                  <a href="mailto:legal@propertyvision.com">
+                  <a href="mailto:legal@propertyvisionltd.com">
                     Contact Legal Team
                   </a>
                 </Button>

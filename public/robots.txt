@@ -56,10 +56,10 @@ Disallow: /properties/post
 Crawl-delay: 2
 
 # Sitemap location
-Sitemap: https://propertyvision.com/sitemap.xml
+Sitemap: https://propertyvisionltd.com/sitemap.xml
 
 # Host
-Host: https://propertyvision.com
+Host: https://propertyvisionltd.com
 
 # Bot-specific rules
 User-agent: Googlebot

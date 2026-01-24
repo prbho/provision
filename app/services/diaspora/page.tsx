@@ -389,7 +389,7 @@ export default function DiasporaServicesPage() {
         {/* Contact Options */}
         <div className="grid md:grid-cols-3 gap-6">
           <a
-            href="mailto:diaspora@propertyvision.com"
+            href="mailto:diaspora@propertyvisionltd.com"
             className="p-6 border rounded-lg hover:bg-blue-50 text-center"
           >
             <MessageSquare className="h-8 w-8 text-brand mx-auto mb-3" />
@@ -397,7 +397,7 @@ export default function DiasporaServicesPage() {
               Email Support
             </div>
             <div className="text-sm text-gray-600">
-              diaspora@propertyvision.com
+              diaspora@propertyvisionltd.com
             </div>
           </a>
           <a

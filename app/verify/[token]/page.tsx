@@ -259,7 +259,7 @@ export default function VerifyPage() {
                 href="mailto:onboarding@resend.dev"
                 className="text-blue-600 hover:underline font-medium"
               >
-                support@propertyvision.com
+                support@propertyvisionltd.com
               </a>
             </p>
           </div>

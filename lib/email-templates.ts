@@ -187,7 +187,7 @@ export function generateVerificationEmail(params: EmailTemplateParams): {
         </div>
         
         <div class="footer">
-          <p>Need help? <a href="mailto:support@propertyvision.com" style="color: #2563eb;">Contact Support</a></p>
+          <p>Need help? <a href="mailto:support@propertyvisionltd.com" style="color: #2563eb;">Contact Support</a></p>
           <p style="font-size: 12px; color: #94a3b8;">
             &copy; ${new Date().getFullYear()} PropertyVision. All rights reserved.
           </p>
@@ -312,7 +312,7 @@ export function generatePasswordResetEmail(params: EmailTemplateParams): {
         </div>
         
         <div class="footer">
-          <p>Need help? <a href="mailto:support@propertyvision.com" style="color: #2563eb;">Contact Support</a></p>
+          <p>Need help? <a href="mailto:support@propertyvisionltd.com" style="color: #2563eb;">Contact Support</a></p>
           <p style="font-size: 12px; color: #94a3b8;">
             &copy; ${new Date().getFullYear()} PropertyVision. All rights reserved.
           </p>

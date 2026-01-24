@@ -390,7 +390,7 @@ export default function ConstructionServicePage() {
         {/* Contact Options */}
         <div className="grid md:grid-cols-3 gap-6">
           <a
-            href="mailto:construction@propertyvision.com"
+            href="mailto:construction@propertyvisionltd.com"
             className="p-6 border rounded-lg hover:bg-brand/5 text-center"
           >
             <Mail className="h-8 w-8 text-brand mx-auto mb-3" />
@@ -398,7 +398,7 @@ export default function ConstructionServicePage() {
               Email Support
             </div>
             <div className="text-sm text-gray-600">
-              construction@propertyvision.com
+              construction@propertyvisionltd.com
             </div>
           </a>
           <a

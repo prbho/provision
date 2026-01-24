@@ -4,51 +4,14 @@
 
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
-import L from 'leaflet'
 
-import 'leaflet/dist/leaflet.css'
-
-// Fix Leaflet default icon paths
-// Remove the private property to fix the icon paths
-if (typeof window !== 'undefined') {
-  // Access the prototype with proper type checking
-  const defaultIconProto = L.Icon.Default.prototype as unknown as {
-    _getIconUrl?: string
-  }
-
-  if (defaultIconProto._getIconUrl) {
-    delete defaultIconProto._getIconUrl
-  }
-
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: '/marker-icon-2x.png',
-    iconUrl: '/marker-icon.png',
-    shadowUrl: '/marker-shadow.png',
-  })
-}
-
-// Alternative: Use CDN URLs instead of local files (more reliable)
-// if (typeof window !== 'undefined') {
-//   // Fix Leaflet default icon paths using CDN
-//   const defaultIconProto = L.Icon.Default.prototype as unknown as {
-//     _getIconUrl?: string;
-//   };
-
-//   if (defaultIconProto._getIconUrl) {
-//     delete defaultIconProto._getIconUrl;
-//   }
-
-//   L.Icon.Default.mergeOptions({
-//     iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-//     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-//     shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-//   });
-// }
-
-// Dynamically import MapContainer to avoid SSR issues
+// Dynamically import everything to avoid SSR issues
 const MapContainer = dynamic(
   () => import('react-leaflet').then((mod) => mod.MapContainer),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => <MapLoading />,
+  }
 )
 const TileLayer = dynamic(
   () => import('react-leaflet').then((mod) => mod.TileLayer),
@@ -71,32 +34,28 @@ interface PropertyMapProps {
   country?: string
 }
 
-// Function to adjust coordinates when they don't match the city/address
-const getAdjustedCoordinates = (
-  lat: number,
-  lng: number,
-  city: string,
-  address: string
-): [number, number] => {
-  const lowerCity = city.toLowerCase()
-  const lowerAddress = address.toLowerCase()
+// Loading component for the map
+function MapLoading() {
+  return (
+    <div className="h-[400px] w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading map...</p>
+      </div>
+    </div>
+  )
+}
 
-  // Check if address mentions Ibeju-Lekki but coordinates are in Ikeja area
-  const isIbejuLekkiAddress =
-    lowerCity.includes('ibeju') ||
-    lowerAddress.includes('ibeju') ||
-    lowerAddress.includes('lekki epe') ||
-    lowerAddress.includes('alaro city')
-
-  const isIkejaCoordinates =
-    lat >= 6.45 && lat <= 6.65 && lng >= 3.3 && lng <= 3.45
-
-  if (isIbejuLekkiAddress && isIkejaCoordinates) {
-    console.log('📍 Adjusting coordinates from Ikeja to Ibeju-Lekki')
-    return [6.4589, 3.6018] // Ibeju-Lekki coordinates
-  }
-
-  return [lat, lng]
+// Error component for map failures
+function MapError({ fullAddress }: { fullAddress: string }) {
+  return (
+    <div className="h-[400px] w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center">
+      <div className="text-center p-4">
+        <p className="text-gray-600">Unable to load map location</p>
+        <p className="text-sm text-gray-500 mt-2">Address: {fullAddress}</p>
+      </div>
+    </div>
+  )
 }
 
 export default function PropertyMap({
@@ -107,13 +66,38 @@ export default function PropertyMap({
   state,
   country = 'Nigeria',
 }: PropertyMapProps) {
-  const [isClient, setIsClient] = useState(false)
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null)
   const [isAdjusted, setIsAdjusted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
+
+  // Function to adjust coordinates when they don't match the city/address
+  const getAdjustedCoordinates = (
+    lat: number,
+    lng: number,
+    city: string,
+    address: string
+  ): [number, number] => {
+    const lowerCity = city.toLowerCase()
+    const lowerAddress = address.toLowerCase()
+
+    const isIbejuLekkiAddress =
+      lowerCity.includes('ibeju') ||
+      lowerAddress.includes('ibeju') ||
+      lowerAddress.includes('lekki epe') ||
+      lowerAddress.includes('alaro city')
+
+    const isIkejaCoordinates =
+      lat >= 6.45 && lat <= 6.65 && lng >= 3.3 && lng <= 3.45
+
+    if (isIbejuLekkiAddress && isIkejaCoordinates) {
+      return [6.4589, 3.6018] // Ibeju-Lekki coordinates
+    }
+
+    return [lat, lng]
+  }
 
   useEffect(() => {
-    setIsClient(true)
     setIsLoading(true)
 
     console.log('🌍 Map Data:', {
@@ -153,7 +137,6 @@ export default function PropertyMap({
     console.log('🔍 Geocoding address:', fullAddress)
 
     try {
-      // Using OpenStreetMap Nominatim API with Nigeria country code filter
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
           fullAddress
@@ -168,7 +151,6 @@ export default function PropertyMap({
         const lon = parseFloat(data[0].lon)
         console.log('✅ Geocoded coordinates:', { lat, lon })
 
-        // Check if we need to adjust these coordinates too
         const adjusted = getAdjustedCoordinates(lat, lon, city, address)
         setCoordinates(adjusted)
         setIsAdjusted(adjusted[0] !== lat || adjusted[1] !== lon)
@@ -185,7 +167,6 @@ export default function PropertyMap({
   }
 
   const getFallbackCoordinates = () => {
-    // Try to get coordinates based on city/state with adjustment
     const stateCoords: Record<string, [number, number]> = {
       Lagos: [6.5244, 3.3792],
       Abuja: [9.0765, 7.3986],
@@ -224,9 +205,8 @@ export default function PropertyMap({
       Bayelsa: [4.7719, 6.0699],
     }
 
-    let coords = stateCoords[state] || [9.082, 8.6753] // Default to Nigeria center
+    let coords = stateCoords[state] || [9.082, 8.6753]
 
-    // If it's Ibeju-Lekki specifically, use those coordinates
     if (
       city.toLowerCase().includes('ibeju') ||
       address.toLowerCase().includes('ibeju')
@@ -234,7 +214,7 @@ export default function PropertyMap({
       coords = [6.4589, 3.6018]
       setIsAdjusted(true)
     } else {
-      setIsAdjusted(true) // Mark as adjusted since we're using fallback
+      setIsAdjusted(true)
     }
 
     console.log('📍 Using fallback coordinates:', state, coords)
@@ -244,26 +224,16 @@ export default function PropertyMap({
 
   const fullAddress = `${address}, ${city}, ${state}, ${country}`
 
-  if (!isClient || isLoading) {
-    return (
-      <div className="h-[400px] w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading map...</p>
-        </div>
-      </div>
-    )
+  if (hasError) {
+    return <MapError fullAddress={fullAddress} />
+  }
+
+  if (isLoading) {
+    return <MapLoading />
   }
 
   if (!coordinates) {
-    return (
-      <div className="h-[400px] w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center">
-        <div className="text-center p-4">
-          <p className="text-gray-600">Unable to load map location</p>
-          <p className="text-sm text-gray-500 mt-2">Address: {fullAddress}</p>
-        </div>
-      </div>
-    )
+    return <MapError fullAddress={fullAddress} />
   }
 
   return (
@@ -271,7 +241,7 @@ export default function PropertyMap({
       <MapContainer
         center={coordinates}
         zoom={15}
-        className="h-full w-full z-10!"
+        className="h-full w-full"
         scrollWheelZoom={false}
       >
         <TileLayer
@@ -336,7 +306,6 @@ export default function PropertyMap({
         </Marker>
       </MapContainer>
 
-      {/* Additional information below the map */}
       <div className="bg-gray-50 border-t border-gray-200 p-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-gray-600">
           <div>

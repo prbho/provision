@@ -20,32 +20,60 @@ async function getProperty(id: string): Promise<Property> {
       throw new Error('Missing document ID')
     }
 
+    console.log('🔍 Fetching property with ID:', id)
+
+    // First, get the property
     const property = await databases.getDocument(
       DATABASE_ID,
       PROPERTIES_COLLECTION_ID,
       id
     )
 
-    // Update view count
-    await databases.updateDocument(DATABASE_ID, PROPERTIES_COLLECTION_ID, id, {
-      views: (property.views || 0) + 1,
-    })
+    if (!property) {
+      console.error('❌ Property not found in database')
+      throw new Error('Property not found')
+    }
+
+    console.log('✅ Property found:', property.title)
+
+    // Then, update view count (don't await this to speed up response)
+    databases
+      .updateDocument(DATABASE_ID, PROPERTIES_COLLECTION_ID, id, {
+        views: (property.views || 0) + 1,
+      })
+      .catch((err) => {
+        console.error('❌ Error updating view count:', err)
+        // Don't throw, this is non-critical
+      })
 
     // Cast to Property type
     return property as unknown as Property
-  } catch {
-    console.error('Error fetching property')
+  } catch (error: any) {
+    console.error('❌ Error in getProperty:', {
+      message: error.message,
+      code: error.code,
+      id: id,
+    })
     throw new Error('Property not found')
   }
 }
 
+// Cache the property fetch to avoid duplicate calls
+const propertyCache = new Map<string, Promise<Property>>()
+
+function getCachedProperty(id: string): Promise<Property> {
+  if (!propertyCache.has(id)) {
+    propertyCache.set(id, getProperty(id))
+  }
+  return propertyCache.get(id)!
+}
+
 export default async function PropertyPage(props: PageProps) {
-  // Unwrap the params promise
   const params = await props.params
   let property: Property
 
   try {
-    property = await getProperty(params.id)
+    property = await getCachedProperty(params.id)
   } catch {
     notFound()
   }
@@ -55,24 +83,27 @@ export default async function PropertyPage(props: PageProps) {
 
 // Generate metadata for SEO
 export async function generateMetadata(props: PageProps) {
-  // Unwrap the params promise
   const params = await props.params
 
   try {
-    const property = await getProperty(params.id)
+    const property = await getCachedProperty(params.id)
 
     return {
-      title: `${property.title} | ${property.city}, ${property.state} - propertyvision`,
-      description: property.description.substring(0, 160) + '...',
+      title: `${property.title} | ${property.city}, ${property.state} - PropertyVision`,
+      description:
+        property.description?.substring(0, 160) + '...' ||
+        'Property listing on PropertyVision',
       openGraph: {
         title: property.title,
-        description: property.description.substring(0, 160) + '...',
-        images: property.images.length > 0 ? [property.images[0]] : [],
+        description:
+          property.description?.substring(0, 160) + '...' ||
+          'Property listing on PropertyVision',
+        images: property.images?.length > 0 ? [property.images[0]] : [],
       },
     }
   } catch {
     return {
-      title: 'Property Not Found - propertyvision',
+      title: 'Property Not Found - PropertyVision',
       description: 'The property you are looking for does not exist.',
     }
   }

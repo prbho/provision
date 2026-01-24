@@ -183,10 +183,10 @@ export default function PrivacyPolicyPage() {
             <p className="text-sm text-gray-700">
               To exercise these rights, contact us at{' '}
               <a
-                href="mailto:privacy@propertyvision.com"
+                href="mailto:privacy@propertyvisionltd.com"
                 className="text-blue-600 font-medium"
               >
-                privacy@propertyvision.com
+                privacy@propertyvisionltd.com
               </a>
               . We respond within 30 days as required by law.
             </p>
@@ -213,13 +213,13 @@ export default function PrivacyPolicyPage() {
           <div className="space-y-4">
             <div>
               <h3 className="font-medium text-gray-900 mb-1">Privacy Team</h3>
-              <p className="text-gray-600">privacy@propertyvision.com</p>
+              <p className="text-gray-600">privacy@propertyvisionltd.com</p>
             </div>
             <div>
               <h3 className="font-medium text-gray-900 mb-1">
                 Data Protection Officer
               </h3>
-              <p className="text-gray-600">dpo@propertyvision.com</p>
+              <p className="text-gray-600">dpo@propertyvisionltd.com</p>
             </div>
             <div>
               <h3 className="font-medium text-gray-900 mb-1">

@@ -291,7 +291,7 @@ export default function FAQPage() {
             </div>
             <div className="flex gap-3">
               <a
-                href="mailto:support@propertyvision.com"
+                href="mailto:support@propertyvisionltd.com"
                 className="flex items-center gap-2 px-4 py-2 bg-brand/90 text-white text-sm rounded-md hover:bg-brand"
               >
                 <Mail className="h-4 w-4" />

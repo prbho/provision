@@ -1,5 +1,5 @@
-Contact: mailto:security@propertyvision.com
+Contact: mailto:security@propertyvisionltd.com
 Expires: 2025-12-31T23:00:00.000Z
 Preferred-Languages: en
-Canonical: https://propertyvision.com/.well-known/security.txt
-Policy: https://propertyvision.com/security-policy
+Canonical: https://propertyvisionltd.com/.well-known/security.txt
+Policy: https://propertyvisionltd.com/security-policy

@@ -275,7 +275,7 @@ export default function CookiePolicyPage() {
               Questions About Cookies?
             </h3>
             <p className="text-gray-700 text-sm mb-2">
-              Contact us at privacy@propertyvision.com
+              Contact us at privacy@propertyvisionltd.com
             </p>
             <p className="text-gray-600 text-xs">
               Subject: Cookie Policy Inquiry

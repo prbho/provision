@@ -465,7 +465,7 @@ export default function AccessibilityPage() {
                 asChild
                 className="bg-white text-emerald-700 hover:bg-gray-100"
               >
-                <a href="mailto:accessibility@propertyvision.com?subject=Accessibility Feedback">
+                <a href="mailto:accessibility@propertyvisionltd.com?subject=Accessibility Feedback">
                   Email Feedback
                 </a>
               </Button>

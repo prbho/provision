@@ -64,10 +64,10 @@ Disallow: /properties/post
 Crawl-delay: 2
 
 # Sitemap location
-Sitemap: https://propertyvision.com/sitemap.xml
+Sitemap: https://propertyvisionltd.com/sitemap.xml
 
 # Host
-Host: https://propertyvision.com
+Host: https://propertyvisionltd.com
 
 # Bot-specific rules
 User-agent: Googlebot
@@ -121,8 +121,8 @@ User-agent: MauiBot
 Disallow: /
 
 # Sitewide sitemaps:
-Sitemap: https://propertyvision.com/sitemap.xml
-Sitemap: https://propertyvision.com/sitemap
+Sitemap: https://propertyvisionltd.com/sitemap.xml
+Sitemap: https://propertyvisionltd.com/sitemap
 
 # End of robots.txt`
 

@@ -273,7 +273,7 @@ export default function HowItWorksPage() {
     {
       question: 'How long does the buying process take?',
       answer:
-        'Typically 8-12 weeks from search to closing, depending on property type and financing.',
+        'Typically 1-4 weeks from search to closing, depending on property type and financing.',
     },
     {
       question: 'What documents do I need to buy a property?',
@@ -543,7 +543,7 @@ export default function HowItWorksPage() {
               Total estimated time:{' '}
               <span className="font-semibold text-gray-900">
                 {activeTab === 'buy'
-                  ? '8-12 weeks'
+                  ? '1-4 weeks'
                   : activeTab === 'sell'
                     ? '7-13 weeks'
                     : '10-14 weeks'}
