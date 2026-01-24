@@ -256,7 +256,7 @@ export default function VerifyPage() {
             <p className="text-xs text-gray-500 text-center">
               Need help? Contact{' '}
               <a
-                href="mailto:onboarding@resend.dev"
+                href="mailto:support@propertyvisionltd.com"
                 className="text-blue-600 hover:underline font-medium"
               >
                 support@propertyvisionltd.com

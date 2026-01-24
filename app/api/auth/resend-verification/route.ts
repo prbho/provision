@@ -252,9 +252,9 @@ export async function POST(request: NextRequest) {
       }
 
       const { error } = await resend.emails.send({
-        from: 'propertyvision <onboarding@resend.dev>',
+        from: 'propertyvision <hello@mail.propertyvisionltd.com>',
         to: email,
-        subject: 'Verify your email - propertyvision',
+        subject: 'Verify your email - propertyVision',
         html: emailHtml,
       })
 

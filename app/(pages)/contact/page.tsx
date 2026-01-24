@@ -60,7 +60,8 @@ export default function ContactPage() {
     office:
       'Didi Mall, Suit LF6A, Adjacent Novare Mall, Sangotedo, Ajah, Lagos',
     phone: '+234 906 8425 841',
-    email: 'propertyvision@gmail.com',
+    email: 'propertyvisiondev@gmail.com,',
+    email2: 'hello@propertyvisionltd.com',
   }
 
   return (
@@ -282,6 +283,13 @@ export default function ContactPage() {
                       className="text-brand hover:text-brand"
                     >
                       {contactInfo.email}
+                    </a>
+                    <br />
+                    <a
+                      href={`mailto:${contactInfo.email2}`}
+                      className="text-brand hover:text-brand"
+                    >
+                      {contactInfo.email2}
                     </a>
                     <p className="text-sm text-gray-600 mt-1">
                       We respond within 24 hours

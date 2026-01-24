@@ -15,7 +15,8 @@ export class EmailService {
 
   constructor() {
     // Get email configuration from environment
-    this.baseEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
+    this.baseEmail =
+      process.env.RESEND_FROM_EMAIL || 'hello@mail.propertyvisionltd.com'
 
     // Make sure RESEND_API_KEY is set in your .env.local file
     const apiKey = process.env.RESEND_API_KEY

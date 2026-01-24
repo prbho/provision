@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const resend = getResendClient()
 
     const { data, error } = await resend.emails.send({
-      from: 'propertyvision <onboarding@resend.dev>',
+      from: 'propertyvision <hello@mail.propertyvisionltd.com>',
       to: email,
       subject: 'Verify your email - propertyvision',
       html: generateVerificationEmail(verificationUrl, userName || email), // Changed to html
