@@ -189,7 +189,8 @@ export function generateVerificationEmail(params: EmailTemplateParams): {
         <div class="footer">
           <p>Need help? <a href="mailto:support@propertyvisionltd.com" style="color: #2563eb;">Contact Support</a></p>
           <p style="font-size: 12px; color: #94a3b8;">
-            &copy; ${new Date().getFullYear()} PropertyVision. All rights reserved.
+            &copy; ${new Date().getFullYear()} Property Vision Leadgate Development
+              Ltd. All rights reserved.
           </p>
         </div>
       </div>
@@ -314,7 +315,8 @@ export function generatePasswordResetEmail(params: EmailTemplateParams): {
         <div class="footer">
           <p>Need help? <a href="mailto:support@propertyvisionltd.com" style="color: #2563eb;">Contact Support</a></p>
           <p style="font-size: 12px; color: #94a3b8;">
-            &copy; ${new Date().getFullYear()} PropertyVision. All rights reserved.
+            &copy; ${new Date().getFullYear()} Property Vision Leadgate Development
+              Ltd. All rights reserved.
           </p>
         </div>
       </div>

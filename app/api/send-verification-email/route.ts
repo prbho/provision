@@ -117,7 +117,10 @@ function generateVerificationEmail(verificationUrl: string, userName: string) {
           <p>This verification link will expire in 24 hours.</p>
           <div class="footer">
             <p>If you didn't create an account with propertyvision, please ignore this email.</p>
-            <p>&copy; 2024 propertyvision. All rights reserved.</p>
+            <p style="font-size: 12px; color: #94a3b8;">
+            &copy; ${new Date().getFullYear()} Property Vision Leadgate Development
+              Ltd. All rights reserved.
+          </p>
           </div>
         </div>
       </body>

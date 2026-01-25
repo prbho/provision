@@ -205,7 +205,8 @@ export default function Footer() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
             <div className="text-gray-500">
-              © {new Date().getFullYear()} PropertyVision. All rights reserved.
+              © {new Date().getFullYear()} Property Vision Leadgate Development
+              Ltd. All rights reserved.
             </div>
 
             <div className="flex items-center gap-6">

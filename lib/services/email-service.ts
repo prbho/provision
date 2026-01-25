@@ -223,7 +223,8 @@ export class EmailService {
             </div>
             <div class="footer">
               <p>Best regards,<br>The PropertyVision Security Team</p>
-              <p>© ${new Date().getFullYear()} PropertyVision. All rights reserved.</p>
+              <p>© ${new Date().getFullYear()} Property Vision Leadgate Development
+              Ltd. All rights reserved.</p>
               <p style="font-size: 12px; color: #9ca3af;">
                 This is an automated security notification. Please do not reply to this email.
               </p>

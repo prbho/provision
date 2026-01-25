@@ -224,7 +224,8 @@ export async function POST(request: NextRequest) {
               
               <div class="footer">
                   <p>If you didn't request this email, please ignore it.</p>
-                  <p>&copy; ${new Date().getFullYear()} propertyvision. All rights reserved.</p>
+                  <p>&copy; ${new Date().getFullYear()} Property Vision Leadgate Development
+              Ltd. All rights reserved.</p>
               </div>
           </div>
       </body>
