@@ -1,7 +1,7 @@
 // components/chatbot/intents.ts
 import { Memory } from './types'
 
-export type Intent =
+type Intent =
   | 'greeting'
   | 'property_search'
   | 'location_search'
@@ -12,6 +12,7 @@ export type Intent =
   | 'help'
   | 'basic_qa'
   | 'thanks'
+  | 'view_details'
   | 'unknown'
 
 export const detectIntent = (message: string, _memory: Memory): Intent => {
@@ -79,18 +80,26 @@ export const detectIntent = (message: string, _memory: Memory): Intent => {
     return 'property_search'
   }
 
-  // 8. Schedule viewing
+  // 8. View details intent
+  if (
+    /details|show me|tell me about|information|more info|see details/i.test(
+      text
+    )
+  )
+    return 'view_details'
+
+  // 9. Schedule viewing
   if (/viewing|tour|visit|see.*property|schedule.*viewing/i.test(text))
     return 'schedule_viewing'
 
-  // 9. Contact agent
+  // 10. Contact agent
   if (/agent|contact.*someone|speak.*person|talk.*to.*agent/i.test(text))
     return 'contact_agent'
 
-  // 10. Budget inquiry
+  // 11. Budget inquiry
   if (/price|cost|budget|how much|afford/i.test(text)) return 'budget_info'
 
-  // 11. If we get a greeting with location, still treat as location_search
+  // 12. If we get a greeting with location, still treat as location_search
   // This handles cases like "hello lagos" or "hi in lekki"
   const greetingWithLocation =
     /^(hi|hello|hey)\s+(in|at)?\s*(lagos|abuja|ikeja|lekki)/i.test(text)
@@ -163,9 +172,23 @@ export const extractMemoryUpdates = (text: string): Partial<Memory> => {
   }
 
   // Extract property type
-  const propertyTypes = ['house', 'apartment', 'condo', 'townhouse', 'land']
+  const propertyTypes = [
+    'duplex',
+    'apartment',
+    'house',
+    'condo',
+    'townhouse',
+    'land',
+    'bungalow',
+    'flat',
+    'villa',
+    'penthouse',
+    'studio',
+  ]
+
   for (const type of propertyTypes) {
-    if (text.includes(type)) {
+    const regex = new RegExp(`\\b${type}\\b`, 'i')
+    if (regex.test(text)) {
       updates.propertyType = type
       console.log('🏡 Found property type:', updates.propertyType)
       break

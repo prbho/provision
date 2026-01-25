@@ -12,20 +12,53 @@ import { getContextualQuickReplies } from './quickReplies'
 import { getShortResponse } from './responses'
 import { ChatMessage, LeadFormData, Memory } from './types'
 
+// Update the mockSearchProperties function:
 const mockSearchProperties = async (filters: Partial<Memory>) => {
   console.log('🔍 Searching properties with filters:', filters)
-  return [
+
+  // Mock data based on filters
+  const mockProperties = [
     {
       id: '1',
-      title: 'Beautiful 3-bedroom apartment in Lagos',
+      title: 'Beautiful Duplex in Lagos',
       price: 50000000,
-      bedrooms: 3,
-      bathrooms: 2,
+      bedrooms: 4,
+      bathrooms: 3,
       city: 'Lagos',
       address: 'Lekki Phase 1',
       images: ['/placeholder-property.jpg'],
+      propertyType: 'duplex',
+    },
+    {
+      id: '2',
+      title: 'Modern Apartment in Abuja',
+      price: 35000000,
+      bedrooms: 3,
+      bathrooms: 2,
+      city: 'Abuja',
+      address: 'Wuse 2',
+      images: ['/placeholder-property.jpg'],
+      propertyType: 'apartment',
     },
   ]
+
+  // Filter by location and property type
+  let filtered = mockProperties
+
+  if (filters.location) {
+    filtered = filtered.filter((p) =>
+      p.city.toLowerCase().includes(filters.location!.toLowerCase())
+    )
+  }
+
+  if (filters.propertyType) {
+    filtered = filtered.filter((p) =>
+      p.propertyType.toLowerCase().includes(filters.propertyType!.toLowerCase())
+    )
+  }
+
+  console.log('✅ Found properties:', filtered.length)
+  return filtered
 }
 
 export const useChatEngine = () => {
@@ -58,6 +91,8 @@ export const useChatEngine = () => {
   }, [leadData])
 
   // Define processUserMessage early so it can be referenced
+  // Replace your existing processUserMessage function in useChatEngine.ts with this:
+
   const processUserMessage = useCallback(
     async (message: string) => {
       console.log('💬 Processing message:', message)
@@ -67,146 +102,184 @@ export const useChatEngine = () => {
         return
       }
 
+      // Add user message
       addMessage({
         content: message,
         timestamp: new Date(),
         type: 'user',
       })
 
-      const intent = detectIntent(message, memoryManager.current.getMemory())
+      // Get current memory
+      const currentMemory = memoryManager.current.getMemory()
+      console.log('🧠 Current memory:', currentMemory)
+
+      // Detect intent
+      const intent = detectIntent(message, currentMemory)
       console.log('🎯 Detected intent:', intent)
 
-      // Update memory in a non-render context
-      setTimeout(() => {
-        if (memoryManager.current) {
-          memoryManager.current.updateFromIntent(intent, message)
-        }
-      }, 0)
+      // Update memory from intent
+      memoryManager.current.updateFromIntent(intent, message)
 
-      // Update lead form with memory data
-      setTimeout(() => {
-        if (memoryManager.current && leadFlowManager.current) {
-          leadFlowManager.current.updateFromMemory(
-            memoryManager.current.getMemory()
-          )
-        }
-      }, 0)
+      // Get updated memory
+      const updatedMemory = memoryManager.current.getMemory()
 
       setIsTyping(true)
 
-      switch (intent) {
-        case 'clear_chat':
-          setMessages([])
-          setTimeout(() => {
-            if (memoryManager.current) {
-              memoryManager.current.clear()
-            }
-          }, 0)
-          setDisplayedProperties([])
-          setIsTyping(false)
-          break
+      // Handle different intents with proper conversation flow
+      setTimeout(() => {
+        let response = ''
+        let foundProperties = 0
 
-        case 'location_search':
-          // Handle location search
-          console.log('📍 Handling location search for:', message)
+        switch (intent) {
+          case 'clear_chat':
+            memoryManager.current?.clear()
+            setMessages([])
+            setDisplayedProperties([])
+            response = 'Chat cleared! How can I help you today?'
+            break
 
-          if (!memoryManager.current) return
+          case 'greeting':
+            response = getShortResponse(intent, updatedMemory)
+            break
 
-          const updates = extractMemoryUpdates(message)
-          if (updates.location) {
-            memoryManager.current.update({ location: updates.location })
-          }
-
-          try {
-            const properties = await mockSearchProperties({
-              location: updates.location || message,
-            })
-
-            if (properties.length > 0) {
-              setDisplayedProperties(properties)
-
-              setTimeout(() => {
-                addMessage({
-                  content: `Great! I found ${properties.length} property${properties.length > 1 ? 'ies' : ''} in ${updates.location || message}.`,
-                  timestamp: new Date(),
-                  type: 'bot',
-                })
-
-                setTimeout(() => {
-                  addMessage({
-                    content:
-                      'Would you like to see the details or schedule a viewing?',
-                    timestamp: new Date(),
-                    type: 'bot',
-                  })
-                  setIsTyping(false)
-                }, 500)
-              }, 1000)
+          case 'property_search':
+            // Check if we need location or property type
+            if (!updatedMemory.location) {
+              updatedMemory.lastQuestionAsked = 'location'
+              response = 'Which location are you interested in?'
+            } else if (!updatedMemory.propertyType) {
+              updatedMemory.lastQuestionAsked = 'propertyType'
+              response = `Got it 👍 What type of property are you looking for in ${updatedMemory.location}?`
             } else {
-              setTimeout(() => {
+              // Both location and property type are known - search properties
+              mockSearchProperties({
+                location: updatedMemory.location,
+                propertyType: updatedMemory.propertyType,
+              }).then((properties) => {
+                foundProperties = properties.length
+                updatedMemory.propertiesFound = foundProperties
+                memoryManager.current?.update(updatedMemory)
+
+                if (foundProperties > 0) {
+                  setDisplayedProperties(properties)
+                  response = `Great! I found ${foundProperties} ${updatedMemory.propertyType}(s) in ${updatedMemory.location}. Would you like to see the details or schedule a viewing?`
+                } else {
+                  response = `I couldn't find any ${updatedMemory.propertyType} in ${updatedMemory.location}. Would you like to try another location or property type?`
+                }
+
+                // Add bot response
                 addMessage({
-                  content: `I couldn't find any properties in ${updates.location || message} right now. Would you like to try another location or get notified when properties become available?`,
+                  content: response,
                   timestamp: new Date(),
                   type: 'bot',
                 })
                 setIsTyping(false)
-              }, 1000)
-            }
-          } catch (error) {
-            console.error('Error searching properties:', error)
-            setTimeout(() => {
-              addMessage({
-                content:
-                  'Sorry, I encountered an error searching for properties. Please try again.',
-                timestamp: new Date(),
-                type: 'bot',
               })
-              setIsTyping(false)
-            }, 1000)
-          }
-          break
+              return // Exit early for async operation
+            }
+            break
 
-        case 'contact_agent':
-          setShowLeadForm(true)
-          setLeadStep(0)
-          setTimeout(() => {
-            addMessage({
-              content:
-                "I'd be happy to connect you with an agent! Please share your contact details below.",
-              timestamp: new Date(),
-              type: 'bot',
-            })
-            setIsTyping(false)
-          }, 500)
-          break
+          case 'location_search':
+            // Extract location from message
+            const locationMatch = message.match(
+              /\b(lagos|abuja|ikeja|lekki|yaba|ikoyi)\b/i
+            )
+            const location = locationMatch ? locationMatch[0] : message
 
-        case 'schedule_viewing':
-          setShowLeadForm(true)
-          setLeadStep(1)
-          setTimeout(() => {
-            addMessage({
-              content:
-                "Let's schedule a viewing! Please tell us when you'd like to visit.",
-              timestamp: new Date(),
-              type: 'bot',
-            })
-            setIsTyping(false)
-          }, 500)
-          break
+            // Update memory with location
+            if (memoryManager.current) {
+              memoryManager.current.update({ location })
+            }
+            const updatedMem = memoryManager.current?.getMemory()
 
-        default:
-          const response = getShortResponse(intent, {})
-          setTimeout(() => {
-            addMessage({
-              content: response,
-              timestamp: new Date(),
-              type: 'bot',
-            })
-            setIsTyping(false)
-          }, 500)
-      }
+            if (!updatedMem || !updatedMem.propertyType) {
+              response = `Great! Looking for properties in ${location}. What type of property are you looking for?`
+            } else {
+              // Both location and property type known - search
+              mockSearchProperties({
+                location: location,
+                propertyType: updatedMem.propertyType,
+              }).then((properties) => {
+                foundProperties = properties.length
+                memoryManager.current?.update({
+                  propertiesFound: foundProperties,
+                })
+
+                if (foundProperties > 0) {
+                  setDisplayedProperties(properties)
+                  response = `Great! I found ${foundProperties} ${updatedMem.propertyType}(s) in ${location}. Would you like to see the details or schedule a viewing?`
+                } else {
+                  response = `I couldn't find any ${updatedMem.propertyType} in ${location}. Would you like to try another location or property type?`
+                }
+
+                addMessage({
+                  content: response,
+                  timestamp: new Date(),
+                  type: 'bot',
+                })
+                setIsTyping(false)
+              })
+              return
+            }
+            break
+
+          case 'schedule_viewing':
+            if (!updatedMemory.location || !updatedMemory.propertyType) {
+              response =
+                'Let me get a few details first. What location are you interested in?'
+            } else if (displayedProperties.length === 0) {
+              response =
+                'Please search for properties first, then I can help you schedule a viewing.'
+            } else {
+              setShowLeadForm(true)
+              setLeadStep(0) // Changed from 1 to 0 - start with name
+              setTimeout(() => {
+                addMessage({
+                  content: "Let's schedule a viewing! First, what's your name?",
+                  timestamp: new Date(),
+                  type: 'bot',
+                })
+                setIsTyping(false)
+              }, 500)
+              return // Exit early since we're showing a message
+            }
+            break
+
+          case 'view_details':
+            if (!updatedMemory.location || !updatedMemory.propertyType) {
+              response =
+                'Let me get a few details first. What location are you interested in?'
+            } else if (displayedProperties.length === 0) {
+              response =
+                'Please search for properties first, then I can show you the details.'
+            } else {
+              response =
+                `Here are the details for properties in ${updatedMemory.location}:\n\n` +
+                `• Property Type: ${updatedMemory.propertyType}\n` +
+                `• Found: ${displayedProperties.length} properties\n` +
+                `• Price range: ₦${displayedProperties.reduce((min, p) => Math.min(min, p.price), Infinity).toLocaleString()} - ₦${displayedProperties.reduce((max, p) => Math.max(max, p.price), 0).toLocaleString()}\n\n` +
+                `Would you like to schedule a viewing for any of these?`
+            }
+            break
+
+          default:
+            response = getShortResponse(
+              intent,
+              updatedMemory,
+              displayedProperties.length
+            )
+        }
+
+        // Add bot response (for non-async cases)
+        addMessage({
+          content: response,
+          timestamp: new Date(),
+          type: 'bot',
+        })
+        setIsTyping(false)
+      }, 500)
     },
-    [addMessage]
+    [addMessage, displayedProperties.length]
   )
 
   const updateQuickReplies = useCallback(() => {
@@ -255,19 +328,59 @@ export const useChatEngine = () => {
   const submitLead = useCallback(async () => {
     if (!leadFlowManager.current) return
 
-    // Check if form is valid using the state
-    const requiredFields = ['name', 'email', 'phone']
-    const isValid = requiredFields.every((field) => leadData[field]?.trim())
+    // Check if current step is valid
+    let isValid = false
+    let currentField = ''
+    let nextStepField = ''
+
+    switch (leadStep) {
+      case 0: // name step
+        currentField = 'name'
+        isValid = !!leadData.name?.trim()
+        nextStepField = 'email'
+        break
+      case 1: // email step
+        currentField = 'email'
+        isValid = !!leadData.email?.trim()
+        nextStepField = 'phone'
+        break
+      case 2: // phone step (final step)
+        currentField = 'phone'
+        isValid = !!leadData.phone?.trim()
+        break
+    }
 
     if (!isValid) {
       addMessage({
-        content: 'Please fill in all required fields: name, email, and phone.',
+        content: `Please provide your ${currentField}.`,
         timestamp: new Date(),
         type: 'bot',
       })
       return
     }
 
+    // If we're not on the last step, go to next step
+    if (leadStep < 2) {
+      setLeadStep(leadStep + 1)
+
+      // Show message for next step
+      const nextStepMessages = [
+        "Great! Now, what's your email address?",
+        "Thanks! Finally, what's your phone number?",
+      ]
+
+      setTimeout(() => {
+        addMessage({
+          content: nextStepMessages[leadStep],
+          timestamp: new Date(),
+          type: 'bot',
+        })
+      }, 500)
+
+      return
+    }
+
+    // We're on the last step (phone), submit the lead
     setIsTyping(true)
 
     // Save lead data to state manager
@@ -296,7 +409,7 @@ export const useChatEngine = () => {
       setLeadData({})
       setIsTyping(false)
     }, 1000)
-  }, [addMessage, leadData])
+  }, [addMessage, leadData, leadStep])
 
   // Initialize managers only on client side
   useEffect(() => {

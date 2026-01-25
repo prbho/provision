@@ -78,6 +78,22 @@ export interface Memory {
   name?: string
   email?: string
   phone?: string
+
+  // Add conversation state tracking
+  conversationStep?:
+    | 'greeting'
+    | 'property_type'
+    | 'location'
+    | 'results'
+    | 'details'
+    | 'scheduling'
+  propertiesFound?: number
+  lastQuestionAsked?:
+    | 'location'
+    | 'propertyType'
+    | 'budget'
+    | 'bedrooms'
+    | 'none'
 }
 
 export interface LeadFormData {

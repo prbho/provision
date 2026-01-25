@@ -69,7 +69,7 @@ export default function Chatbot() {
             <ChatInput onSend={processUserMessage} />
           ) : (
             <LeadFormSteps
-              step={(['name', 'email', 'phone'] as const)[leadStep]}
+              step={leadStep}
               data={leadData}
               onChange={updateLeadData}
               onSubmit={submitLead}
