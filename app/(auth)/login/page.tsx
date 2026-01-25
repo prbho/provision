@@ -107,9 +107,12 @@ export default function LoginPage() {
         <Toaster position="top-right" expand={false} richColors closeButton />
         <ToastHandler />
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <h2 className="text-xl font-bold text-gray-900 mb-2 text-center">
-            Sign in to your account
+          <h2 className="text-xl font-bold text-gray-900 mb-1">
+            Sign in to PropertyVision
           </h2>
+          <p className="text-sm text-gray-500">
+            Secure access to your PropertyVision dashboard
+          </p>
         </div>
 
         <div className="mt-8">
@@ -157,7 +160,7 @@ export default function LoginPage() {
                 </Label>
                 <Link
                   href="/forget-password"
-                  className="text-sm font-medium text-brand hover:text-brand transition-colors"
+                  className="text-sm font-medium text-stone-500 hover:text-blue-800 transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -171,7 +174,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Enter your PropertyVision password"
                   className="h-12 text-base pr-10"
                   disabled={isLoading}
                 />
@@ -242,6 +245,22 @@ export default function LoginPage() {
                   'Sign In'
                 )}
               </Button>
+              <p className="text-xs mt-3 text-gray-500 text-center">
+                By signing in, you agree to our{' '}
+                <Link href="/terms" className="underline hover:text-gray-700">
+                  Terms
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy" className="underline hover:text-gray-700">
+                  Privacy Policy
+                </Link>
+                .
+              </p>
+
+              <p className="mt-4 text-xs text-gray-500 text-center">
+                This is a secure login for PropertyVision. We never ask for
+                sensitive information outside this platform.
+              </p>
             </div>
           </form>
 

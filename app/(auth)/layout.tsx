@@ -8,8 +8,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-linear-to-br from-primary/5 via-white to-surface/5 flex flex-col">
       {/* Header */}
       <header className="py-8">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col items-center gap-3">
-          <Link href="/" className="inline-flex items-center gap-3">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col items-center">
+          <Link href="/" className=" items-center gap-3 flex flex-col">
             <Image
               src="/logot.png"
               alt="PropertyVision Ltd Logo"
@@ -17,16 +17,10 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
               height={55}
               priority
             />
+            {/* <h2 className='class="block text-xl font-bold text-white"'>
+              PropertyVision
+            </h2> */}
           </Link>
-
-          {/* Identity text (important for trust) */}
-          <div className="text-center">
-            <p className="font-semibold text-gray-900">PropertyVision</p>
-            <p className="text-sm text-gray-500 max-w-md">
-              A verified real estate platform built on trust, accountability,
-              and transparent property listings.
-            </p>
-          </div>
         </div>
       </header>
 
