@@ -382,6 +382,52 @@ export class PremiumListingService {
   }
 
   /**
+   * Sync all premium properties to update featured status
+   */
+  static async syncAllPremiumProperties(): Promise<{
+    successful: number
+    total: number
+  }> {
+    console.log('🔄 SYNC ALL PREMIUM PROPERTIES START')
+
+    try {
+      // Get all active premium listings
+      const activeListings = await this.getActivePremiumListings()
+
+      console.log('📊 Active premium listings found:', activeListings.length)
+
+      let successful = 0
+
+      // Sync each property with premium listings
+      for (const listing of activeListings) {
+        try {
+          await PropertyService.syncPropertyWithPremium(listing.propertyId)
+          successful++
+          console.log(`✅ Synced property ${listing.propertyId}`)
+        } catch (syncError: any) {
+          console.warn(
+            `⚠️ Failed to sync property ${listing.propertyId}:`,
+            syncError.message
+          )
+        }
+      }
+
+      console.log('✅ Sync completed:', {
+        successful,
+        total: activeListings.length,
+      })
+
+      return {
+        successful,
+        total: activeListings.length,
+      }
+    } catch (error: any) {
+      console.error('❌ Sync all premium properties error:', error.message)
+      throw error
+    }
+  }
+
+  /**
    * Check for expired premium listings and update their status
    */
   static async processExpiredListings(): Promise<{ expired: number }> {
