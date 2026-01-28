@@ -637,7 +637,7 @@ export default function SitemapPage() {
 
             <p className="text-gray-600 mb-8">
               Your comprehensive guide to every corner of our real estate
-              platform. We've organized everything so you can find your way
+              platform. We&apos;ve organized everything so you can find your way
               around with a smile.
             </p>
 
@@ -697,7 +697,7 @@ export default function SitemapPage() {
           <div className="text-center py-16 border border-gray-200 rounded-lg">
             <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No pages found for "{searchQuery}"
+              No pages found for &quot;{searchQuery}&quot;
             </h3>
             <p className="text-gray-600 mb-4">
               Try searching with different keywords or browse our categories
@@ -765,7 +765,7 @@ export default function SitemapPage() {
                             </span>
                             {link.tagline && (
                               <span className="text-xs text-gray-500 italic">
-                                "{link.tagline}"
+                                &quot;{link.tagline}&quot;
                               </span>
                             )}
                           </div>
@@ -787,7 +787,7 @@ export default function SitemapPage() {
             </div>
 
             <h3 className="text-xl font-semibold text-gray-900 mb-3">
-              Found what you're looking for?
+              Found what you&apos;re looking for?
             </h3>
 
             <p className="text-gray-600 mb-6">

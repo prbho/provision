@@ -1,4 +1,6 @@
 // app/api/properties/[id]/route.ts - FIXED
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextRequest, NextResponse } from 'next/server'
 
 import {

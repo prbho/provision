@@ -1,4 +1,6 @@
 // app/api/payments/extend/route.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { PlanType } from '@/types'
 
@@ -71,7 +73,6 @@ export async function POST(request: NextRequest) {
       message: 'Proceed to payment to extend your plan',
     })
   } catch (error: any) {
-    console.error('💥 Extend plan error:', error.message)
     return NextResponse.json(
       {
         error: 'Failed to extend plan',

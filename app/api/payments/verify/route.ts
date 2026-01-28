@@ -1,4 +1,6 @@
 // app/api/payments/verify/route.ts - UPDATED with fix
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextRequest, NextResponse } from 'next/server'
 
 import { PaymentService } from '@/lib/services/payment-service'

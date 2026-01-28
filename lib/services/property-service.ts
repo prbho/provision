@@ -1,4 +1,6 @@
 // lib/services/property-service.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Query } from 'appwrite'
 
 import {

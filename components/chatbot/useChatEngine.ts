@@ -1,4 +1,3 @@
-// components/chatbot/useChatEngine.ts
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 'use client'
@@ -89,9 +88,6 @@ export const useChatEngine = () => {
   const getCurrentLeadData = useCallback((): Record<string, string> => {
     return leadData
   }, [leadData])
-
-  // Define processUserMessage early so it can be referenced
-  // Replace your existing processUserMessage function in useChatEngine.ts with this:
 
   const processUserMessage = useCallback(
     async (message: string) => {
@@ -253,11 +249,21 @@ export const useChatEngine = () => {
               response =
                 'Please search for properties first, then I can show you the details.'
             } else {
+              // Calculate min and max prices
+              const minPrice = displayedProperties.reduce(
+                (min, p) => Math.min(min, p.price),
+                Infinity
+              )
+              const maxPrice = displayedProperties.reduce(
+                (max, p) => Math.max(max, p.price),
+                0
+              )
+
               response =
                 `Here are the details for properties in ${updatedMemory.location}:\n\n` +
                 `• Property Type: ${updatedMemory.propertyType}\n` +
                 `• Found: ${displayedProperties.length} properties\n` +
-                `• Price range: ₦${displayedProperties.reduce((min, p) => Math.min(min, p.price), Infinity).toLocaleString()} - ₦${displayedProperties.reduce((max, p) => Math.max(max, p.price), 0).toLocaleString()}\n\n` +
+                `• Price range: ₦${minPrice.toLocaleString()} - ₦${maxPrice.toLocaleString()}\n\n` +
                 `Would you like to schedule a viewing for any of these?`
             }
             break
@@ -279,7 +285,7 @@ export const useChatEngine = () => {
         setIsTyping(false)
       }, 500)
     },
-    [addMessage, displayedProperties.length]
+    [addMessage, displayedProperties] // ✅ Fixed: Use full displayedProperties array
   )
 
   const updateQuickReplies = useCallback(() => {
