@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { PlanType } from '@/types'
 import { Check, Crown, Loader2, Sparkles, Star, Zap } from 'lucide-react'
@@ -12,7 +12,9 @@ interface PremiumButtonProps {
   propertyId: string
   propertyTitle: string
   currentPlan?: PlanType | null
+  isExtension?: boolean
   onUpgrade?: (planType: PlanType) => void
+  onExtended?: (newExpiryDate: string) => void
   size?: 'sm' | 'md' | 'lg'
   variant?: 'default' | 'gradient'
   className?: string
@@ -24,6 +26,7 @@ export default function PremiumButton({
   propertyTitle,
   currentPlan,
   onUpgrade,
+  isExtension = false,
   size = 'md',
   variant = 'default',
   className = '',
@@ -93,7 +96,7 @@ export default function PremiumButton({
       : 'bg-gold-600 text-white hover:bg-gold-600',
     gradient: currentPlan
       ? 'bg-gradient-to-r from-brand/95 to-brand text-white'
-      : 'bg-gradient-to-r from-brand to-emerald-600 text-white hover:from-brand hover:from-brand',
+      : 'bg-gradient-to-r from-brand to-brand text-white hover:from-brand hover:from-brand',
   }
 
   return (
@@ -165,75 +168,76 @@ export default function PremiumButton({
                     <div
                       key={planKey}
                       className={`
-                        border rounded-lg p-4 cursor-pointer transition-colors
-                        ${selectedPlan === planType ? 'border-emerald-500 bg-brand/5' : 'border-gray-200 hover:border-gray-300'}
-                        ${isCurrentPlan ? 'bg-brand/5 border-emerald-200' : ''}
-                        ${isPopular ? 'border-emerald-300' : ''}
+                        border rounded-lg p-4 cursor-pointer transition-colors flex flex-col
+                        ${selectedPlan === planType ? 'border-brand bg-brand/5' : 'border-gray-200 hover:border-gray-300'}
+                        ${isCurrentPlan ? 'bg-brand/5 border-brand/30' : ''}
+                        ${isPopular ? 'border-brand/30' : ''}
                       `}
                       onClick={() =>
                         !isCurrentPlan && setSelectedPlan(planType)
                       }
                     >
-                      {/* Plan Header */}
-                      <div className="text-center mb-4">
-                        <div className="flex justify-center mb-3">
-                          <div
-                            className={`p-2 rounded ${
-                              planType === 'featured'
-                                ? 'bg-blue-100 text-blue-600'
-                                : planType === 'premium'
-                                  ? 'bg-brand/10 text-emerald-600'
-                                  : 'bg-purple-100 text-purple-600'
-                            }`}
-                          >
-                            {planType === 'featured' && (
-                              <Zap className="w-5 h-5" />
-                            )}
-                            {planType === 'premium' && (
-                              <Star className="w-5 h-5" />
-                            )}
-                            {planType === 'enterprise' && (
-                              <Crown className="w-5 h-5" />
-                            )}
+                      <div>
+                        {/* Plan Header */}
+                        <div className="text-center mb-4">
+                          <div className="flex justify-center mb-3">
+                            <div
+                              className={`p-2 rounded ${
+                                planType === 'featured'
+                                  ? 'bg-blue-100 text-blue-600'
+                                  : planType === 'premium'
+                                    ? 'bg-brand/10 text-brand'
+                                    : 'bg-gold-50 text-gold-600'
+                              }`}
+                            >
+                              {planType === 'featured' && (
+                                <Zap className="w-5 h-5" />
+                              )}
+                              {planType === 'premium' && (
+                                <Star className="w-5 h-5" />
+                              )}
+                              {planType === 'enterprise' && (
+                                <Crown className="w-5 h-5" />
+                              )}
+                            </div>
                           </div>
-                        </div>
 
-                        <h3 className="font-semibold text-gray-900 mb-1">
-                          {plan.name}
-                        </h3>
+                          <h3 className="font-semibold text-gray-900 mb-1">
+                            {plan.name}
+                          </h3>
 
-                        <div className="mb-2">
-                          <span className="text-2xl font-bold text-gray-900">
-                            {formatPrice(plan.price)}
-                          </span>
-                          <span className="text-gray-600 ml-1">
-                            /{plan.duration} days
-                          </span>
-                        </div>
-
-                        {isPopular && !isCurrentPlan && (
-                          <span className="text-xs text-emerald-600 font-medium">
-                            Most Popular
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Features */}
-                      <ul className="space-y-2 mb-4">
-                        {plan.features.slice(0, 3).map((feature, index) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700">
-                              {feature}
+                          <div className="mb-2 flex flex-col">
+                            <span className="text-2xl font-bold text-gray-900">
+                              {formatPrice(plan.price)}
                             </span>
-                          </li>
-                        ))}
-                      </ul>
+                            <span className="text-gray-600 ml-1">
+                              {plan.duration} days
+                            </span>
+                          </div>
 
+                          {isPopular && !isCurrentPlan && (
+                            <span className="text-xs text-brand font-medium">
+                              Most Popular
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Features */}
+                        <ul className="space-y-2 mb-4">
+                          {plan.features.slice(0, 3).map((feature, index) => (
+                            <li key={index} className="flex items-start gap-2">
+                              <Check className="w-4 h-4 text-brand shrink-0 mt-0.5" />
+                              <span className="text-sm text-gray-700">
+                                {feature}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                       {/* Action Button */}
                       {isCurrentPlan ? (
                         <div className="text-center p-2 bg-brand/10 rounded">
-                          <div className="flex items-center justify-center gap-1 text-emerald-700 text-sm font-medium">
+                          <div className="flex items-center justify-center gap-1 text-brand text-sm font-medium">
                             <Check className="w-4 h-4" />
                             Active
                           </div>
@@ -246,7 +250,7 @@ export default function PremiumButton({
                           }}
                           disabled={isProcessing}
                           className={`
-                            w-full py-2 px-4 rounded font-medium text-sm transition-colors
+                            w-full py-2 mt-auto px-4 rounded font-medium text-sm transition-colors
                             ${
                               selectedPlan === planType || isPopular
                                 ? 'bg-brand text-white hover:bg-brand'
@@ -265,7 +269,7 @@ export default function PremiumButton({
 
               {/* Selected Plan Action */}
               {selectedPlan && !currentPlan && (
-                <div className="mt-6 p-4 bg-brand/5 border border-emerald-200 rounded-lg">
+                <div className="mt-6 p-4 bg-brand/5 border border-brand/20 rounded-lg">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                       <h4 className="font-medium text-gray-900">

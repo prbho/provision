@@ -9,7 +9,7 @@ import {
   databases,
   PREMIUM_COLLECTION_ID,
 } from '../appwrite-server'
-import { PropertyService } from './property-service' // Add this import
+import { PropertyService } from './property-service'
 
 export const PREMIUM_PLANS: Record<
   PlanType,
@@ -25,7 +25,7 @@ export const PREMIUM_PLANS: Record<
   featured: {
     name: 'Featured Listing',
     description: 'Get your property featured at the top of search results',
-    price: 5000,
+    price: 500000, // 5000 Naira in kobo
     duration: 7,
     priority: 8,
     features: [
@@ -38,7 +38,7 @@ export const PREMIUM_PLANS: Record<
   premium: {
     name: 'Premium Listing',
     description: 'Maximum visibility with premium placement',
-    price: 15000,
+    price: 1500000, // 15000 Naira in kobo
     duration: 30,
     priority: 9,
     features: [
@@ -52,7 +52,7 @@ export const PREMIUM_PLANS: Record<
   enterprise: {
     name: 'Enterprise',
     description: 'For agencies with multiple premium listings',
-    price: 50000,
+    price: 3000000, // 30000 Naira in kobo
     duration: 30,
     priority: 10,
     features: [
@@ -73,18 +73,110 @@ export class PremiumListingService {
     userId: string
     planType: PlanType
     paymentId: string
+    isExtension?: boolean
   }): Promise<PremiumListing> {
-    const plan = PREMIUM_PLANS[data.planType]
-    const startDate = new Date().toISOString()
-    const endDate = new Date(
-      Date.now() + plan.duration * 24 * 60 * 60 * 1000
-    ).toISOString()
+    console.log('💎 CREATE PREMIUM LISTING START:', data)
 
-    const premiumListing = await databases.createDocument(
-      DATABASE_ID,
-      PREMIUM_COLLECTION_ID,
-      ID.unique(),
-      {
+    try {
+      // Check if premium listing already exists for this property
+      const existingListings = await databases.listDocuments(
+        DATABASE_ID,
+        PREMIUM_COLLECTION_ID,
+        [
+          Query.equal('propertyId', data.propertyId),
+          Query.equal('status', 'active'),
+        ]
+      )
+
+      // If this is an extension and we have an existing active listing
+      if (data.isExtension && existingListings.total > 0) {
+        console.log('🔄 EXTENDING EXISTING PREMIUM LISTING:', {
+          propertyId: data.propertyId,
+          existingId: existingListings.documents[0].$id,
+        })
+
+        const existingListing = existingListings.documents[0]
+        const currentEndDate = new Date(existingListing.endDate)
+        const plan = PREMIUM_PLANS[data.planType]
+
+        // Calculate new end date by adding plan duration to existing end date
+        const newEndDate = new Date(currentEndDate)
+        newEndDate.setDate(newEndDate.getDate() + plan.duration)
+
+        console.log('📅 Extension dates:', {
+          currentEndDate: currentEndDate.toISOString(),
+          newEndDate: newEndDate.toISOString(),
+          addedDays: plan.duration,
+        })
+
+        // Update the existing premium listing
+        const updateData: any = {
+          endDate: newEndDate.toISOString(),
+          paymentId: data.paymentId,
+          renewal: 'extended',
+          $updatedAt: new Date().toISOString(),
+        }
+
+        // Add extension tracking if metadata field exists
+        const existingListingData = existingListing as any
+        if (existingListingData.metadata !== undefined) {
+          const currentMetadata = existingListingData.metadata
+            ? JSON.parse(existingListingData.metadata)
+            : {}
+
+          updateData.metadata = JSON.stringify({
+            ...currentMetadata,
+            lastExtendedAt: new Date().toISOString(),
+            totalExtensions: (currentMetadata.totalExtensions || 0) + 1,
+            extensions: [
+              ...(currentMetadata.extensions || []),
+              {
+                extendedAt: new Date().toISOString(),
+                addedDays: plan.duration,
+                paymentId: data.paymentId,
+                previousEndDate: currentEndDate.toISOString(),
+                newEndDate: newEndDate.toISOString(),
+              },
+            ],
+          })
+        }
+
+        const updatedListing = await databases.updateDocument(
+          DATABASE_ID,
+          PREMIUM_COLLECTION_ID,
+          existingListing.$id,
+          updateData
+        )
+
+        console.log('✅ Premium listing extended:', {
+          id: updatedListing.$id,
+          newEndDate: (updatedListing as any).endDate,
+        })
+
+        return this.mapToPremiumListing(updatedListing)
+      }
+
+      // If no extension or no existing listing, create new one
+      if (existingListings.total > 0) {
+        console.log(
+          '⚠️ Active premium listing already exists for property:',
+          data.propertyId
+        )
+      }
+
+      const plan = PREMIUM_PLANS[data.planType]
+      const startDate = new Date().toISOString()
+      const endDate = new Date(
+        Date.now() + plan.duration * 24 * 60 * 60 * 1000
+      ).toISOString()
+
+      console.log('📅 New premium listing dates:', {
+        startDate,
+        endDate,
+        duration: plan.duration,
+      })
+
+      const documentData = {
         propertyId: data.propertyId,
         agentId: data.agentId,
         userId: data.userId,
@@ -98,106 +190,203 @@ export class PremiumListingService {
         paymentId: data.paymentId,
         renewal: 'monthly',
       }
-    )
 
-    return this.mapToPremiumListing(premiumListing)
+      console.log('📝 Creating new premium listing document:', documentData)
+
+      const premiumListing = await databases.createDocument(
+        DATABASE_ID,
+        PREMIUM_COLLECTION_ID,
+        ID.unique(),
+        documentData
+      )
+
+      console.log('✅ New premium listing created:', {
+        id: premiumListing.$id,
+        propertyId: (premiumListing as any).propertyId,
+        expires: (premiumListing as any).endDate,
+      })
+
+      // Sync property featured status
+      try {
+        console.log('🔄 Syncing property featured status...')
+        await PropertyService.syncPropertyWithPremium(data.propertyId)
+        console.log('✅ Property featured status synced')
+      } catch (syncError: any) {
+        console.warn(
+          '⚠️ Property sync error (non-critical):',
+          syncError.message
+        )
+        // Continue even if sync fails
+      }
+
+      return this.mapToPremiumListing(premiumListing)
+    } catch (error: any) {
+      console.error('❌ Create premium listing error:', {
+        message: error.message,
+        code: error.code,
+        type: error.type,
+        data: error.data,
+      })
+      throw error
+    }
   }
 
   // Get active premium listings for search
   static async getActivePremiumListings(): Promise<PremiumListing[]> {
-    const now = new Date().toISOString()
+    console.log('🔍 GET ACTIVE PREMIUM LISTINGS')
 
-    const result = await databases.listDocuments(
-      DATABASE_ID,
-      PREMIUM_COLLECTION_ID,
-      [
-        Query.equal('status', 'active'),
-        Query.greaterThan('endDate', now),
-        Query.orderDesc('priority'),
-        Query.orderDesc('startDate'),
-      ]
-    )
+    try {
+      const now = new Date().toISOString()
 
-    return result.documents.map((doc) => this.mapToPremiumListing(doc))
+      const result = await databases.listDocuments(
+        DATABASE_ID,
+        PREMIUM_COLLECTION_ID,
+        [
+          Query.equal('status', 'active'),
+          Query.greaterThan('endDate', now),
+          Query.orderDesc('priority'),
+          Query.orderDesc('startDate'),
+        ]
+      )
+
+      console.log('✅ Found active premium listings:', result.total)
+      return result.documents.map((doc) => this.mapToPremiumListing(doc))
+    } catch (error: any) {
+      console.error('❌ Get active premium listings error:', error.message)
+      return []
+    }
   }
 
   // Check if property has active premium
   static async isPropertyPremium(propertyId: string): Promise<boolean> {
-    const now = new Date().toISOString()
+    console.log('🔍 CHECK PROPERTY PREMIUM:', propertyId)
 
-    const result = await databases.listDocuments(
-      DATABASE_ID,
-      PREMIUM_COLLECTION_ID,
-      [
-        Query.equal('propertyId', propertyId),
-        Query.equal('status', 'active'),
-        Query.greaterThan('endDate', now),
-      ]
-    )
+    try {
+      const now = new Date().toISOString()
 
-    return result.total > 0
+      const result = await databases.listDocuments(
+        DATABASE_ID,
+        PREMIUM_COLLECTION_ID,
+        [
+          Query.equal('propertyId', propertyId),
+          Query.equal('status', 'active'),
+          Query.greaterThan('endDate', now),
+        ]
+      )
+
+      console.log('📊 Premium status:', {
+        propertyId,
+        isPremium: result.total > 0,
+        activeListings: result.total,
+      })
+
+      return result.total > 0
+    } catch (error: any) {
+      console.error('❌ Check property premium error:', error.message)
+      return false
+    }
   }
 
   // Get agent's premium listings
   static async getAgentPremiumListings(
     agentId: string
   ): Promise<PremiumListing[]> {
-    const now = new Date().toISOString()
+    console.log('🔍 GET AGENT PREMIUM LISTINGS:', agentId)
 
-    const result = await databases.listDocuments(
-      DATABASE_ID,
-      PREMIUM_COLLECTION_ID,
-      [
-        Query.equal('agentId', agentId),
-        Query.equal('status', 'active'),
-        Query.greaterThan('endDate', now),
-        Query.orderDesc('priority'),
-      ]
-    )
+    try {
+      const now = new Date().toISOString()
 
-    return result.documents.map((doc) => this.mapToPremiumListing(doc))
+      const result = await databases.listDocuments(
+        DATABASE_ID,
+        PREMIUM_COLLECTION_ID,
+        [
+          Query.equal('agentId', agentId),
+          Query.equal('status', 'active'),
+          Query.greaterThan('endDate', now),
+          Query.orderDesc('priority'),
+        ]
+      )
+
+      console.log('✅ Agent premium listings:', result.total)
+      return result.documents.map((doc) => this.mapToPremiumListing(doc))
+    } catch (error: any) {
+      console.error('❌ Get agent premium listings error:', error.message)
+      return []
+    }
   }
 
   // Record impression
   static async recordImpression(premiumListingId: string): Promise<void> {
-    const listing = await databases.getDocument(
-      DATABASE_ID,
-      PREMIUM_COLLECTION_ID,
-      premiumListingId
-    )
+    console.log('📊 RECORD IMPRESSION:', premiumListingId)
 
-    await databases.updateDocument(
-      DATABASE_ID,
-      PREMIUM_COLLECTION_ID,
-      premiumListingId,
-      {
-        impressions: ((listing as any).impressions || 0) + 1,
-      }
-    )
+    try {
+      const listing = await databases.getDocument(
+        DATABASE_ID,
+        PREMIUM_COLLECTION_ID,
+        premiumListingId
+      )
+
+      const currentImpressions = (listing as any).impressions || 0
+      const newImpressions = currentImpressions + 1
+
+      await databases.updateDocument(
+        DATABASE_ID,
+        PREMIUM_COLLECTION_ID,
+        premiumListingId,
+        {
+          impressions: newImpressions,
+        }
+      )
+
+      console.log('✅ Impression recorded:', {
+        listingId: premiumListingId,
+        impressions: newImpressions,
+      })
+    } catch (error: any) {
+      console.error('❌ Record impression error:', error.message)
+      throw error
+    }
   }
 
   // Record click
   static async recordClick(premiumListingId: string): Promise<void> {
-    const listing = await databases.getDocument(
-      DATABASE_ID,
-      PREMIUM_COLLECTION_ID,
-      premiumListingId
-    )
+    console.log('📊 RECORD CLICK:', premiumListingId)
 
-    await databases.updateDocument(
-      DATABASE_ID,
-      PREMIUM_COLLECTION_ID,
-      premiumListingId,
-      {
-        clicks: ((listing as any).clicks || 0) + 1,
-      }
-    )
+    try {
+      const listing = await databases.getDocument(
+        DATABASE_ID,
+        PREMIUM_COLLECTION_ID,
+        premiumListingId
+      )
+
+      const currentClicks = (listing as any).clicks || 0
+      const newClicks = currentClicks + 1
+
+      await databases.updateDocument(
+        DATABASE_ID,
+        PREMIUM_COLLECTION_ID,
+        premiumListingId,
+        {
+          clicks: newClicks,
+        }
+      )
+
+      console.log('✅ Click recorded:', {
+        listingId: premiumListingId,
+        clicks: newClicks,
+      })
+    } catch (error: any) {
+      console.error('❌ Record click error:', error.message)
+      throw error
+    }
   }
 
   /**
    * Check for expired premium listings and update their status
    */
   static async processExpiredListings(): Promise<{ expired: number }> {
+    console.log('⏰ PROCESS EXPIRED LISTINGS START')
+
     try {
       const now = new Date().toISOString()
 
@@ -207,6 +396,8 @@ export class PremiumListingService {
         PREMIUM_COLLECTION_ID,
         [Query.equal('status', 'active'), Query.lessThanEqual('endDate', now)]
       )
+
+      console.log('📊 Expired listings found:', expiredListings.total)
 
       // Update expired listings
       const updatePromises = expiredListings.documents.map((listing) =>
@@ -222,72 +413,37 @@ export class PremiumListingService {
 
       await Promise.all(updatePromises)
 
+      console.log('✅ Expired listings processed:', expiredListings.total)
+
+      // Sync properties that lost premium status
+      for (const listing of expiredListings.documents) {
+        try {
+          await PropertyService.syncPropertyWithPremium(
+            (listing as any).propertyId
+          )
+        } catch (syncError) {
+          console.warn('⚠️ Failed to sync expired property:', syncError)
+        }
+      }
+
       return { expired: expiredListings.total }
-    } catch (error) {
-      console.error('Error processing expired listings:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Sync all premium listings with property featured status
-   * This should be run periodically to ensure consistency
-   */
-  static async syncAllPremiumProperties() {
-    try {
-      const activeListings = await this.getActivePremiumListings()
-
-      // Get unique property IDs from active listings
-      const premiumPropertyIds = [
-        ...new Set(activeListings.map((listing) => listing.propertyId)),
-      ]
-
-      // Sync each property
-      const syncPromises = premiumPropertyIds.map((propertyId) =>
-        PropertyService.syncPropertyWithPremium(propertyId)
-      )
-
-      const results = await Promise.allSettled(syncPromises)
-      const successful = results.filter(
-        (result) => result.status === 'fulfilled'
-      ).length
-
-      return {
-        successful,
-        total: premiumPropertyIds.length,
-      }
-    } catch (error) {
-      console.error('Error syncing all premium properties:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Sync premium status with property featuring
-   */
-  static async syncPremiumPropertyStatus(userId: string) {
-    try {
-      const activeListings = await this.getAgentPremiumListings(userId)
-      const hasPremium = activeListings.length > 0
-
-      if (hasPremium) {
-        // Get all properties for this user and feature them
-        await PropertyService.featureAllUserProperties(userId)
-      }
-
-      return hasPremium
-    } catch (error) {
-      console.error('Error syncing premium property status:', error)
+    } catch (error: any) {
+      console.error('❌ Process expired listings error:', error.message)
       throw error
     }
   }
 
   // Helper method to map AppWrite document to PremiumListing
   private static mapToPremiumListing(doc: Models.Document): PremiumListing {
-    // Use type assertion for document properties
     const typedDoc = doc as any
 
-    return {
+    console.log('🗺️ Mapping to PremiumListing:', {
+      id: doc.$id,
+      propertyId: typedDoc.propertyId,
+      status: typedDoc.status,
+    })
+
+    const premiumListing = {
       $id: doc.$id,
       $createdAt: doc.$createdAt,
       $updatedAt: doc.$updatedAt,
@@ -304,5 +460,8 @@ export class PremiumListingService {
       paymentId: typedDoc.paymentId,
       renewal: typedDoc.renewal,
     }
+
+    console.log('✅ Mapped PremiumListing:', premiumListing)
+    return premiumListing
   }
 }

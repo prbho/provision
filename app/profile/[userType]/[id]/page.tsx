@@ -773,7 +773,7 @@ export default function DynamicProfilePage({}: {
             <div className="lg:col-span-2">
               <PremiumFeaturesSection
                 premiumStatus={premiumStatus}
-                onExtendPlan={() => router.push('/pricing')}
+                // onExtendPlan={() => router.push('/pricing')}
               />
             </div>
 

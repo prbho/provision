@@ -1,10 +1,15 @@
+// components/PremiumFeaturesSection.tsx - Updated
 'use client'
 
+import { useAuth } from '@/contexts/AuthContext' // Add this import
+import { PlanType } from '@/types'
 import { Check, Crown, Eye, Star, Zap } from 'lucide-react'
 
 import CountdownTimer from '@/components/CountdownTimer'
 import PremiumButton from '@/components/PremiumButton'
 import { CardContent } from '@/components/ui/card'
+
+import ExtendModalButton from './premium/ExtendModalButton'
 
 interface PremiumFeaturesSectionProps {
   premiumStatus: {
@@ -12,6 +17,7 @@ interface PremiumFeaturesSectionProps {
     activePlans: string[]
     startDate: string | null
     expiresAt: string | null
+    currentPlan?: PlanType
   }
   onExtendPlan?: () => void
 }
@@ -20,9 +26,7 @@ export default function PremiumFeaturesSection({
   premiumStatus,
   onExtendPlan,
 }: PremiumFeaturesSectionProps) {
-  const handleExtendPlan = () => {
-    onExtendPlan ? onExtendPlan() : (window.location.href = '/pricing')
-  }
+  const { user } = useAuth() // Add this to get the user
 
   const features = [
     {
@@ -44,6 +48,19 @@ export default function PremiumFeaturesSection({
       icon: Zap,
     },
   ]
+
+  // Define propertyTitle for profile
+  const propertyTitle = 'My Profile Premium'
+
+  // Determine current plan
+  const currentPlan: PlanType =
+    premiumStatus.currentPlan ||
+    (premiumStatus.activePlans.length > 0
+      ? (premiumStatus.activePlans[0] as PlanType)
+      : 'premium')
+
+  // Create profile-specific property ID
+  const profilePropertyId = user ? `profile-${user.$id}` : 'profile-upgrade'
 
   return (
     <div className="border rounded-lg">
@@ -71,7 +88,7 @@ export default function PremiumFeaturesSection({
             </div>
           ) : (
             <PremiumButton
-              propertyId="profile-upgrade"
+              propertyId={profilePropertyId}
               propertyTitle="Profile Premium Upgrade"
               currentPlan={null}
               size="sm"
@@ -124,17 +141,28 @@ export default function PremiumFeaturesSection({
                     showLabels={true}
                   />
                 </div>
-                <button
-                  onClick={handleExtendPlan}
-                  className="text-sm bg-brand text-white px-4 py-2 rounded hover:bg-brand transition-colors"
-                >
-                  Extend
-                </button>
+                {/* Use the modal version here with proper profile ID */}
+                <ExtendModalButton
+                  propertyId={profilePropertyId}
+                  propertyTitle={propertyTitle}
+                  currentPlan={currentPlan}
+                  onExtended={() => {
+                    console.log(
+                      'Button clicked, propertyId:',
+                      profilePropertyId
+                    )
+                    console.log('Current plan:', currentPlan)
+                    if (onExtendPlan) onExtendPlan()
+                  }}
+                  size="sm"
+                />
               </div>
 
               <div className="text-sm text-gray-600">
                 <span className="font-medium">Active plan:</span>{' '}
-                {premiumStatus.activePlans.join(', ') || 'Premium'}
+                {premiumStatus.activePlans.join(', ') ||
+                  currentPlan ||
+                  'Premium'}
               </div>
             </div>
           </div>
@@ -145,7 +173,7 @@ export default function PremiumFeaturesSection({
               support.
             </p>
             <PremiumButton
-              propertyId="profile-premium-cta"
+              propertyId={profilePropertyId}
               propertyTitle="your profile and listing"
               currentPlan={null}
             />

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 import { Check, Crown, Loader2, X } from 'lucide-react'
 
 export default function PaymentVerifyPage() {
@@ -10,7 +11,14 @@ export default function PaymentVerifyPage() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
     'loading'
   )
+  const { user, logout } = useAuth()
+
   const [message, setMessage] = useState('Verifying your payment...')
+
+  const getProfileLink = () => {
+    if (!user?.$id || !user?.userType) return '/profile'
+    return `/profile/${user.userType}/${user.$id}`
+  }
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -64,7 +72,7 @@ export default function PaymentVerifyPage() {
         {status === 'loading' && (
           <>
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+              <Loader2 className="w-8 h-8 text-brand animate-spin" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               Verifying Payment
@@ -105,11 +113,12 @@ export default function PaymentVerifyPage() {
             <p className="text-gray-600 mb-4">{message}</p>
             <div className="space-y-3">
               <button
-                onClick={() => router.push('/properties')}
-                className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={() => router.push(getProfileLink())}
+                className="w-full bg-brand text-white py-3 px-4 rounded-lg hover:bg-brand/95 transition-colors"
               >
-                Back to Properties
+                Back to Profile
               </button>
+
               <button
                 onClick={() => router.push('/support')}
                 className="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
