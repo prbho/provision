@@ -44,26 +44,33 @@ export default function PropertyCarousel({
     return () => window.removeEventListener('resize', updateColumns)
   }, [])
 
+  const uniqueProperties = useMemo(() => {
+    const map = new Map<string, Property>()
+    for (const p of properties) map.set(p.$id, p)
+    return Array.from(map.values())
+  }, [properties])
+
   const totalPages = useMemo(
-    () => Math.ceil(properties.length / columns),
-    [properties.length, columns]
+    () => Math.ceil(uniqueProperties.length / columns),
+    [uniqueProperties.length, columns]
   )
 
-  // Get visible properties with wrap-around
   const visibleProperties = useMemo(() => {
     const start = currentIndex * columns
     const end = start + columns
 
-    // If we need more properties than available, wrap around to beginning
-    if (end > properties.length) {
-      const needed = end - properties.length
-      return [...properties.slice(start), ...properties.slice(0, needed)]
+    if (end > uniqueProperties.length) {
+      const needed = end - uniqueProperties.length
+      return [
+        ...uniqueProperties.slice(start),
+        ...uniqueProperties.slice(0, needed),
+      ]
     }
 
-    return properties.slice(start, end)
-  }, [properties, currentIndex, columns])
+    return uniqueProperties.slice(start, end)
+  }, [uniqueProperties, currentIndex, columns])
 
-  const hasMultiplePages = properties.length > columns
+  const hasMultiplePages = uniqueProperties.length > columns
 
   const handleNext = async () => {
     if (isAnimating) return
@@ -148,9 +155,9 @@ export default function PropertyCarousel({
             transition={{ duration: 0.3 }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6"
           >
-            {visibleProperties.slice(0, columns).map((property) => (
+            {visibleProperties.slice(0, columns).map((property, idx) => (
               <motion.div
-                key={property.$id}
+                key={`${property.$id}-${currentIndex}-${idx}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
