@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   PROPERTY_AMENITIES,
   PROPERTY_FEATURES,
+  PROPERTY_TYPES,
   PropertyFormData,
 } from '@/types'
 import {
@@ -124,8 +125,6 @@ export default function PropertyPostForm({
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(
     null
   )
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [showScrollTop, setShowScrollTop] = useState(false)
   const userType = params.userType as string
   const [currentStep, setCurrentStep] = useState(1) // Changed to numeric steps
   const totalSteps = 5
@@ -239,20 +238,8 @@ export default function PropertyPostForm({
     'Breakfast Included',
   ]
 
-  // Handle scroll for sticky sidebar and scroll to top button
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50)
-      setShowScrollTop(window.scrollY > 300)
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+  // Check if property type is land
+  const isLandProperty = formData.propertyType === 'land'
 
   // Fetch agent profile when user is loaded
   useEffect(() => {
@@ -504,19 +491,23 @@ export default function PropertyPostForm({
     }
   }
 
-  // Step validation functions
+  // Step validation functions - Updated for land properties
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1: // Basic Info
         return !!(formData.title && formData.description && formData.status)
       case 2: // Details
-        return !!(
-          selectedLocation &&
-          formData.address &&
-          formData.bedrooms &&
-          formData.bathrooms &&
-          formData.squareFeet
-        )
+        if (!selectedLocation || !formData.address || !formData.squareFeet) {
+          return false
+        }
+
+        // For land properties, only require squareFeet
+        if (isLandProperty) {
+          return true
+        }
+
+        // For non-land properties, require bedrooms and bathrooms
+        return !!(formData.bedrooms && formData.bathrooms)
       case 3: // Media
         return newImages.length > 0
       case 4: // Pricing
@@ -599,6 +590,12 @@ export default function PropertyPostForm({
 
       const propertyData = {
         ...formData,
+        // Clear bedrooms and bathrooms for land properties
+        ...(isLandProperty && {
+          bedrooms: 0,
+          bathrooms: 0,
+          yearBuilt: undefined,
+        }),
         userId: user?.$id,
         userType: user?.userType,
         ...(user?.userType === 'agent' && {
@@ -765,8 +762,8 @@ export default function PropertyPostForm({
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6 pt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-7 gap-6">
+                      <div className="space-y-3 col-span-5">
                         <Label htmlFor="title" className="font-medium">
                           Listing Title *
                         </Label>
@@ -782,7 +779,9 @@ export default function PropertyPostForm({
                               ? 'Cozy 2-Bedroom Vacation Home with WiFi & Pool'
                               : formData.status === 'for-rent'
                                 ? 'Modern 3-Bedroom Apartment in Lekki'
-                                : 'Beautiful 4-Bedroom House for Sale'
+                                : isLandProperty
+                                  ? 'Prime Land for Sale in Lekki Phase 1'
+                                  : 'Luxurious 5-Bedroom House for Sale'
                           }
                           className="h-11"
                         />
@@ -824,6 +823,30 @@ export default function PropertyPostForm({
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {formData.status !== 'short-let' && (
+                        <div className="space-y-2">
+                          <Label htmlFor="propertyType">Property Type *</Label>
+                          <Select
+                            required
+                            value={formData.propertyType}
+                            onValueChange={(value) =>
+                              handleInputChange('propertyType', value)
+                            }
+                          >
+                            <SelectTrigger id="propertyType">
+                              <SelectValue placeholder="Select property type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PROPERTY_TYPES.map((type) => (
+                                <SelectItem key={type} value={type}>
+                                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-3">
@@ -837,13 +860,16 @@ export default function PropertyPostForm({
                           placeholder={
                             formData.status === 'short-let'
                               ? 'Describe your short-let property, nearby attractions, unique features...'
-                              : 'Describe the property features, neighborhood, and unique selling points...'
+                              : isLandProperty
+                                ? 'Describe the land, zoning, development potential, nearby infrastructure...'
+                                : 'Describe the property features, neighborhood, and unique selling points...'
                           }
                         />
                       </div>
                       <p className="text-sm text-gray-500">
-                        Include key features in the first paragraph for better
-                        visibility
+                        {isLandProperty
+                          ? 'Include zoning information, development potential, and nearby infrastructure'
+                          : 'Include key features in the first paragraph for better visibility'}
                       </p>
                     </div>
                   </CardContent>
@@ -872,9 +898,13 @@ export default function PropertyPostForm({
                       Location & Property Details
                     </CardTitle>
                     <CardDescription>
-                      Help potential{' '}
-                      {formData.status === 'short-let' ? 'guests' : 'buyers'}{' '}
-                      find and understand your property
+                      {isLandProperty
+                        ? 'Specify land location and size'
+                        : `Help potential ${
+                            formData.status === 'short-let'
+                              ? 'guests'
+                              : 'buyers'
+                          } find and understand your property`}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6 pt-6">
@@ -901,7 +931,11 @@ export default function PropertyPostForm({
                             onChange={(e) =>
                               handleInputChange('address', e.target.value)
                             }
-                            placeholder="Street address, building number, etc."
+                            placeholder={
+                              isLandProperty
+                                ? "Land's street address or nearby landmark"
+                                : 'Street address, building number, etc.'
+                            }
                             className="h-11"
                           />
                         </div>
@@ -966,112 +1000,178 @@ export default function PropertyPostForm({
                       )}
                     </div>
 
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Property Specifications
-                      </h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="space-y-3">
-                          <Label
-                            htmlFor="bedrooms"
-                            className="flex items-center gap-2 font-medium"
-                          >
-                            <Bed className="w-4 h-4" />
-                            Bedrooms *
-                          </Label>
-                          <Input
-                            id="bedrooms"
-                            type="number"
-                            required
-                            min="0"
-                            max="20"
-                            value={formData.bedrooms}
-                            onChange={(e) =>
-                              handleInputChange(
-                                'bedrooms',
-                                parseInt(e.target.value) || 0
-                              )
-                            }
-                            className="h-11"
-                          />
-                        </div>
+                    {/* Property Specifications - Only show for non-land properties */}
+                    {!isLandProperty ? (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Property Specifications
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="space-y-3">
+                            <Label
+                              htmlFor="bedrooms"
+                              className="flex items-center gap-2 font-medium"
+                            >
+                              <Bed className="w-4 h-4" />
+                              Bedrooms *
+                            </Label>
+                            <Input
+                              id="bedrooms"
+                              type="number"
+                              required
+                              min="0"
+                              max="20"
+                              value={formData.bedrooms}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  'bedrooms',
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
+                              className="h-11"
+                            />
+                          </div>
 
-                        <div className="space-y-3">
-                          <Label
-                            htmlFor="bathrooms"
-                            className="flex items-center gap-2 font-medium"
-                          >
-                            <Bath className="w-4 h-4" />
-                            Bathrooms *
-                          </Label>
-                          <Input
-                            id="bathrooms"
-                            type="number"
-                            required
-                            min="0"
-                            max="20"
-                            value={formData.bathrooms}
-                            onChange={(e) =>
-                              handleInputChange(
-                                'bathrooms',
-                                parseInt(e.target.value) || 0
-                              )
-                            }
-                            className="h-11"
-                          />
-                        </div>
+                          <div className="space-y-3">
+                            <Label
+                              htmlFor="bathrooms"
+                              className="flex items-center gap-2 font-medium"
+                            >
+                              <Bath className="w-4 h-4" />
+                              Bathrooms *
+                            </Label>
+                            <Input
+                              id="bathrooms"
+                              type="number"
+                              required
+                              min="0"
+                              max="20"
+                              value={formData.bathrooms}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  'bathrooms',
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
+                              className="h-11"
+                            />
+                          </div>
 
-                        <div className="space-y-3">
-                          <Label
-                            htmlFor="squareFeet"
-                            className="flex items-center gap-2 font-medium"
-                          >
-                            <Square className="w-4 h-4" />
-                            Square Meter *
-                          </Label>
-                          <Input
-                            id="squareFeet"
-                            type="number"
-                            required
-                            min="0"
-                            value={formData.squareFeet}
-                            onChange={(e) =>
-                              handleInputChange(
-                                'squareFeet',
-                                parseInt(e.target.value) || 0
-                              )
-                            }
-                            className="h-11"
-                          />
-                        </div>
+                          <div className="space-y-3">
+                            <Label
+                              htmlFor="squareFeet"
+                              className="flex items-center gap-2 font-medium"
+                            >
+                              <Square className="w-4 h-4" />
+                              Square Meter *
+                            </Label>
+                            <Input
+                              id="squareFeet"
+                              type="number"
+                              required
+                              min="0"
+                              value={formData.squareFeet}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  'squareFeet',
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
+                              className="h-11"
+                            />
+                          </div>
 
-                        <div className="space-y-3">
-                          <Label
-                            htmlFor="yearBuilt"
-                            className="flex items-center gap-2 font-medium"
-                          >
-                            <Calendar className="w-4 h-4" />
-                            Year Built
-                          </Label>
-                          <Input
-                            id="yearBuilt"
-                            type="number"
-                            min="1800"
-                            max={new Date().getFullYear()}
-                            value={formData.yearBuilt || ''}
-                            onChange={(e) =>
-                              handleInputChange(
-                                'yearBuilt',
-                                e.target.value
-                                  ? parseInt(e.target.value)
-                                  : undefined
-                              )
-                            }
-                            className="h-11"
-                          />
+                          <div className="space-y-3">
+                            <Label
+                              htmlFor="yearBuilt"
+                              className="flex items-center gap-2 font-medium"
+                            >
+                              <Calendar className="w-4 h-4" />
+                              Year Built
+                            </Label>
+                            <Input
+                              id="yearBuilt"
+                              type="number"
+                              min="1800"
+                              max={new Date().getFullYear()}
+                              value={formData.yearBuilt || ''}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  'yearBuilt',
+                                  e.target.value
+                                    ? parseInt(e.target.value)
+                                    : undefined
+                                )
+                              }
+                              className="h-11"
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      // Land-specific fields
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Land Details
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-3">
+                            <Label
+                              htmlFor="squareFeet"
+                              className="flex items-center gap-2 font-medium"
+                            >
+                              <Square className="w-4 h-4" />
+                              Land Area (Square Meter) *
+                            </Label>
+                            <Input
+                              id="squareFeet"
+                              type="number"
+                              required
+                              min="0"
+                              value={formData.squareFeet}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  'squareFeet',
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
+                              placeholder="e.g., 1000"
+                              className="h-11"
+                            />
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label
+                              htmlFor="lotSize"
+                              className="flex items-center gap-2 font-medium"
+                            >
+                              <Square className="w-4 h-4" />
+                              Lot Size (Optional)
+                            </Label>
+                            <Input
+                              id="lotSize"
+                              type="number"
+                              min="0"
+                              value={formData.lotSize || ''}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  'lotSize',
+                                  e.target.value
+                                    ? parseInt(e.target.value)
+                                    : undefined
+                                )
+                              }
+                              placeholder="e.g., 500"
+                              className="h-11"
+                            />
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          Land properties don&apos;t require bedroom/bathroom
+                          specifications
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -1079,8 +1179,9 @@ export default function PropertyPostForm({
                   <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 flex items-center gap-3">
                     <InfoIcon className="w-5 h-5 text-amber-600" />
                     <p className="text-amber-700 text-sm">
-                      Please complete location and property specifications
-                      before continuing.
+                      {isLandProperty
+                        ? 'Please complete location and land area before continuing.'
+                        : 'Please complete location and property specifications before continuing.'}
                     </p>
                   </div>
                 )}
@@ -1132,11 +1233,35 @@ export default function PropertyPostForm({
                                 <li>
                                   • Use natural lighting for better quality
                                 </li>
-                                <li>• Include different angles of each room</li>
-                                <li>• Show exterior, kitchen, and bathrooms</li>
-                                <li>
-                                  • First image should be the best exterior shot
-                                </li>
+                                {isLandProperty ? (
+                                  <>
+                                    <li>• Show clear boundaries of the land</li>
+                                    <li>
+                                      • Include photos of the surrounding area
+                                    </li>
+                                    <li>
+                                      • Show access roads and nearby
+                                      infrastructure
+                                    </li>
+                                    <li>
+                                      • Include any existing structures or
+                                      features
+                                    </li>
+                                  </>
+                                ) : (
+                                  <>
+                                    <li>
+                                      • Include different angles of each room
+                                    </li>
+                                    <li>
+                                      • Show exterior, kitchen, and bathrooms
+                                    </li>
+                                    <li>
+                                      • First image should be the best exterior
+                                      shot
+                                    </li>
+                                  </>
+                                )}
                               </ul>
                             </div>
                           </div>
@@ -1215,6 +1340,11 @@ export default function PropertyPostForm({
                               )
                             }
                             className="h-11 pl-8"
+                            placeholder={
+                              isLandProperty
+                                ? 'e.g., 50000000'
+                                : 'e.g., 15000000'
+                            }
                           />
                         </div>
                       </div>
@@ -1321,68 +1451,74 @@ export default function PropertyPostForm({
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6 pt-6">
-                    {/* Features & Amenities */}
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Features & Amenities
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-3">
-                          <h4 className="text-sm font-medium text-gray-900">
-                            Property Features
-                          </h4>
-                          <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-2">
-                            {PROPERTY_FEATURES.map((feature) => (
-                              <div
-                                key={feature}
-                                className="flex items-center space-x-2"
-                              >
-                                <Checkbox
-                                  id={`feature-${feature}`}
-                                  checked={formData.features.includes(feature)}
-                                  onCheckedChange={() =>
-                                    handleArrayToggle('features', feature)
-                                  }
-                                />
-                                <Label
-                                  htmlFor={`feature-${feature}`}
-                                  className="text-sm cursor-pointer"
+                    {/* Features & Amenities - Only show for non-land properties */}
+                    {!isLandProperty && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Features & Amenities
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-gray-900">
+                              Property Features
+                            </h4>
+                            <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-2">
+                              {PROPERTY_FEATURES.map((feature) => (
+                                <div
+                                  key={feature}
+                                  className="flex items-center space-x-2"
                                 >
-                                  {feature}
-                                </Label>
-                              </div>
-                            ))}
+                                  <Checkbox
+                                    id={`feature-${feature}`}
+                                    checked={formData.features.includes(
+                                      feature
+                                    )}
+                                    onCheckedChange={() =>
+                                      handleArrayToggle('features', feature)
+                                    }
+                                  />
+                                  <Label
+                                    htmlFor={`feature-${feature}`}
+                                    className="text-sm cursor-pointer"
+                                  >
+                                    {feature}
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                        <div className="space-y-3">
-                          <h4 className="text-sm font-medium text-gray-900">
-                            Community Amenities
-                          </h4>
-                          <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-2">
-                            {PROPERTY_AMENITIES.map((amenity) => (
-                              <div
-                                key={amenity}
-                                className="flex items-center space-x-2"
-                              >
-                                <Checkbox
-                                  id={`amenity-${amenity}`}
-                                  checked={formData.amenities.includes(amenity)}
-                                  onCheckedChange={() =>
-                                    handleArrayToggle('amenities', amenity)
-                                  }
-                                />
-                                <Label
-                                  htmlFor={`amenity-${amenity}`}
-                                  className="text-sm cursor-pointer"
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-gray-900">
+                              Community Amenities
+                            </h4>
+                            <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-2">
+                              {PROPERTY_AMENITIES.map((amenity) => (
+                                <div
+                                  key={amenity}
+                                  className="flex items-center space-x-2"
                                 >
-                                  {amenity}
-                                </Label>
-                              </div>
-                            ))}
+                                  <Checkbox
+                                    id={`amenity-${amenity}`}
+                                    checked={formData.amenities.includes(
+                                      amenity
+                                    )}
+                                    onCheckedChange={() =>
+                                      handleArrayToggle('amenities', amenity)
+                                    }
+                                  />
+                                  <Label
+                                    htmlFor={`amenity-${amenity}`}
+                                    className="text-sm cursor-pointer"
+                                  >
+                                    {amenity}
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Additional Options */}
                     <div className="space-y-4">
@@ -1421,7 +1557,11 @@ export default function PropertyPostForm({
                             onChange={(e) =>
                               handleTagsInputChange(e.target.value)
                             }
-                            placeholder="e.g., luxury, waterfront, new, renovated"
+                            placeholder={
+                              isLandProperty
+                                ? 'e.g., residential land, commercial land, waterfront, developed'
+                                : 'e.g., luxury, waterfront, new, renovated'
+                            }
                           />
                           {formData.tags.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-2">
@@ -1447,6 +1587,13 @@ export default function PropertyPostForm({
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div className="space-y-1">
+                            <p className="text-gray-600">Property Type</p>
+                            <p className="font-medium text-gray-900 capitalize">
+                              {formData.propertyType}
+                              {isLandProperty && ' (Land)'}
+                            </p>
+                          </div>
+                          <div className="space-y-1">
                             <p className="text-gray-600">Listing Type</p>
                             <p className="font-medium text-gray-900 capitalize">
                               {formData.status.replace('-', ' ')}
@@ -1467,13 +1614,57 @@ export default function PropertyPostForm({
                               {formData.city}, {formData.state}
                             </p>
                           </div>
-                          <div className="space-y-1">
-                            <p className="text-gray-600">Images</p>
-                            <p className="font-medium text-gray-900">
-                              {newImages.length} uploaded
-                            </p>
-                          </div>
                         </div>
+                        {!isLandProperty && (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mt-4">
+                            <div className="space-y-1">
+                              <p className="text-gray-600">Bedrooms</p>
+                              <p className="font-medium text-gray-900">
+                                {formData.bedrooms}
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-gray-600">Bathrooms</p>
+                              <p className="font-medium text-gray-900">
+                                {formData.bathrooms}
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-gray-600">Size</p>
+                              <p className="font-medium text-gray-900">
+                                {formData.squareFeet} m²
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-gray-600">Images</p>
+                              <p className="font-medium text-gray-900">
+                                {newImages.length} uploaded
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {isLandProperty && (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mt-4">
+                            <div className="space-y-1">
+                              <p className="text-gray-600">Land Area</p>
+                              <p className="font-medium text-gray-900">
+                                {formData.squareFeet} m²
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-gray-600">Lot Size</p>
+                              <p className="font-medium text-gray-900">
+                                {formData.lotSize || 'Not specified'}
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-gray-600">Images</p>
+                              <p className="font-medium text-gray-900">
+                                {newImages.length} uploaded
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </CardContent>
@@ -1552,7 +1743,9 @@ export default function PropertyPostForm({
                     <div className="text-sm text-gray-600">
                       {currentStep === 1 && 'Complete basic information'}
                       {currentStep === 2 &&
-                        'Fill in location and property details'}
+                        (isLandProperty
+                          ? 'Fill in location and land area'
+                          : 'Fill in location and property details')}
                       {currentStep === 3 &&
                         'Upload at least one property image'}
                       {currentStep === 4 && 'Set your pricing'}

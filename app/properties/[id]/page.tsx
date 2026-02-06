@@ -1,3 +1,4 @@
+//app/properties/[id]/page.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { notFound } from 'next/navigation'

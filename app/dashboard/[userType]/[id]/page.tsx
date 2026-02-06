@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Property } from '@/types/index'
@@ -11,6 +11,7 @@ import { Query } from 'appwrite'
 import {
   AlertTriangle,
   BarChart3,
+  Bell,
   Building,
   Calendar,
   CheckCircle,
@@ -20,7 +21,6 @@ import {
   Heart,
   Home,
   MessageSquare,
-  Plus,
   Search,
   Settings,
   Shield,
@@ -34,7 +34,6 @@ import { toast } from 'sonner'
 
 import DashboardSkeleton from '@/components/dashboard/DashboardSkeleton'
 import DashboardStats from '@/components/dashboard/DashboardStats'
-import PropertyCard from '@/components/PropertyCard'
 import { databases } from '@/lib/appwrite'
 
 interface DashboardStatsData {
@@ -55,6 +54,11 @@ interface DashboardStatsData {
   totalAgents?: number
   verifiedAgents?: number
   pendingApprovals?: number
+
+  // ✅ new buyer stats
+  recentPurchasesCount?: number
+  totalSpentKobo?: number
+
   [key: string]: any
 }
 
@@ -82,6 +86,19 @@ interface DashboardProperty extends Property {
   lastInquiry?: string
 }
 
+type PurchaseDoc = {
+  $id: string
+  $createdAt: string
+  buyerId?: string
+  agentId?: string
+  propertyId?: string
+  propertyTitle?: string
+  amountKobo?: number
+  currency?: string
+  status?: string
+  reference?: string
+}
+
 export default function DynamicDashboardPage({}: {
   params: Promise<{ userType: string; id: string }>
 }) {
@@ -90,51 +107,68 @@ export default function DynamicDashboardPage({}: {
   const id = params.id as string
   const router = useRouter()
   const { user, isAuthenticated, isLoading } = useAuth()
+
   const [dashboardStats, setDashboardStats] = useState<DashboardStatsData>({})
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [properties, setProperties] = useState<DashboardProperty[]>([])
+  const [recentPurchases, setRecentPurchases] = useState<PurchaseDoc[]>([])
   const [dashboardLoading, setDashboardLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<
-    'properties' | 'messages' | 'notifications'
-  >('properties')
 
-  // Validate if user is viewing their own dashboard
+  const databaseId =
+    process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'propertyDB'
+  const propertiesCollectionId =
+    process.env.NEXT_PUBLIC_APPWRITE_PROPERTIES_TABLE_ID || 'properties'
+  const purchasesCollectionId =
+    process.env.NEXT_PUBLIC_APPWRITE_PURCHASES_TABLE_ID || 'purchases'
+  const usersCollectionId =
+    process.env.NEXT_PUBLIC_APPWRITE_USERS_TABLE_ID || 'users'
+  const agentsCollectionId =
+    process.env.NEXT_PUBLIC_APPWRITE_AGENTS_TABLE_ID || 'agents'
+
+  const money = useCallback((amountKobo?: number, currency = 'NGN') => {
+    const n = Math.round((Number(amountKobo) || 0) / 100)
+    if (currency === 'NGN') return `₦${n.toLocaleString()}`
+    return new Intl.NumberFormat('en', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(n)
+  }, [])
+
+  // ✅ Validate route once auth state is ready (prevents loops / spam)
   useEffect(() => {
-    if (!isLoading && user && user.$id !== id) {
+    if (isLoading) return
+    if (!user) return
+
+    // only their own dashboard
+    if (user.$id !== id) {
       toast.error('You can only view your own dashboard')
-      router.push('/')
+      router.replace('/')
+      return
     }
 
-    // Validate user type matches the route
-    if (!isLoading && user && user.userType !== userType) {
-      const correctPath = `/dashboard/${user.userType}/${user.$id}`
-      router.replace(correctPath)
+    // userType mismatch: fix URL
+    if (user.userType !== userType) {
+      router.replace(`/dashboard/${user.userType}/${user.$id}`)
+      return
     }
-  }, [user, isLoading, id, userType, router])
+  }, [isLoading, user, id, userType, router])
 
   // Fetch properties from Appwrite
   const fetchProperties = useCallback(async () => {
     if (!user?.$id) return []
 
     try {
-      const databaseId =
-        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'propertyDB'
-      const propertiesCollectionId =
-        process.env.NEXT_PUBLIC_APPWRITE_PROPERTIES_TABLE_ID || 'properties'
-
       // For admin, fetch all properties without filters
       if (user.userType === 'admin') {
         const response = await databases.listDocuments(
           databaseId,
           propertiesCollectionId,
-          [
-            Query.orderDesc('$createdAt'),
-            Query.limit(1000), // Increased limit for admin to calculate stats
-          ]
+          [Query.orderDesc('$createdAt'), Query.limit(1000)]
         )
 
-        const transformedProperties: DashboardProperty[] =
-          response.documents.map((doc: any) => ({
+        const transformed: DashboardProperty[] = response.documents.map(
+          (doc: any) => ({
             $id: doc.$id,
             $collectionId: doc.$collectionId,
             $databaseId: doc.$databaseId,
@@ -192,13 +226,14 @@ export default function DynamicDashboardPage({}: {
             customPlanMonths: doc.customPlanMonths || 0,
             inquiries: doc.inquiries || 0,
             lastInquiry: doc.lastInquiry,
-          }))
+          })
+        )
 
-        return transformedProperties
+        return transformed
       }
 
       // For other user types
-      const queries = []
+      const queries: any[] = []
 
       if (user.userType === 'seller') {
         queries.push(Query.equal('ownerId', user.$id))
@@ -217,7 +252,7 @@ export default function DynamicDashboardPage({}: {
         queries
       )
 
-      const transformedProperties: DashboardProperty[] = response.documents.map(
+      const transformed: DashboardProperty[] = response.documents.map(
         (doc: any) => ({
           $id: doc.$id,
           $collectionId: doc.$collectionId,
@@ -279,61 +314,71 @@ export default function DynamicDashboardPage({}: {
         })
       )
 
-      return transformedProperties
+      return transformed
     } catch (error) {
       console.error('Error fetching properties:', error)
       return []
     }
-  }, [user])
+  }, [user, databaseId, propertiesCollectionId])
+
+  // ✅ Fetch purchases (buyer)
+  const fetchPurchases = useCallback(async () => {
+    if (!user?.$id) return []
+
+    try {
+      const queries: any[] = [
+        Query.orderDesc('$createdAt'),
+        Query.limit(5),
+        Query.equal('buyerId', user.$id),
+      ]
+
+      const res = await databases.listDocuments(
+        databaseId,
+        purchasesCollectionId,
+        queries
+      )
+
+      return (res.documents || []) as unknown as PurchaseDoc[]
+    } catch (e) {
+      console.error('Error fetching purchases:', e)
+      return []
+    }
+  }, [user, databaseId, purchasesCollectionId])
 
   // Calculate dashboard stats based on properties
   const calculateStats = useCallback(
-    async (properties: DashboardProperty[], userType: string) => {
-      if (userType === 'admin') {
+    async (props: DashboardProperty[], type: string) => {
+      if (type === 'admin') {
         try {
-          const databaseId =
-            process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'propertyDB'
-
-          // Fetch all admin-specific data in parallel
           const [
             usersResponse,
             agentsResponse,
             verifiedAgentsResponse,
             pendingApprovalsResponse,
           ] = await Promise.all([
-            // Total Users
-            databases.listDocuments(databaseId, 'users', [Query.limit(1)]),
-
-            // Total Agents
-            databases.listDocuments(databaseId, 'agents', [Query.limit(1)]),
-
-            // Verified Agents
-            databases.listDocuments(databaseId, 'agents', [
+            databases.listDocuments(databaseId, usersCollectionId, [
+              Query.limit(1),
+            ]),
+            databases.listDocuments(databaseId, agentsCollectionId, [
+              Query.limit(1),
+            ]),
+            databases.listDocuments(databaseId, agentsCollectionId, [
               Query.equal('isVerified', true),
               Query.limit(1),
             ]),
-
-            // Pending Approvals (properties not verified)
-            databases.listDocuments(databaseId, 'properties', [
+            databases.listDocuments(databaseId, propertiesCollectionId, [
               Query.equal('isVerified', false),
               Query.equal('isActive', true),
               Query.limit(1),
             ]),
           ])
 
-          // Calculate views and favorites from all properties
-          const totalViews = properties.reduce(
-            (sum, property) => sum + (property.views || 0),
+          const totalViews = props.reduce((sum, p) => sum + (p.views || 0), 0)
+          const totalFavorites = props.reduce(
+            (sum, p) => sum + (p.favorites || 0),
             0
           )
-
-          const totalFavorites = properties.reduce(
-            (sum, property) => sum + (property.favorites || 0),
-            0
-          )
-
-          // Count active listings (verified and active)
-          const activeListings = properties.filter(
+          const activeListings = props.filter(
             (p) => p.isActive === true && p.isVerified === true
           ).length
 
@@ -341,7 +386,7 @@ export default function DynamicDashboardPage({}: {
             totalUsers: usersResponse.total,
             totalAgents: agentsResponse.total,
             verifiedAgents: verifiedAgentsResponse.total,
-            totalProperties: properties.length,
+            totalProperties: props.length,
             pendingApprovals: pendingApprovalsResponse.total,
             totalViews,
             totalFavorites,
@@ -349,32 +394,28 @@ export default function DynamicDashboardPage({}: {
           }
         } catch (error) {
           console.error('Error fetching admin stats:', error)
-          // Return fallback stats if API fails
           return {
-            totalUsers: 50000,
-            totalAgents: 1200,
-            verifiedAgents: 800,
-            totalProperties: 10000,
-            activeListings: 8000,
-            pendingApprovals: 200,
-            totalViews: 450000,
-            totalFavorites: 12000,
+            totalUsers: 0,
+            totalAgents: 0,
+            verifiedAgents: 0,
+            totalProperties: props.length,
+            activeListings: 0,
+            pendingApprovals: 0,
+            totalViews: 0,
+            totalFavorites: 0,
           }
         }
       }
 
-      if (userType === 'agent') {
-        const totalViews = properties.reduce(
-          (sum, property) => sum + (property.views || 0),
-          0
-        )
-        const totalFavorites = properties.reduce(
-          (sum, property) => sum + (property.favorites || 0),
+      if (type === 'agent') {
+        const totalViews = props.reduce((sum, p) => sum + (p.views || 0), 0)
+        const totalFavorites = props.reduce(
+          (sum, p) => sum + (p.favorites || 0),
           0
         )
 
         return {
-          totalListings: properties.length,
+          totalListings: props.length,
           totalViews,
           totalFavorites,
           pendingViewings: 0,
@@ -382,36 +423,30 @@ export default function DynamicDashboardPage({}: {
         }
       }
 
-      if (userType === 'seller') {
-        const totalViews = properties.reduce(
-          (sum, property) => sum + (property.views || 0),
-          0
-        )
-        const activeListings = properties.filter(
+      if (type === 'seller') {
+        const totalViews = props.reduce((sum, p) => sum + (p.views || 0), 0)
+        const activeListings = props.filter(
           (p) => p.status === 'active' || p.isActive === true
         ).length
 
         return {
-          totalProperties: properties.length,
+          totalProperties: props.length,
           activeListings,
           totalViews,
-          totalInquiries: properties.reduce(
-            (sum, property) => sum + (property.inquiries || 0),
-            0
-          ),
+          totalInquiries: props.reduce((sum, p) => sum + (p.inquiries || 0), 0),
           pendingOffers: 0,
         }
       }
 
-      if (userType === 'buyer') {
-        const savedProperties = Array.isArray(user?.favoriteProperties)
-          ? user.favoriteProperties.length
+      if (type === 'buyer') {
+        const savedProperties = Array.isArray((user as any)?.favoriteProperties)
+          ? (user as any).favoriteProperties.length
           : 0
-        const savedSearches = Array.isArray(user?.savedSearches)
-          ? user.savedSearches.length
+        const savedSearches = Array.isArray((user as any)?.savedSearches)
+          ? (user as any).savedSearches.length
           : 0
-        const propertiesViewed = Array.isArray(user?.recentlyViewed)
-          ? user.recentlyViewed.length
+        const propertiesViewed = Array.isArray((user as any)?.recentlyViewed)
+          ? (user as any).recentlyViewed.length
           : 0
 
         return {
@@ -424,7 +459,13 @@ export default function DynamicDashboardPage({}: {
 
       return {}
     },
-    [user]
+    [
+      user,
+      databaseId,
+      usersCollectionId,
+      agentsCollectionId,
+      propertiesCollectionId,
+    ]
   )
 
   // Load dashboard data
@@ -434,65 +475,101 @@ export default function DynamicDashboardPage({}: {
     try {
       setDashboardLoading(true)
 
-      // Fetch properties
-      const fetchedProperties = await fetchProperties()
+      const [fetchedProperties, purchases] = await Promise.all([
+        fetchProperties(),
+        userType === 'buyer' ? fetchPurchases() : Promise.resolve([]),
+      ])
+
       setProperties(fetchedProperties)
+      setRecentPurchases(purchases)
 
-      // Calculate stats based on properties and user type
       const stats = await calculateStats(fetchedProperties, userType)
-      setDashboardStats(stats)
 
-      // Create mock recent activity
-      const mockActivity = [
-        {
-          id: '1',
-          type: userType === 'admin' ? 'system_update' : 'property_update',
-          title: userType === 'admin' ? 'System' : user?.name || 'User',
-          description:
-            userType === 'admin'
-              ? 'Admin dashboard refreshed'
-              : userType === 'seller' || userType === 'agent'
-                ? 'updated property listing'
-                : 'viewed a property',
-          time: new Date().toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-          }),
-          status: 'completed',
-        },
-        {
-          id: '2',
-          type: 'notification',
-          title: userType === 'admin' ? 'Welcome' : 'System',
-          description:
-            userType === 'admin'
-              ? 'Welcome to admin dashboard'
-              : 'Welcome to your dashboard',
-          time: new Date().toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-          }),
-          status: 'new',
-        },
-      ]
-      setRecentActivity(mockActivity)
+      if (userType === 'buyer') {
+        const totalSpentKobo = purchases.reduce(
+          (sum, p) => sum + (Number(p.amountKobo) || 0),
+          0
+        )
+        setDashboardStats({
+          ...stats,
+          recentPurchasesCount: purchases.length,
+          totalSpentKobo,
+        })
+      } else {
+        setDashboardStats(stats)
+      }
+
+      const activity: any[] = []
+
+      if (userType === 'buyer') {
+        purchases.slice(0, 3).forEach((p) => {
+          activity.push({
+            id: p.$id,
+            title: 'Purchase',
+            description: `Payment completed${
+              p.propertyTitle ? ` for "${p.propertyTitle}"` : ''
+            }`,
+            time: new Date(p.$createdAt).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            }),
+            status: 'completed',
+          })
+        })
+      }
+
+      if (activity.length === 0) {
+        activity.push(
+          {
+            id: '1',
+            type: userType === 'admin' ? 'system_update' : 'property_update',
+            title: userType === 'admin' ? 'System' : user?.name || 'User',
+            description:
+              userType === 'admin'
+                ? 'Admin dashboard refreshed'
+                : userType === 'seller' || userType === 'agent'
+                  ? 'updated property listing'
+                  : 'viewed a property',
+            time: new Date().toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            }),
+            status: 'completed',
+          },
+          {
+            id: '2',
+            type: 'notification',
+            title: userType === 'admin' ? 'Welcome' : 'System',
+            description:
+              userType === 'admin'
+                ? 'Welcome to admin dashboard'
+                : 'Welcome to your dashboard',
+            time: new Date().toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            }),
+            status: 'new',
+          }
+        )
+      }
+
+      setRecentActivity(activity)
     } catch (error) {
       console.error('Error loading dashboard data:', error)
       toast.error('Failed to load dashboard data')
     } finally {
       setDashboardLoading(false)
     }
-  }, [user, id, userType, fetchProperties, calculateStats])
+  }, [user, id, userType, fetchProperties, fetchPurchases, calculateStats])
 
   useEffect(() => {
-    if (user && user.$id === id && user.userType === userType) {
+    if (!isLoading && user && user.$id === id && user.userType === userType) {
       loadDashboardData()
     }
-  }, [user, id, userType, loadDashboardData])
+  }, [isLoading, user, id, userType, loadDashboardData])
 
-  // Get user type specific configuration
-  const getUserTypeConfig = () => {
-    const configs = {
+  const userTypeConfig = useMemo(() => {
+    const configs: any = {
       admin: {
         title: 'Admin Dashboard',
         icon: Shield,
@@ -515,14 +592,11 @@ export default function DynamicDashboardPage({}: {
         subtitle: 'Find your dream property',
       },
     }
-    return configs[userType as keyof typeof configs] || configs.buyer
-  }
+    return configs[userType] || configs.buyer
+  }, [userType])
 
-  const userTypeConfig = getUserTypeConfig()
-
-  // Get stats based on user type
-  const getStats = (): StatItem[] => {
-    const statsConfigs = {
+  const getStats = useCallback((): StatItem[] => {
+    const statsConfigs: any = {
       admin: [
         {
           title: 'Total Users',
@@ -652,11 +726,22 @@ export default function DynamicDashboardPage({}: {
           bgColor: 'bg-red-50',
         },
         {
-          title: 'Scheduled Tours',
-          value: dashboardStats.scheduledTours || 0,
-          icon: Calendar,
-          description: 'Upcoming viewings',
-          color: 'text-blue-500',
+          title: 'Purchases',
+          value: dashboardStats.recentPurchasesCount || 0,
+          icon: DollarSign,
+          description: 'Recent successful payments',
+          color: 'text-emerald-600',
+          bgColor: 'bg-emerald-50',
+        },
+        {
+          title: 'Total Spent',
+          value:
+            typeof dashboardStats.totalSpentKobo === 'number'
+              ? `₦${Math.round(dashboardStats.totalSpentKobo / 100).toLocaleString()}`
+              : '₦0',
+          icon: BarChart3,
+          description: 'All-time spending',
+          color: 'text-blue-600',
           bgColor: 'bg-blue-50',
         },
         {
@@ -667,24 +752,14 @@ export default function DynamicDashboardPage({}: {
           color: 'text-green-500',
           bgColor: 'bg-green-50',
         },
-        {
-          title: 'Properties Viewed',
-          value: dashboardStats.propertiesViewed || 0,
-          icon: Eye,
-          description: 'Recently viewed',
-          color: 'text-purple-500',
-          bgColor: 'bg-purple-50',
-        },
       ],
     }
-    return (
-      statsConfigs[userType as keyof typeof statsConfigs] || statsConfigs.buyer
-    )
-  }
 
-  // Get quick actions based on user type
-  const getQuickActions = (): QuickAction[] => {
-    const actionsConfigs = {
+    return statsConfigs[userType] || statsConfigs.buyer
+  }, [dashboardStats, userType])
+
+  const getQuickActions = useCallback((): QuickAction[] => {
+    const actionsConfigs: any = {
       admin: [
         {
           title: 'Approval Queue',
@@ -710,28 +785,28 @@ export default function DynamicDashboardPage({}: {
           description: 'Manage all users',
           icon: Users,
           href: `/dashboard/${userType}/${user?.$id || ''}/users`,
-          color: 'bg-brand hover:bg-brand/90',
+          color: 'bg-slate-900 hover:bg-slate-800',
         },
         {
           title: 'Properties',
           description: 'Manage all listings',
           icon: Home,
           href: `/dashboard/${userType}/${user?.$id || ''}/properties`,
-          color: 'bg-brand hover:bg-brand/90',
+          color: 'bg-slate-900 hover:bg-slate-800',
         },
         {
           title: 'Analytics',
           description: 'Platform performance',
           icon: BarChart3,
           href: '/admin/analytics',
-          color: 'bg-brand hover:bg-brand/90',
+          color: 'bg-slate-900 hover:bg-slate-800',
         },
         {
           title: 'System Settings',
           description: 'Platform configuration',
           icon: Settings,
           href: '/admin/settings',
-          color: 'bg-brand hover:bg-brand/90',
+          color: 'bg-slate-900 hover:bg-slate-800',
         },
       ],
       agent: [
@@ -740,21 +815,21 @@ export default function DynamicDashboardPage({}: {
           description: 'View all listings',
           icon: Settings,
           href: `/dashboard/agent/${user?.$id || ''}/properties`,
-          color: 'bg-brand hover:bg-brand/90',
+          color: 'bg-slate-900 hover:bg-slate-800',
         },
         {
           title: 'Messages',
           description: 'Respond to inquiries',
           icon: MessageSquare,
           href: `/dashboard/agent/${user?.$id || ''}/messages`,
-          color: 'bg-brand hover:bg-brand/90',
+          color: 'bg-slate-900 hover:bg-slate-800',
         },
         {
           title: 'Performance',
           description: 'View analytics',
           icon: TrendingUp,
           href: `/dashboard/agent/${user?.$id || ''}/analytics`,
-          color: 'bg-brand hover:bg-brand/90',
+          color: 'bg-slate-900 hover:bg-slate-800',
         },
       ],
       seller: [
@@ -763,28 +838,28 @@ export default function DynamicDashboardPage({}: {
           description: 'Sell your property',
           icon: Home,
           href: '/properties/post',
-          color: 'bg-brand hover:bg-brand/90',
+          color: 'bg-emerald-600 hover:bg-emerald-700',
         },
         {
           title: 'Manage Properties',
           description: 'Edit your listings',
           icon: Settings,
           href: `/dashboard/${userType}/${user?.$id || ''}/properties`,
-          color: 'bg-brand hover:bg-brand/90',
+          color: 'bg-slate-900 hover:bg-slate-800',
         },
         {
           title: 'View Inquiries',
           description: 'Respond to buyers',
           icon: MessageSquare,
           href: `/dashboard/${userType}/${user?.$id || ''}/messages`,
-          color: 'bg-brand hover:bg-brand/90',
+          color: 'bg-slate-900 hover:bg-slate-800',
         },
         {
           title: 'Market Analysis',
           description: 'Pricing insights',
           icon: TrendingUp,
           href: `/dashboard/${userType}/${user?.$id || ''}/analytics`,
-          color: 'bg-brand hover:bg-brand/90',
+          color: 'bg-slate-900 hover:bg-slate-800',
         },
       ],
       buyer: [
@@ -792,8 +867,8 @@ export default function DynamicDashboardPage({}: {
           title: 'Search Properties',
           description: 'Find your dream home',
           icon: Search,
-          href: `/dashboard/${userType}/${user?.$id || ''}/properties`,
-          color: 'bg-brand/5 hover:bg-emerald-600',
+          href: `/properties`,
+          color: 'bg-emerald-600 hover:bg-emerald-700',
         },
         {
           title: 'Saved Properties',
@@ -802,31 +877,29 @@ export default function DynamicDashboardPage({}: {
           href: `/dashboard/${userType}/${user?.$id || ''}/favorites`,
           color: 'bg-red-500 hover:bg-red-600',
         },
-        // {
-        //   title: 'Schedule Tour',
-        //   description: 'Book a viewing',
-        //   icon: Calendar,
-        //   href: '/buyer/tours',
-        //   color: 'bg-blue-500 hover:bg-blue-600',
-        // },
-        // {
-        //   title: 'Market Trends',
-        //   description: 'View insights',
-        //   icon: TrendingUp,
-        //   href: '/buyer/insights',
-        //   color: 'bg-purple-500 hover:bg-purple-600',
-        // },
+        {
+          title: 'My Purchases',
+          description: 'Receipts & payment status',
+          icon: DollarSign,
+          href: `/dashboard/${userType}/${user?.$id || ''}/purchases`,
+          color: 'bg-blue-600 hover:bg-blue-700',
+          badge: dashboardStats.recentPurchasesCount || 0,
+        },
+        {
+          title: 'Notifications',
+          description: 'Updates & alerts',
+          icon: Bell,
+          href: `/dashboard/${userType}/${user?.$id || ''}/notifications`,
+          color: 'bg-slate-900 hover:bg-slate-800',
+        },
       ],
     }
-    return (
-      actionsConfigs[userType as keyof typeof actionsConfigs] ||
-      actionsConfigs.buyer
-    )
-  }
 
-  // Get tips/advice based on user type
-  const getTips = () => {
-    const tipsConfigs = {
+    return actionsConfigs[userType] || actionsConfigs.buyer
+  }, [dashboardStats, userType, user])
+
+  const getTips = useCallback(() => {
+    const tipsConfigs: any = {
       admin: [
         {
           title: 'System Monitoring',
@@ -836,8 +909,7 @@ export default function DynamicDashboardPage({}: {
         },
         {
           title: 'Agent Verification',
-          content:
-            'Verify new agents within 24 hours for better user experience',
+          content: 'Verify new agents quickly for a better user experience',
           color: 'bg-green-50',
           textColor: 'text-green-700',
         },
@@ -846,13 +918,13 @@ export default function DynamicDashboardPage({}: {
         {
           title: 'Quick Response',
           content:
-            'Respond to viewing requests within 2 hours to increase conversion by 40%',
+            'Respond to viewing requests quickly to increase conversions.',
           color: 'bg-yellow-50',
           textColor: 'text-yellow-700',
         },
         {
           title: 'Quality Photos',
-          content: 'Properties with professional photos get 3x more views',
+          content: 'Listings with great photos get significantly more views.',
           color: 'bg-blue-50',
           textColor: 'text-blue-700',
         },
@@ -860,80 +932,70 @@ export default function DynamicDashboardPage({}: {
       seller: [
         {
           title: 'Quality Photos',
-          content: 'Properties with professional photos sell 32% faster',
+          content: 'Properties with professional photos sell faster.',
           color: 'bg-yellow-50',
           textColor: 'text-yellow-700',
         },
         {
           title: 'Accurate Pricing',
-          content: 'Correctly priced homes receive 3.9x more views',
+          content: 'Correct pricing increases serious buyer inquiries.',
           color: 'bg-blue-50',
           textColor: 'text-blue-700',
         },
       ],
       buyer: [
         {
-          title: 'Market Timing',
+          title: 'Shortlist Smartly',
           content:
-            'Spring and Fall typically have more inventory and better prices',
+            'Save 5–10 properties, then compare location + price trends.',
           color: 'bg-green-50',
           textColor: 'text-green-700',
         },
         {
-          title: 'Get Pre-Approved',
-          content: 'Sellers prefer buyers with mortgage pre-approval',
+          title: 'Ask the Right Questions',
+          content: 'Confirm title, service charge, and neighborhood details.',
           color: 'bg-blue-50',
           textColor: 'text-blue-700',
         },
       ],
     }
-    return (
-      tipsConfigs[userType as keyof typeof tipsConfigs] || tipsConfigs.buyer
-    )
-  }
+    return tipsConfigs[userType] || tipsConfigs.buyer
+  }, [userType])
 
-  // Filter properties based on user type
-  const getDisplayProperties = () => {
+  const displayProperties = useMemo(() => {
     if (userType === 'buyer') {
-      const favoriteIds = user?.favoriteProperties || []
-      return properties.filter((property) => favoriteIds.includes(property.$id))
+      const favoriteIds = (user as any)?.favoriteProperties || []
+      return properties.filter((p) => favoriteIds.includes(p.$id))
     }
     return properties
-  }
+  }, [userType, user, properties])
 
-  // Get top performing agents for admin dashboard
-  const getTopPerformingAgents = () => {
+  const topPerformingAgents = useMemo(() => {
     if (userType !== 'admin') return []
 
-    // Calculate agent performance based on properties
-    const agentPerformance = properties.reduce((acc, property) => {
-      if (!property.agentId || !property.agentName) return acc
-
-      if (!acc[property.agentId]) {
-        acc[property.agentId] = {
-          name: property.agentName,
+    const perf = properties.reduce((acc, p: any) => {
+      if (!p.agentId || !p.agentName) return acc
+      if (!acc[p.agentId]) {
+        acc[p.agentId] = {
+          name: p.agentName,
           listings: 0,
           views: 0,
           favorites: 0,
         }
       }
-
-      acc[property.agentId].listings++
-      acc[property.agentId].views += property.views || 0
-      acc[property.agentId].favorites += property.favorites || 0
-
+      acc[p.agentId].listings++
+      acc[p.agentId].views += p.views || 0
+      acc[p.agentId].favorites += p.favorites || 0
       return acc
     }, {} as any)
 
-    return Object.values(agentPerformance)
+    return Object.values(perf)
       .sort((a: any, b: any) => b.listings - a.listings)
       .slice(0, 3)
-  }
+  }, [userType, properties])
 
-  // Get agent verification status for admin
-  const getAgentVerificationStatus = () => {
+  const agentVerificationStatus = useMemo(() => {
     if (userType !== 'admin') return null
-
     return {
       verified: dashboardStats.verifiedAgents || 0,
       pending:
@@ -942,15 +1004,9 @@ export default function DynamicDashboardPage({}: {
           : 0,
       total: dashboardStats.totalAgents || 0,
     }
-  }
+  }, [userType, dashboardStats])
 
-  const displayProperties = getDisplayProperties()
-  const topPerformingAgents = getTopPerformingAgents()
-  const agentVerificationStatus = getAgentVerificationStatus()
-
-  if (isLoading || dashboardLoading) {
-    return <DashboardSkeleton />
-  }
+  if (isLoading || dashboardLoading) return <DashboardSkeleton />
 
   if (!isAuthenticated || !user) {
     return (
@@ -995,6 +1051,7 @@ export default function DynamicDashboardPage({}: {
                 </div>
               </div>
             </div>
+
             <div className="flex items-center space-x-4">
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium ${userTypeConfig.badgeColor}`}
@@ -1016,13 +1073,16 @@ export default function DynamicDashboardPage({}: {
               </div>
             </div>
           </div>
+
+          {/* ✅ show stats for all user types (more useful) */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+            <DashboardStats stats={getStats()} />
+          </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Grid */}
-        {userType === 'admin' && <DashboardStats stats={getStats()} />}
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1036,34 +1096,37 @@ export default function DynamicDashboardPage({}: {
                     Most used features
                   </span>
                 </div>
+
                 <div
-                  className={`grid grid-cols-1 gap-4 ${userType === 'admin' ? 'md:grid-cols-2 lg:grid-cols-2' : 'md:grid-cols-1'}`}
+                  className={`grid grid-cols-1 gap-4 ${
+                    userType === 'admin' ? 'md:grid-cols-1' : 'md:grid-cols-'
+                  }`}
                 >
                   {getQuickActions().map((action, index) => (
-                    <a
+                    <button
                       key={index}
-                      href={action.href}
-                      className={`flex flex-col items-center text-sm justify-between p-4 rounded-lg text-white ${action.color} transition-all hover:shadow-md hover:scale-[1.02]`}
+                      onClick={() => router.push(action.href)}
+                      className={`relative flex flex-col text-left p-4 rounded-lg text-white ${action.color} transition-all hover:shadow-md hover:scale-[1.02]`}
+                      type="button"
                     >
-                      <div className="flex items-center">
-                        <div>
-                          <div className="flex items-center line-clamp-1">
-                            <action.icon className="w-5 h-5 mr-1" />
-                            <p className="font-semibold line-clamp-1">
-                              {action.title}
-                            </p>
-                            {action.badge !== undefined && action.badge > 0 && (
-                              <span className="bg-white text-orange-600 text-xs rounded-full px-2 py-1 min-w-6 h-6 flex items-center justify-center">
-                                {action.badge}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm opacity-90">
+                      <div className="flex items-start gap-2">
+                        <action.icon className="w-5 h-5 mt-0.5" />
+                        <div className="min-w-0">
+                          <p className="font-semibold truncate">
+                            {action.title}
+                          </p>
+                          <p className="text-sm opacity-90 line-clamp-2">
                             {action.description}
                           </p>
                         </div>
                       </div>
-                    </a>
+
+                      {action.badge !== undefined && action.badge > 0 && (
+                        <span className="absolute top-3 right-3 bg-white text-slate-900 text-xs rounded-full px-2 py-1 min-w-6 h-6 flex items-center justify-center">
+                          {action.badge}
+                        </span>
+                      )}
+                    </button>
                   ))}
                 </div>
               </div>
@@ -1074,15 +1137,14 @@ export default function DynamicDashboardPage({}: {
                   <h3 className="text-lg font-semibold text-gray-900">
                     Recent Activity
                   </h3>
-                  <span className="text-sm text-gray-500">
-                    Last 5 activities
-                  </span>
+                  <span className="text-sm text-gray-500">Latest updates</span>
                 </div>
+
                 <div className="space-y-3">
                   {recentActivity.length > 0 ? (
                     recentActivity.slice(0, 5).map((activity, index) => (
                       <div
-                        key={index}
+                        key={activity.id || index}
                         className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         <div
@@ -1104,14 +1166,16 @@ export default function DynamicDashboardPage({}: {
                             <Eye className="w-4 h-4 text-blue-600" />
                           )}
                         </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">
+
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
                             {activity.title}
                           </p>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-gray-600 truncate">
                             {activity.description}
                           </p>
                         </div>
+
                         <span className="text-xs text-gray-500">
                           {activity.time}
                         </span>
@@ -1145,6 +1209,7 @@ export default function DynamicDashboardPage({}: {
                       <div className="w-3 h-3 rounded-full bg-green-500" />
                     </div>
                   </div>
+
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
                     <div>
                       <p className="font-medium text-gray-900">
@@ -1159,10 +1224,15 @@ export default function DynamicDashboardPage({}: {
                         {dashboardStats.verifiedAgents || 0} active
                       </span>
                       <div
-                        className={`w-3 h-3 rounded-full ${(dashboardStats.verifiedAgents || 0) > 0 ? 'bg-green-500' : 'bg-yellow-500'}`}
+                        className={`w-3 h-3 rounded-full ${
+                          (dashboardStats.verifiedAgents || 0) > 0
+                            ? 'bg-green-500'
+                            : 'bg-yellow-500'
+                        }`}
                       />
                     </div>
                   </div>
+
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
                     <div>
                       <p className="font-medium text-gray-900">
@@ -1179,10 +1249,15 @@ export default function DynamicDashboardPage({}: {
                           : 'No Data'}
                       </span>
                       <div
-                        className={`w-3 h-3 rounded-full ${(dashboardStats.totalProperties || 0) > 0 ? 'bg-green-500' : 'bg-yellow-500'}`}
+                        className={`w-3 h-3 rounded-full ${
+                          (dashboardStats.totalProperties || 0) > 0
+                            ? 'bg-green-500'
+                            : 'bg-yellow-500'
+                        }`}
                       />
                     </div>
                   </div>
+
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
                     <div>
                       <p className="font-medium text-gray-900">
@@ -1195,7 +1270,11 @@ export default function DynamicDashboardPage({}: {
                         {dashboardStats.pendingApprovals || 0} items
                       </span>
                       <div
-                        className={`w-3 h-3 rounded-full ${(dashboardStats.pendingApprovals || 0) > 0 ? 'bg-orange-500' : 'bg-green-500'}`}
+                        className={`w-3 h-3 rounded-full ${
+                          (dashboardStats.pendingApprovals || 0) > 0
+                            ? 'bg-orange-500'
+                            : 'bg-green-500'
+                        }`}
                       />
                     </div>
                   </div>
@@ -1214,6 +1293,7 @@ export default function DynamicDashboardPage({}: {
                     Based on Listings
                   </span>
                 </div>
+
                 <div className="space-y-4">
                   {topPerformingAgents.map((agent: any, index: number) => (
                     <div
@@ -1233,6 +1313,7 @@ export default function DynamicDashboardPage({}: {
                           </p>
                         </div>
                       </div>
+
                       <div className="text-right">
                         <p className="font-semibold text-gray-900">
                           {agent.views} views
@@ -1300,7 +1381,7 @@ export default function DynamicDashboardPage({}: {
                 Tips & Advice
               </h3>
               <div className="space-y-3">
-                {getTips().map((tip, index) => (
+                {getTips().map((tip: any, index: number) => (
                   <div key={index} className={`p-3 rounded-lg ${tip.color}`}>
                     <p className="font-medium mb-1">{tip.title}</p>
                     <p className={`text-sm ${tip.textColor}`}>{tip.content}</p>
@@ -1327,9 +1408,10 @@ export default function DynamicDashboardPage({}: {
                         'totalProperties',
                         'pendingApprovals',
                         'activeListings',
+                        'totalSpentKobo',
                       ].includes(key)
                   )
-                  .slice(0, 4)
+                  .slice(0, 6)
                   .map(([key, value], index) => (
                     <div
                       key={index}
@@ -1341,28 +1423,109 @@ export default function DynamicDashboardPage({}: {
                       <span className="font-semibold text-emerald-600">
                         {typeof value === 'number'
                           ? value.toLocaleString()
-                          : value}
+                          : (value as any)}
                       </span>
                     </div>
                   ))}
               </div>
             </div>
 
-            {/* For Buyers - Saved Properties Preview */}
+            {/* ✅ Buyer - Recent Purchases */}
+            {userType === 'buyer' && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Recent Purchases
+                  </h3>
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/dashboard/${userType}/${user.$id}/purchases`
+                      )
+                    }
+                    className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                    type="button"
+                  >
+                    View all →
+                  </button>
+                </div>
+
+                {recentPurchases.length === 0 ? (
+                  <p className="text-sm text-gray-500">
+                    No purchases yet. When you complete a payment, it will
+                    appear here.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {recentPurchases.slice(0, 5).map((p) => (
+                      <div
+                        key={p.$id}
+                        className="p-3 border border-gray-200 rounded-lg flex items-start justify-between"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                            {p.propertyTitle || 'Property purchase'}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            Ref: {p.reference || p.$id}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(p.$createdAt).toLocaleDateString(
+                              'en-US',
+                              {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              }
+                            )}
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-emerald-700">
+                            {money(p.amountKobo, p.currency || 'NGN')}
+                          </p>
+                          <span className="text-xs px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                            {p.status || 'success'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Buyer - Saved Properties Preview */}
             {userType === 'buyer' && displayProperties.length > 0 && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Saved Properties
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Saved Properties
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      router.push(
+                        `/dashboard/${userType}/${user.$id}/favorites`
+                      )
+                    }
+                    className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                  >
+                    View all →
+                  </button>
+                </div>
+
                 <div className="space-y-3">
                   {displayProperties.slice(0, 3).map((property) => (
-                    <a
+                    <button
                       key={property.$id}
-                      href={`/properties/${property.$id}`}
-                      className="block p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      type="button"
+                      onClick={() => router.push(`/properties/${property.$id}`)}
+                      className="w-full text-left block p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
                           <p className="text-sm font-medium text-gray-900 line-clamp-1">
                             {property.title}
                           </p>
@@ -1370,20 +1533,12 @@ export default function DynamicDashboardPage({}: {
                             {property.city}, {property.state}
                           </p>
                         </div>
-                        <div className="text-emerald-600 text-sm font-medium">
+                        <div className="text-emerald-600 text-sm font-medium shrink-0">
                           View →
                         </div>
                       </div>
-                    </a>
+                    </button>
                   ))}
-                  {displayProperties.length > 3 && (
-                    <a
-                      href="/buyer/saved"
-                      className="text-emerald-600 hover:text-emerald-700 text-sm font-medium text-center block"
-                    >
-                      View all {displayProperties.length} properties →
-                    </a>
-                  )}
                 </div>
               </div>
             )}

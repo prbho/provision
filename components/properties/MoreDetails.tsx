@@ -3,9 +3,7 @@
 
 import { Property } from '@/types'
 import {
-  Building,
   Calendar,
-  Car,
   Clock,
   Home,
   Layers,

@@ -169,7 +169,7 @@ export default function MessageButton({
     return (
       <div className={`space-y-4 ${className}`}>
         {/* Owner badge */}
-        <div className="p-4 bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+        <div className="p-4 border border-blue-200 rounded-lg">
           <div className="flex items-center gap-2 mb-3">
             <UserCheck className="w-5 h-5 text-blue-600" />
             <span className="text-sm font-semibold text-blue-800">
@@ -242,7 +242,7 @@ export default function MessageButton({
   // Determine button classes
   const getButtonClasses = () => {
     const baseClasses =
-      'text-white cursor-pointer text-ellipsis capitalize transition-colors w-full py-6 bg-linear-to-r from-brand from-brand hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg transform transition-all duration-200 border-0'
+      'text-white cursor-pointer text-ellipsis capitalize transition-colors w-full py-6 text-white font-bold text-lg transform transition-all duration-200 border-0'
 
     if (variant === 'icon') {
       return `${baseClasses} ${sizeClasses[size].icon} aspect-square w-fit bg-transparent text-gray-400 flex items-center justify-center ${className}`

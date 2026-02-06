@@ -392,6 +392,13 @@ export default function DashboardSidebar({
       badge: notificationCounts.byType.favorite,
       userTypes: ['buyer'],
     },
+    {
+      name: 'Purchased Properties',
+      href: `/dashboard/${user?.userType}/${user?.$id || ''}/purchases`,
+      icon: <Heart className="w-5 h-5" />,
+      // badge: notificationCounts.byType.purchases,
+      userTypes: ['buyer'],
+    },
     // {
     //   name: 'Scheduled Tours',
     //   href: `/dashboard/${user?.userType}/${user?.$id || ''}/tours`,

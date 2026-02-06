@@ -1,321 +1,247 @@
-// lib/payment-service.ts
+// lib/services/payment-service.ts
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { PaymentRecord, PlanType } from '@/types'
-import { ID, Models, Query } from 'appwrite'
+import { ID, Query } from 'appwrite'
 
-import {
-  DATABASE_ID,
-  databases,
-  PAYMENT_COLLECTION_ID,
-} from '../appwrite-server'
-import { PREMIUM_PLANS } from './premium-service'
+import { databases } from '@/lib/appwrite-server'
+
+const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'propertyDB'
+
+// IMPORTANT:
+// - This must match your actual Appwrite collection IDs.
+// - If your collection is named "payments", set NEXT_PUBLIC_APPWRITE_PAYMENT_TABLE_ID=payments
+const PAYMENTS_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_PAYMENT_TABLE_ID || 'payment'
+
+const PURCHASES_COLLECTION_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_PURCHASES_TABLE_ID || 'purchases'
+
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY
+const PAYSTACK_BASE_URL = 'https://api.paystack.co'
+
+type AppwritePaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded'
+
+function mapPaystackStatusToAppwriteStatus(
+  paystackStatus: string
+): AppwritePaymentStatus {
+  const s = String(paystackStatus || '').toLowerCase()
+
+  // Paystack commonly returns: success, failed, abandoned
+  if (s === 'success') return 'completed'
+  if (s === 'failed') return 'failed'
+  if (s === 'refunded' || s === 'reversed') return 'refunded'
+
+  // includes "abandoned", "pending", unknown values
+  return 'pending'
+}
 
 export class PaymentService {
-  private static paystackSecretKey = process.env.PAYSTACK_SECRET_KEY!
-  private static baseUrl = 'https://api.paystack.co'
+  // ✅ Paystack verify
+  static async verifyPayment(reference: string) {
+    if (!PAYSTACK_SECRET_KEY) throw new Error('Missing PAYSTACK_SECRET_KEY')
 
-  // Initialize payment with PayStack
-
-  static async initializePayment(data: {
-    email: string
-    planType: PlanType
-    propertyId: string
-    agentId: string
-    userId: string
-    metadata?: any
-  }) {
-    console.log('💳 INITIALIZE PAYMENT CALLED:', {
-      email: data.email,
-      planType: data.planType,
-      propertyId: data.propertyId,
-      agentId: data.agentId,
-      userId: data.userId,
-      metadata: data.metadata,
-    })
-
-    const plan = PREMIUM_PLANS[data.planType]
-    console.log('📊 Plan details:', plan)
-
-    // Check if PayStack key is available
-    if (!this.paystackSecretKey) {
-      console.error('❌ PayStack secret key is not set!')
-      throw new Error('PayStack configuration error')
-    }
-
-    // Prepare callback URL
-    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/payment/verify`
-    console.log('🔗 Callback URL:', callbackUrl)
-
-    // Prepare metadata with extension info if provided
-    const requestMetadata = {
-      userId: data.userId,
-      agentId: data.agentId,
-      propertyId: data.propertyId,
-      planType: data.planType,
-      ...(data.metadata || {}),
-    }
-
-    console.log('📋 Request metadata:', requestMetadata)
-
-    const requestBody = {
-      email: data.email,
-      amount: plan.price, // PayStack expects amount in kobo
-      metadata: requestMetadata,
-      callback_url: callbackUrl,
-    }
-
-    console.log('📤 Sending request to PayStack:', {
-      url: `${this.baseUrl}/transaction/initialize`,
-      amount: plan.price,
-      amountInNaira: plan.price / 100,
-    })
-
-    try {
-      const response = await fetch(`${this.baseUrl}/transaction/initialize`, {
-        method: 'POST',
+    const res = await fetch(
+      `${PAYSTACK_BASE_URL}/transaction/verify/${reference}`,
+      {
+        method: 'GET',
         headers: {
-          Authorization: `Bearer ${this.paystackSecretKey}`,
+          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
-      })
-
-      console.log('📥 PayStack response status:', response.status)
-      console.log(
-        '📥 PayStack response headers:',
-        Object.fromEntries(response.headers.entries())
-      )
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('❌ PayStack initialize error:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText,
-        })
-        throw new Error(`Payment initialization failed: ${errorText}`)
+        cache: 'no-store',
       }
+    )
 
-      const result = await response.json()
-      console.log('✅ PayStack initialize result:', {
-        status: result.status,
-        message: result.message,
-        hasData: !!result.data,
-        reference: result.data?.reference,
-        authorization_url: result.data?.authorization_url,
-      })
+    const json = await res.json().catch(() => null)
 
-      if (!result.status || !result.data) {
-        console.error('❌ PayStack returned invalid response:', result)
-        throw new Error('Invalid response from payment gateway')
-      }
+    if (!res.ok || !json?.status || !json?.data) {
+      throw new Error(json?.message || 'Paystack verification failed')
+    }
 
-      return result.data
-    } catch (error: any) {
-      console.error('💥 Initialize payment error:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-      })
-      throw error
+    const data = json.data
+
+    return {
+      status: data.status, // paystack status (e.g. "success")
+      reference: data.reference,
+      amount: Number(data.amount) || 0, // kobo
+      currency: data.currency || data.metadata?.currency || 'NGN',
+      metadata: data.metadata || {},
+      paidAt: data.paid_at || data.paidAt || new Date().toISOString(),
+      raw: data,
     }
   }
 
-  // Verify PayStack payment
-  static async verifyPayment(reference: string) {
-    console.log('🔍 VERIFY PAYMENT START:', reference)
-
-    try {
-      const response = await fetch(
-        `${this.baseUrl}/transaction/verify/${reference}`,
-        {
-          headers: {
-            Authorization: `Bearer ${this.paystackSecretKey}`,
-          },
-        }
-      )
-
-      console.log('📤 PayStack verify response status:', response.status)
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('❌ PayStack verify error:', errorText)
-        throw new Error(`Failed to verify payment: ${errorText}`)
-      }
-
-      const result = await response.json()
-      console.log('✅ PayStack verify result:', {
-        status: result.data.status,
-        amount: result.data.amount,
-        metadata: result.data.metadata,
-      })
-
-      return result.data
-    } catch (error: any) {
-      console.error('💥 Verify payment error:', error)
-      throw error
-    }
+  // ✅ prevent duplicates
+  static async getPaymentByReference(reference: string) {
+    const res = await databases.listDocuments(
+      DATABASE_ID,
+      PAYMENTS_COLLECTION_ID,
+      [Query.equal('reference', reference), Query.limit(1)]
+    )
+    return res.total > 0 ? res.documents[0] : null
   }
 
-  // Create payment record in database
-  static async createPaymentRecord(paymentData: any): Promise<PaymentRecord> {
-    console.log('💾 CREATE PAYMENT RECORD START:', {
-      reference: paymentData.reference,
-      status: paymentData.status,
-      metadata: paymentData.metadata,
+  // ✅ supports premium + property_purchase (Option A: map status + store gatewayStatus)
+  static async createPaymentRecord(verification: any) {
+    const reference = String(verification?.reference || '').trim()
+    if (!reference) throw new Error('Missing payment reference')
+
+    const paystackStatus = String(verification?.status || '').trim()
+    const appwriteStatus = mapPaystackStatusToAppwriteStatus(paystackStatus)
+
+    const amount = Number(verification?.amount) || 0
+    const currency =
+      verification?.currency || verification?.metadata?.currency || 'NGN'
+    const metadata = verification?.metadata || {}
+    const paidAt = verification?.paidAt || new Date().toISOString()
+
+    const existing = await this.getPaymentByReference(reference)
+    if (existing) return existing
+
+    const paymentType = metadata?.paymentType || 'premium'
+
+    // Premium-only (may be absent for property purchases)
+    const planType = metadata?.planType ?? null
+
+    // If you used to rely on duration, keep it safe:
+    // - allow metadata.duration
+    // - allow metadata.planDuration (if you ever used that)
+    // - otherwise null
+    const duration =
+      metadata?.duration ?? metadata?.planDuration ?? metadata?.months ?? null
+
+    const doc = await databases.createDocument(
+      DATABASE_ID,
+      PAYMENTS_COLLECTION_ID,
+      ID.unique(),
+      {
+        // Core
+        reference,
+        status: appwriteStatus, // ✅ must be one of: pending/completed/failed/refunded
+        gatewayStatus: paystackStatus || null, // ✅ store raw paystack status (Option A)
+        amount, // kobo
+        currency,
+        paymentType,
+
+        // Premium fields
+        planType,
+        duration,
+
+        // Shared fields
+        propertyId: metadata?.propertyId ?? null,
+        agentId: metadata?.agentId ?? null,
+
+        // Premium user field (older flow)
+        userId: metadata?.userId ?? null,
+
+        // Purchase fields
+        buyerId: metadata?.buyerId ?? null,
+        buyerEmail: metadata?.buyerEmail ?? null,
+
+        // Store full metadata safely
+        metadata: JSON.stringify(metadata || {}),
+        paidAt,
+      }
+    )
+
+    return doc
+  }
+
+  // ✅ Paystack initialize
+  static async initializePayment({
+    email,
+    amount,
+    metadata,
+  }: {
+    email: string
+    amount: number // kobo
+    metadata: Record<string, any>
+  }) {
+    if (!PAYSTACK_SECRET_KEY) {
+      throw new Error('Missing PAYSTACK_SECRET_KEY')
+    }
+
+    if (!email || !amount) {
+      throw new Error('Email and amount are required')
+    }
+
+    const res = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        amount, // MUST be in kobo
+        currency: metadata?.currency || 'NGN',
+        metadata, // 👈 THIS is what powers everything later
+      }),
     })
 
-    try {
-      // Check if payment already exists
-      const existingPayment = await this.getPaymentByReference(
-        paymentData.reference
-      )
-      if (existingPayment) {
-        console.log('⚠️ Payment already exists:', existingPayment.$id)
-        return existingPayment
-      }
+    const json = await res.json().catch(() => null)
 
-      const plan = PREMIUM_PLANS[paymentData.metadata.planType as PlanType]
-      console.log('📊 Plan for payment:', plan)
+    if (!res.ok || !json?.status || !json?.data) {
+      throw new Error(json?.message || 'Paystack initialization failed')
+    }
 
-      // Prepare document data
-      const documentData = {
-        // Core identifiers
-        userId: paymentData.metadata.userId,
-        agentId: paymentData.metadata.agentId,
-        propertyId: paymentData.metadata.propertyId,
-
-        // Payment details
-        amount: paymentData.amount / 100, // Convert from kobo to Naira
-        currency: 'NGN',
-        status: paymentData.status === 'success' ? 'completed' : 'failed',
-        paymentMethod: paymentData.channel || 'card',
-        paymentGateway: 'paystack',
-        gatewayReference: paymentData.reference,
-
-        // Plan information
-        planType: paymentData.metadata.planType,
-        duration: plan.duration,
-
-        // Additional useful fields
-        customerEmail: paymentData.customer?.email,
-        ipAddress: paymentData.ip_address,
-        fees: paymentData.fees ? paymentData.fees / 100 : 0, // Convert from kobo to Naira
-        paidAt: paymentData.paid_at || new Date().toISOString(),
-        transactionDate: paymentData.transaction_date,
-
-        // Card details (if available)
-        cardBrand: paymentData.authorization?.brand,
-        cardLast4: paymentData.authorization?.last4,
-        bank: paymentData.authorization?.bank,
-      }
-
-      console.log('📝 Creating payment document with data:', documentData)
-
-      const paymentDoc = await databases.createDocument(
-        DATABASE_ID,
-        PAYMENT_COLLECTION_ID,
-        ID.unique(),
-        documentData
-      )
-
-      console.log('✅ Payment record created:', {
-        id: paymentDoc.$id,
-        reference: (paymentDoc as any).gatewayReference,
-        status: (paymentDoc as any).status,
-      })
-
-      return this.mapToPaymentRecord(paymentDoc)
-    } catch (error: any) {
-      console.error('❌ Create payment record error:', {
-        message: error.message,
-        code: error.code,
-        type: error.type,
-        data: error.data,
-      })
-      throw error
+    return {
+      authorization_url: json.data.authorization_url,
+      reference: json.data.reference,
     }
   }
 
-  // Get payment by reference
-  static async getPaymentByReference(
-    reference: string
-  ): Promise<PaymentRecord | null> {
-    console.log('🔍 GET PAYMENT BY REFERENCE:', reference)
+  // ✅ create purchases row (also map status to enum-safe values if purchases.status is enum)
+  static async createPurchaseRecord({
+    paymentRecordId,
+    verification,
+  }: {
+    paymentRecordId: string
+    verification: any
+  }) {
+    const m = verification?.metadata || {}
+    const reference = String(verification?.reference || '').trim()
+    if (!reference) throw new Error('Missing purchase reference')
 
-    try {
-      const result = await databases.listDocuments(
-        DATABASE_ID,
-        PAYMENT_COLLECTION_ID,
-        [Query.equal('gatewayReference', reference)]
-      )
+    const existing = await databases.listDocuments(
+      DATABASE_ID,
+      PURCHASES_COLLECTION_ID,
+      [Query.equal('reference', reference), Query.limit(1)]
+    )
+    if (existing.total > 0) return existing.documents[0]
 
-      console.log('🔍 Payment search result:', {
-        found: result.documents.length,
-        references: result.documents.map((d) => (d as any).gatewayReference),
-      })
+    const paystackStatus = String(verification?.status || '').trim()
+    const appwriteStatus = mapPaystackStatusToAppwriteStatus(paystackStatus)
 
-      if (result.documents.length === 0) {
-        console.log('📭 No payment found with reference:', reference)
-        return null
+    const doc = await databases.createDocument(
+      DATABASE_ID,
+      PURCHASES_COLLECTION_ID,
+      ID.unique(),
+      {
+        reference,
+
+        // If your purchases collection "status" is ALSO enum:
+        status: appwriteStatus, // ✅ pending/completed/failed/refunded
+        gatewayStatus: paystackStatus || null, // ✅ optional but recommended
+
+        amount: Number(verification?.amount) || 0,
+        currency: verification?.currency || m.currency || 'NGN',
+
+        propertyId: m.propertyId ?? null,
+        agentId: m.agentId ?? null,
+        buyerId: m.buyerId ?? null,
+        buyerEmail: m.buyerEmail ?? null,
+
+        propertyTitle: m.propertyTitle ?? null,
+        propertyPrice: m.propertyPrice ?? null,
+
+        paymentId: paymentRecordId,
+        metadata: JSON.stringify(m || {}),
+
+        $createdAt: new Date().toISOString(),
       }
+    )
 
-      const payment = this.mapToPaymentRecord(result.documents[0])
-      console.log('✅ Payment found:', payment.$id)
-      return payment
-    } catch (error: any) {
-      console.error('❌ Get payment by reference error:', {
-        message: error.message,
-        code: error.code,
-      })
-      return null
-    }
-  }
-
-  // Helper method to map AppWrite document to PaymentRecord
-  private static mapToPaymentRecord(doc: Models.Document): PaymentRecord {
-    const typedDoc = doc as any
-
-    console.log('🗺️ Mapping document to PaymentRecord:', {
-      id: doc.$id,
-      hasUserId: !!typedDoc.userId,
-      hasMetadata: !!typedDoc.metadata, // This shouldn't exist
-    })
-
-    const paymentRecord = {
-      $id: doc.$id,
-      $createdAt: doc.$createdAt,
-      $updatedAt: doc.$updatedAt,
-      userId: typedDoc.userId,
-      agentId: typedDoc.agentId,
-      propertyId: typedDoc.propertyId,
-      amount: typedDoc.amount,
-      currency: typedDoc.currency,
-      status: typedDoc.status,
-      paymentMethod: typedDoc.paymentMethod,
-      paymentGateway: typedDoc.paymentGateway,
-      gatewayReference: typedDoc.gatewayReference,
-      planType: typedDoc.planType,
-      duration: typedDoc.duration,
-
-      // Additional fields
-      customerEmail: typedDoc.customerEmail,
-      ipAddress: typedDoc.ipAddress,
-      fees: typedDoc.fees,
-      paidAt: typedDoc.paidAt,
-      transactionDate: typedDoc.transactionDate,
-      cardBrand: typedDoc.cardBrand,
-      cardLast4: typedDoc.cardLast4,
-      bank: typedDoc.bank,
-    }
-
-    console.log('✅ Mapped PaymentRecord:', {
-      id: paymentRecord.$id,
-      status: paymentRecord.status,
-      amount: paymentRecord.amount,
-    })
-
-    return paymentRecord
+    return doc
   }
 }

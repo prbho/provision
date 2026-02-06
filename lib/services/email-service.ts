@@ -9,6 +9,11 @@ import {
   generateVerificationEmail,
 } from '@/lib/email-templates'
 
+import {
+  generatePurchaseReceiptEmail,
+  PurchaseReceiptEmailParams,
+} from '../email/purchase-email'
+
 export class EmailService {
   private resend: Resend | null = null
   private baseEmail: string
@@ -303,6 +308,45 @@ export class EmailService {
     } catch (error: any) {
       console.error('❌ Test email service error:', error.message)
       return { success: false, error: error.message }
+    }
+  }
+
+  // ✅ NEW: Purchase Receipt Email (standalone, won't affect existing templates)
+  async sendPurchaseReceiptEmail(
+    params: PurchaseReceiptEmailParams
+  ): Promise<{ success: boolean; error?: string; emailId?: string }> {
+    try {
+      if (!this.resend) {
+        console.log(
+          `📧 [Build simulation] Purchase receipt would be sent to: ${params.buyerEmail}`
+        )
+        return { success: true }
+      }
+
+      const { subject, html } = generatePurchaseReceiptEmail(params)
+      const fromAddress = `propertyvision Receipts <${this.baseEmail}>`
+
+      console.log('📤 Sending purchase receipt to:', params.buyerEmail, {
+        reference: params.reference,
+      })
+
+      const { data, error } = await this.resend.emails.send({
+        from: fromAddress,
+        to: params.buyerEmail,
+        subject,
+        html,
+      })
+
+      if (error) {
+        console.error('❌ Receipt email sending error:', error)
+        return { success: false, error: error.message }
+      }
+
+      console.log('✅ Receipt email sent:', data?.id)
+      return { success: true, emailId: data?.id }
+    } catch (err: any) {
+      console.error('❌ Receipt email service error:', err?.message)
+      return { success: false, error: err?.message || 'Unknown error' }
     }
   }
 

@@ -1,60 +1,67 @@
-// lib/appwrite-server-auth.ts
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { cookies } from 'next/headers'
-import { User } from '@/types/auth'
-import { Client } from 'node-appwrite'
+import { Account, Client } from 'node-appwrite'
 
-const client = new Client()
-
-client
-  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
-  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!)
-
-export async function getServerCurrentUser(): Promise<User | null> {
-  try {
-    // Get the session cookie from the request
-    const cookieStore = await cookies()
-    const sessionCookie = cookieStore.get(
-      `a_session_${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID?.toLowerCase()}`
-    )
-
-    if (!sessionCookie?.value) {
-      console.log('❌ No session cookie found in server context')
-      return null
-    }
-
-    // For server-side authentication, we have a few options:
-
-    // Option 1: Use API key (but this authenticates as the API key owner, not the session user)
-    // This is problematic because it doesn't represent the actual logged-in user
-
-    // Option 2: Use Appwrite's admin SDK to verify the session
-    // This requires the Appwrite server SDK to have session verification capabilities
-
-    // Option 3: Pass the user ID from the client (less secure)
-
-    // Since Appwrite's node SDK doesn't easily support session cookies in server components,
-    // let's use a different approach...
-
-    return null
-  } catch {
-    return null
-  }
+function env(key: string) {
+  return process.env[key] || ''
 }
 
-// Alternative: Create a client that can use the session
-export async function createAuthenticatedClient() {
-  const cookieStore = await cookies()
-  const sessionCookie = cookieStore.get(
-    `a_session_${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID?.toLowerCase()}`
-  )
+function getEndpoint() {
+  return env('APPWRITE_ENDPOINT') || env('NEXT_PUBLIC_APPWRITE_ENDPOINT')
+}
 
-  if (!sessionCookie) {
+function getProjectId() {
+  return env('APPWRITE_PROJECT_ID') || env('NEXT_PUBLIC_APPWRITE_PROJECT_ID')
+}
+
+function getSessionCookieName(projectId: string) {
+  // Appwrite SSR cookie format
+  return `a_session_${projectId.toLowerCase()}`
+}
+
+/**
+ * Returns an authenticated Account client using the Appwrite session cookie (SSR).
+ * If no cookie, returns null.
+ */
+export async function createSessionAccount(): Promise<Account | null> {
+  const endpoint = getEndpoint()
+  const projectId = getProjectId()
+
+  if (!endpoint || !projectId) {
+    console.error('❌ Missing Appwrite env vars for SSR:', {
+      endpoint: !!endpoint,
+      projectId: !!projectId,
+    })
     return null
   }
 
-  // This approach has limitations with the current Appwrite node SDK
-  // You might need to use a different authentication strategy
-  return null
+  const cookieStore = await cookies()
+  const sessionCookie = cookieStore.get(getSessionCookieName(projectId))
+
+  if (!sessionCookie?.value) {
+    return null
+  }
+
+  const client = new Client()
+    .setEndpoint(endpoint)
+    .setProject(projectId)
+    // ✅ This is the critical part:
+    .setSession(sessionCookie.value)
+
+  return new Account(client)
+}
+
+/**
+ * Gets current user based on Appwrite session cookie. Returns null if not logged in.
+ */
+export async function getServerCurrentUser() {
+  const account = await createSessionAccount()
+  if (!account) return null
+
+  try {
+    return await account.get() // { $id, email, name, ... }
+  } catch (e: any) {
+    console.error('❌ getServerCurrentUser failed:', e?.message || e)
+    return null
+  }
 }

@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PlanType } from '@/types'
 
-import { PaymentService } from '@/lib/services/payment-service'
+import { PaymentService } from '@/lib/services/plan-service'
 import { PREMIUM_PLANS } from '@/lib/services/premium-service'
 
 export async function POST(request: NextRequest) {

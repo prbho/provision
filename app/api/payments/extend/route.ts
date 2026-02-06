@@ -47,14 +47,16 @@ export async function POST(request: NextRequest) {
     })
 
     // Initialize payment for extension with metadata
+    const amount = PREMIUM_PLANS[validPlanType].price // price in kobo
     const paymentData = await PaymentService.initializePayment({
       email,
-      planType: validPlanType,
-      propertyId,
-      agentId,
-      userId,
+      amount,
       metadata: {
         ...body,
+        planType: validPlanType,
+        propertyId,
+        agentId,
+        userId,
         isProfileUpgrade: isProfileUpgrade || false,
         extensionType: isProfileUpgrade ? 'profile' : 'property',
       },

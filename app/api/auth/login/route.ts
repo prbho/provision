@@ -1,46 +1,72 @@
+// app/api/auth/login/route.ts
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { Account, Client } from 'node-appwrite'
 
-// Import from appwrite-server (server-side SDK)
 import {
   DATABASE_ID,
-  databases, // ← Server-side databases wrapper
-  serverAccount, // ← Server-side account (not 'account')
+  databases,
   USERS_COLLECTION_ID,
 } from '@/lib/appwrite-server'
 
-// ← CORRECT import
+function jsonError(message: string, status = 400, extra?: any) {
+  return NextResponse.json(
+    { success: false, error: message, ...extra },
+    { status }
+  )
+}
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
 
     if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      )
+      return jsonError('Email and password are required', 400)
     }
 
-    // Create session with Appwrite (using SERVER account)
-    let session
+    const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT
+    const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID
+
+    if (!endpoint || !projectId) {
+      return jsonError('Missing Appwrite config (endpoint/projectId)', 500)
+    }
+
+    // IMPORTANT: create a user-authenticated client (NO API KEY here)
+    const userClient = new Client().setEndpoint(endpoint).setProject(projectId)
+    const userAccount = new Account(userClient)
+
+    // 1) Create session as the user
+    let session: any
     try {
-      session = await serverAccount.createEmailPasswordSession(email, password)
-      console.log('Login session created:', session.$id)
+      session = await userAccount.createEmailPasswordSession(email, password)
+      console.log('✅ Appwrite session created:', session.$id)
     } catch (error: any) {
-      console.error('Login failed:', error.message)
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      )
+      console.error('❌ Login failed:', error?.message)
+      return jsonError('Invalid email or password', 401)
     }
 
-    // Get user details from Appwrite (using SERVER account)
-    const appwriteUser = await serverAccount.get()
+    // 2) Generate JWT from that authenticated session
+    // In Appwrite Node SDK, session secret is used to authenticate subsequent calls
+    const authedClient = new Client()
+      .setEndpoint(endpoint)
+      .setProject(projectId)
+      .setSession(session.secret)
 
-    // Get or create user document from database
-    let userDoc
+    const authedAccount = new Account(authedClient)
+
+    const jwtRes = await authedAccount.createJWT()
+    const jwt = jwtRes?.jwt
+
+    if (!jwt) {
+      return jsonError('Failed to create JWT', 500)
+    }
+
+    // 3) Get user from authenticated session (reliable)
+    const appwriteUser = await authedAccount.get()
+
+    // 4) Get / create user document (your existing logic)
+    let userDoc: any
     try {
       userDoc = await databases.getDocument(
         DATABASE_ID,
@@ -48,7 +74,6 @@ export async function POST(request: NextRequest) {
         appwriteUser.$id
       )
     } catch {
-      // Create user document if it doesn't exist
       userDoc = await databases.createDocument(
         DATABASE_ID,
         USERS_COLLECTION_ID,
@@ -59,9 +84,8 @@ export async function POST(request: NextRequest) {
           userType: 'buyer',
           emailVerified: false,
           isActive: true,
-        } as any // May need 'as any' if createDocument wrapper isn't fixed yet
+        } as any
       )
-      console.log('New user document created:', userDoc.$id)
     }
 
     const userResponse = {
@@ -71,21 +95,32 @@ export async function POST(request: NextRequest) {
       phone: userDoc.phone || '',
       userType: userDoc.userType || 'buyer',
       emailVerified: userDoc.emailVerified || false,
-      isActive: userDoc.isActive !== false, // Default to true
+      isActive: userDoc.isActive !== false,
       createdAt: userDoc.$createdAt,
       updatedAt: userDoc.$updatedAt,
     }
 
-    return NextResponse.json({
+    // 5) Set pv_jwt cookie
+    const res = NextResponse.json({
       success: true,
       message: 'Login successful',
       user: userResponse,
     })
+
+    res.cookies.set('pv_jwt', jwt, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      // 7 days (adjust as you want)
+      maxAge: 60 * 60 * 24 * 7,
+    })
+
+    return res
   } catch (error: any) {
-    console.error('Login error:', error.message)
-    return NextResponse.json(
-      { error: 'Login failed. Please try again.' },
-      { status: 500 }
-    )
+    console.error('❌ Login error:', error?.message)
+    return jsonError('Login failed. Please try again.', 500, {
+      details: error?.message,
+    })
   }
 }

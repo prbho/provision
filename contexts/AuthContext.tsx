@@ -53,17 +53,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [verificationDismissed, setVerificationDismissed] = useState(false)
   const [authCheckComplete, setAuthCheckComplete] = useState(false)
 
-  // Fetch user document from database - UPDATED TO CHECK BOTH COLLECTIONS
+  /**
+   * ✅ Fetch user document from database (checks Users first, then Agents).
+   * Keeps your existing avatar logic intact.
+   */
   const fetchUserDocument = async (userId: string): Promise<User | null> => {
     try {
       console.log('📄 Fetching user document for:', userId)
 
-      let userDoc
+      let userDoc: any
       let collectionId = USERS_COLLECTION_ID
       let agentDocumentId: string | undefined = undefined
-      let avatarUrl: string | undefined = undefined // Add this variable
+      let avatarUrl: string | undefined = undefined
 
-      // First try users collection
+      // 1) Try users collection
       try {
         userDoc = await databases.getDocument(
           DATABASE_ID,
@@ -71,10 +74,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userId
         )
 
-        // If user is an agent, try to find their agent profile
         if (userDoc.userType === 'agent') {
           try {
-            // Search for agent profile by userId field
             const agentProfiles = await databases.listDocuments(
               DATABASE_ID,
               AGENTS_COLLECTION_ID,
@@ -82,10 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             )
 
             if (agentProfiles.documents.length > 0) {
-              const agentProfile = agentProfiles.documents[0]
+              const agentProfile: any = agentProfiles.documents[0]
               agentDocumentId = agentProfile.$id
-
-              // ✅ CRITICAL: Use agent's avatar if available
               avatarUrl = agentProfile.avatar || userDoc.avatar
 
               console.log('✅ Found agent profile for user:', {
@@ -97,18 +96,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               })
             } else {
               console.log('⚠️ User is agent type but no agent profile found')
-              avatarUrl = userDoc.avatar // Fall back to user avatar
+              avatarUrl = userDoc.avatar
             }
           } catch (agentError) {
             console.log('⚠️ Could not search for agent profile:', agentError)
-            avatarUrl = userDoc.avatar // Fall back to user avatar
+            avatarUrl = userDoc.avatar
           }
         } else {
-          // Regular user - use user's avatar
           avatarUrl = userDoc.avatar
         }
       } catch {
-        // If not found in users, try agents collection
+        // 2) Fallback: agents collection direct login
         try {
           userDoc = await databases.getDocument(
             DATABASE_ID,
@@ -116,9 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             userId
           )
           collectionId = AGENTS_COLLECTION_ID
-          agentDocumentId = userDoc.$id // This IS the agent document
-
-          // ✅ Direct agent login - use agent's avatar
+          agentDocumentId = userDoc.$id
           avatarUrl = userDoc.avatar
 
           console.log('✅ User found in AGENTS collection (direct agent login)')
@@ -133,12 +129,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name: userDoc.name,
         userType: userDoc.userType,
         emailVerified: userDoc.emailVerified,
-        avatar: avatarUrl ? 'Set' : 'Not set', // Log the determined avatar
+        avatar: avatarUrl ? 'Set' : 'Not set',
         collection: collectionId === USERS_COLLECTION_ID ? 'users' : 'agents',
         agentDocumentId,
       })
 
-      // Build user object with all fields
       const userObject: User = {
         $id: userDoc.$id,
         $createdAt: userDoc.$createdAt,
@@ -155,24 +150,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         emailVerifiedAt: userDoc.emailVerifiedAt,
         savedSearches: userDoc.savedSearches || [],
         favoriteProperties: userDoc.favoriteProperties || [],
-        avatar: avatarUrl || userDoc.avatar || '', // ✅ Use the determined avatar URL
+        avatar: avatarUrl || userDoc.avatar || '',
         bio: userDoc.bio,
         city: userDoc.city,
         state: userDoc.state,
       }
 
-      // Add agent document ID if found
-      if (agentDocumentId) {
-        userObject.agentDocumentId = agentDocumentId
-      }
+      if (agentDocumentId) userObject.agentDocumentId = agentDocumentId
 
-      // Add optional fields
-      if (userDoc.bio) userObject.bio = userDoc.bio
-      if (userDoc.city) userObject.city = userDoc.city
-      if (userDoc.state) userObject.state = userDoc.state
-
-      // Add agent-specific fields if user is an agent
-      // Check both collectionId AND userType for agent-specific fields
+      // agent fields
       if (
         collectionId === AGENTS_COLLECTION_ID ||
         userDoc.userType === 'agent'
@@ -199,57 +185,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Create user document if it doesn't exist
-  // This function is kept for potential future use, but eslint warning is suppressed
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const createUserDocument = async (userId: string): Promise<User | null> => {
+  /**
+   * ✅ Server-side cookie sync for SSR routes.
+   * We call your server login route so it can set pv_jwt (httpOnly).
+   * This will NOT break production if it fails.
+   */
+  const ssrLoginSync = async (email: string, password: string) => {
     try {
-      console.log('📝 Creating user document for:', userId)
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
 
-      const appwriteUser = await account.get()
-
-      const userDoc = await databases.createDocument(
-        DATABASE_ID,
-        USERS_COLLECTION_ID,
-        userId,
-        {
-          name: appwriteUser.name,
-          email: appwriteUser.email,
-          emailVerified: false,
-          userType: 'buyer',
-          isActive: true,
-          savedSearches: [],
-          favoriteProperties: [],
-        }
-      )
-
-      console.log('✅ User document created:', userDoc)
-
-      return {
-        $id: userDoc.$id,
-        $createdAt: userDoc.$createdAt,
-        $updatedAt: userDoc.$updatedAt,
-        name: userDoc.name,
-        email: userDoc.email,
-        bio: userDoc.bio,
-        state: userDoc.state,
-        city: userDoc.city,
-        emailVerified: userDoc.emailVerified,
-        phone: userDoc.phone,
-        mobilePhone: userDoc.mobilePhone,
-        userType: userDoc.userType,
-        isActive: userDoc.isActive,
-        verificationToken: userDoc.verificationToken,
-        lastVerificationRequest: userDoc.lastVerificationRequest,
-        emailVerifiedAt: userDoc.emailVerifiedAt,
-        savedSearches: userDoc.savedSearches || [],
-        favoriteProperties: userDoc.favoriteProperties || [],
-        avatar: userDoc.avatar,
+      // Your login route returns 200/401. We don’t block user if it fails.
+      const json = await res.json().catch(() => null)
+      if (!res.ok) {
+        console.warn('⚠️ SSR login sync failed:', json?.error || res.statusText)
+        return
       }
-    } catch (error) {
-      console.error('❌ Error creating user document:', error)
-      return null
+
+      console.log('✅ SSR login sync ok (pv_jwt should be set)')
+    } catch (e) {
+      console.warn('⚠️ SSR login sync error:', e)
     }
+  }
+
+  /**
+   * ✅ Server-side logout sync (clears pv_jwt).
+   * You need a tiny /api/auth/logout route to clear cookie (I’ll provide below).
+   */
+  const ssrLogoutSync = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' }).catch(() => null)
+    } catch {}
   }
 
   const checkAuthStatus = useCallback(async () => {
@@ -257,7 +226,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔍 Starting auth status check...')
       setAuthState((prev) => ({ ...prev, isLoading: true }))
 
-      // Check if we have a valid session first
+      // Check session first
       try {
         const session = await account.getSession('current')
         console.log('✅ Session found:', {
@@ -267,16 +236,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         })
       } catch {
         console.log('❌ No active session found')
-        setAuthState({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-        })
+        setAuthState({ user: null, isLoading: false, isAuthenticated: false })
         setAuthCheckComplete(true)
         return
       }
 
-      // Then get the Appwrite user
       const appwriteUser = await account.get()
       console.log('✅ Appwrite user account found:', {
         id: appwriteUser.$id,
@@ -284,47 +248,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name: appwriteUser.name,
       })
 
-      // Fetch complete user data from database (UPDATED TO CHECK BOTH COLLECTIONS)
       const userDoc = await fetchUserDocument(appwriteUser.$id)
 
       if (userDoc) {
-        console.log('🎯 Setting authenticated state with user:', {
-          email: userDoc.email,
-          userType: userDoc.userType,
-          emailVerified: userDoc.emailVerified,
-          isAgent: userDoc.userType === 'agent',
-        })
-
-        setAuthState({
-          user: userDoc,
-          isLoading: false,
-          isAuthenticated: true,
-        })
+        setAuthState({ user: userDoc, isLoading: false, isAuthenticated: true })
         setAuthCheckComplete(true)
 
-        // Show verification modal if user is not verified and hasn't dismissed it
         if (!userDoc.emailVerified && !verificationDismissed) {
-          console.log('📧 Showing verification modal - user not verified')
           setShowVerificationModal(true)
         } else if (userDoc.emailVerified) {
-          console.log('✅ User is verified, hiding modal')
           setShowVerificationModal(false)
         }
       } else {
-        console.log('❌ Could not fetch user document')
-        setAuthState({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-        })
+        setAuthState({ user: null, isLoading: false, isAuthenticated: false })
         setAuthCheckComplete(true)
       }
     } catch {
-      setAuthState({
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-      })
+      setAuthState({ user: null, isLoading: false, isAuthenticated: false })
       setAuthCheckComplete(true)
     }
   }, [verificationDismissed])
@@ -336,28 +276,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkVerificationStatus = async (): Promise<boolean> => {
     try {
-      if (!authState.user) {
-        console.log('❌ No user in auth state for verification check')
-        return false
-      }
+      if (!authState.user) return false
 
-      console.log(
-        '🔍 Checking verification status for user:',
-        authState.user.$id
-      )
       const updatedUser = await fetchUserDocument(authState.user.$id)
-
       if (updatedUser?.emailVerified) {
-        console.log('✅ User email is verified!')
-        setAuthState((prev) => ({
-          ...prev,
-          user: updatedUser,
-        }))
+        setAuthState((prev) => ({ ...prev, user: updatedUser }))
         setShowVerificationModal(false)
         return true
       }
-
-      console.log('📧 User email not yet verified')
       return false
     } catch (error) {
       console.error('❌ Error checking verification status:', error)
@@ -365,31 +291,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // refreshUser function (single implementation)
   const refreshUser = async () => {
     try {
-      console.log('🔄 Refreshing user data...')
-
-      if (!authState.user) {
-        console.log('❌ No user to refresh')
-        return
-      }
-
+      if (!authState.user) return
       const updatedUserDoc = await fetchUserDocument(authState.user.$id)
-
       if (updatedUserDoc) {
-        console.log('✅ User data refreshed:', {
-          name: updatedUserDoc.name,
-          email: updatedUserDoc.email,
-          userType: updatedUserDoc.userType,
-          avatar: updatedUserDoc.avatar, // Check if avatar is included
-          collection: updatedUserDoc.userType === 'agent' ? 'agents' : 'users',
-        })
-
-        setAuthState((prev) => ({
-          ...prev,
-          user: updatedUserDoc,
-        }))
+        setAuthState((prev) => ({ ...prev, user: updatedUserDoc }))
       }
     } catch (error) {
       console.error('❌ Error refreshing user:', error)
@@ -398,10 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkEmail = async (email: string): Promise<EmailCheckResult> => {
     try {
-      console.log('📧 Checking email:', email)
-
       if (!email || !email.includes('@')) {
-        console.log('❌ Invalid email format')
         return {
           exists: false,
           error: true,
@@ -411,21 +315,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const response = await fetch('/api/auth/check-email', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
 
       const result = await response.json()
-      console.log('📧 API response:', result)
-
-      // Handle API errors
       if (!response.ok || result.error) {
-        console.error(
-          '❌ Email check failed:',
-          result.message || result.warning
-        )
         return {
           exists: false,
           error: true,
@@ -434,10 +329,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Return the result (exists will be true/false)
       return result as EmailCheckResult
     } catch (error: any) {
-      console.error('❌ Email check exception:', error.message)
       return {
         exists: false,
         error: true,
@@ -446,15 +339,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  /**
+   * ✅ LOGIN
+   * 1) client Appwrite session (keeps current behavior)
+   * 2) SSR sync by calling your server login route to set pv_jwt cookie
+   */
   const login = async (credentials: LoginCredentials) => {
     try {
       console.log('🔐 Attempting login for:', credentials.email)
       setAuthState((prev) => ({ ...prev, isLoading: true }))
 
+      // 1) Keep your current client login
       await account.createEmailPasswordSession(
         credentials.email,
         credentials.password
       )
+
+      // 2) NEW: create pv_jwt cookie on localhost / production domain
+      await fetch('/api/auth/ssr-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // IMPORTANT: credentials include (safe even for same-origin)
+        credentials: 'include',
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password,
+        }),
+      })
 
       await checkAuthStatus()
     } catch (error: any) {
@@ -467,9 +378,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setAuthState((prev) => ({ ...prev, isLoading: false }))
 
-      // Map Appwrite errors to user-friendly messages
       let userFriendlyError = error
-
       if (error.code === 400) {
         userFriendlyError = {
           ...error,
@@ -504,46 +413,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('📝 Starting registration...')
       setAuthState((prev) => ({ ...prev, isLoading: true }))
 
-      let response
+      let response: Response
 
-      // Check if data is FormData (for file uploads)
       if (data instanceof FormData) {
-        console.log('📁 Using FormData for registration (with file)')
-
-        // Add debug logging for FormData contents
-        console.log('📋 FormData entries:')
-        for (const [key, value] of data.entries()) {
-          if (key === 'avatar' && value instanceof File) {
-            console.log(`  ${key}:`, {
-              name: value.name,
-              type: value.type,
-              size: value.size,
-            })
-          } else if (key === 'agentData' && typeof value === 'string') {
-            try {
-              console.log(`  ${key}:`, JSON.parse(value))
-            } catch {
-              console.log(`  ${key}:`, value)
-            }
-          } else {
-            console.log(`  ${key}:`, value)
-          }
-        }
-
         response = await fetch('/api/auth/register', {
           method: 'POST',
           body: data,
-          // DO NOT set Content-Type header - browser will set it automatically
         })
       } else {
-        // Handle regular JSON data (backward compatibility)
-        console.log('📄 Using JSON for registration (no file)')
-        console.log('📋 Registration data:', {
-          ...data,
-          password: '[PROTECTED]',
-          email: data.email ? `${data.email.substring(0, 3)}...` : 'none',
-        })
-
         response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -554,20 +431,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await response.json()
 
       if (!response.ok) {
-        console.error('❌ Registration API error:', result.error)
         throw new Error(result.error || 'Registration failed')
       }
 
-      console.log('✅ Registration successful, user:', {
-        id: result.user?.id,
-        email: result.user?.email
-          ? `${result.user.email.substring(0, 3)}...`
-          : 'none',
-        userType: result.user?.userType,
-        hasAvatar: !!result.user?.avatar,
-      })
-
-      // Immediately update auth state
       setAuthState({
         user: result.user,
         isLoading: false,
@@ -575,109 +441,80 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       setAuthCheckComplete(true)
 
-      // Show verification modal
       setVerificationDismissed(false)
       setShowVerificationModal(true)
 
-      console.log('📧 Verification modal shown')
-
-      return result // Return the result for the caller
+      return result
     } catch (error: any) {
-      console.error('❌ Registration error:', error.message || error)
       setAuthState((prev) => ({ ...prev, isLoading: false }))
-      throw error // Re-throw the error for the caller to handle
+      throw error
     }
   }
 
   const resendVerificationEmail = async (
     email: string
   ): Promise<VerificationEmailResult> => {
+    const response = await fetch('/api/auth/resend-verification', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    })
+
+    const text = await response.text()
+    let data: any
     try {
-      console.log('📧 Resending verification email to:', email)
+      data = JSON.parse(text)
+    } catch {
+      throw new Error(`Server returned invalid JSON: ${text.substring(0, 100)}`)
+    }
 
-      if (!email) {
-        throw new Error('Email is required')
-      }
+    if (!response.ok) {
+      let userMessage = 'Failed to resend verification email'
+      if (data?.code === 'USER_NOT_FOUND')
+        userMessage = 'User not found with this email address'
+      else if (data?.code === 'ALREADY_VERIFIED')
+        userMessage = 'Email is already verified'
+      else if (data?.code === 'EMAIL_SEND_FAILED')
+        userMessage = 'Failed to send email. Please try again later.'
+      else if (data?.error) userMessage = data.error
+      else if (data?.message) userMessage = data.message
+      throw new Error(userMessage)
+    }
 
-      const response = await fetch('/api/auth/resend-verification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      })
-
-      console.log('📡 Response status:', response.status, response.statusText)
-
-      // Get response text first to see what we're getting
-      const responseText = await response.text()
-      console.log(
-        '📄 Raw response text:',
-        responseText.substring(0, 200) + '...'
-      )
-
-      let errorData
-      try {
-        errorData = JSON.parse(responseText)
-      } catch (parseError) {
-        console.error('❌ Failed to parse JSON response:', parseError)
-        throw new Error(
-          `Server returned invalid JSON: ${responseText.substring(0, 100)}`
-        )
-      }
-
-      if (!response.ok) {
-        console.error('❌ Resend verification API error:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData,
-        })
-
-        // Provide more specific error messages
-        let userMessage = 'Failed to resend verification email'
-
-        if (errorData?.code === 'USER_NOT_FOUND') {
-          userMessage = 'User not found with this email address'
-        } else if (errorData?.code === 'ALREADY_VERIFIED') {
-          userMessage = 'Email is already verified'
-        } else if (errorData?.code === 'EMAIL_SEND_FAILED') {
-          userMessage = 'Failed to send email. Please try again later.'
-        } else if (errorData?.error) {
-          userMessage = errorData.error
-        } else if (errorData?.message) {
-          userMessage = errorData.message
-        }
-
-        throw new Error(userMessage)
-      }
-
-      console.log('✅ Verification email resent successfully:', errorData)
-
-      return {
-        success: true,
-        message:
-          errorData.message ||
-          'Verification email sent! Please check your inbox.',
-        data: errorData, // Pass along any additional data
-      }
-    } catch (error: any) {
-      console.error('❌ Resend verification catch error:', error.message)
-      // Don't use toast.error here - let the component handle it
-      throw error // Re-throw so the component can show the error
+    return {
+      success: true,
+      message:
+        data.message || 'Verification email sent! Please check your inbox.',
+      data,
     }
   }
+
   const dismissVerificationModal = () => {
-    console.log('📧 Verification modal dismissed')
     setShowVerificationModal(false)
     setVerificationDismissed(true)
   }
 
+  /**
+   * ✅ LOGOUT
+   * 1) client session delete
+   * 2) clear pv_jwt on server
+   */
   const logout = async () => {
     try {
       console.log('🚪 Logging out...')
       setAuthState((prev) => ({ ...prev, isLoading: true }))
+
+      // 1) Keep your current client logout
       await account.deleteSession('current')
+
+      // 2) NEW: clear pv_jwt too
+      await fetch('/api/auth/ssr-logout', {
+        method: 'POST',
+        credentials: 'include',
+      })
     } catch (error) {
       console.error('❌ Logout error:', error)
     } finally {
@@ -693,21 +530,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // CORRECTED context value (no duplicate refreshUser)
   const value: AuthContextType = {
     ...authState,
     login,
     register,
     logout,
     checkEmail,
-    refreshUser, // Only one instance
+    refreshUser,
     resendVerificationEmail,
     dismissVerificationModal,
     showVerificationModal,
     checkVerificationStatus,
   }
 
-  // Debug: Log when auth state changes
   useEffect(() => {
     console.log('🔄 Auth state updated:', {
       isAuthenticated: authState.isAuthenticated,
@@ -719,7 +554,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             name: authState.user.name,
             userType: authState.user.userType,
             emailVerified: authState.user.emailVerified,
-            isAgent: authState.user.userType === 'agent',
           }
         : null,
     })
@@ -732,10 +566,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isOpen={showVerificationModal && !authState.user?.emailVerified}
         userEmail={authState.user?.email || ''}
         onClose={dismissVerificationModal}
-        onResendEmail={() => {
-          console.log('📧 Resend email triggered for:', authState.user?.email)
-          return resendVerificationEmail(authState.user?.email || '')
-        }}
+        onResendEmail={() =>
+          resendVerificationEmail(authState.user?.email || '')
+        }
         onCheckVerification={checkVerificationStatus}
       />
     </AuthContext.Provider>
