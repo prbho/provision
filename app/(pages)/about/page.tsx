@@ -230,7 +230,7 @@ export default function AboutPage() {
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-white p-8 rounded-xl border hover:border-brand/30 transition-colors">
               <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 bg-gren-50 rounded-lg">
+                <div className="p-3 bg-green-50 rounded-lg">
                   <Target className="h-6 w-6 text-brand" />
                 </div>
                 <div>

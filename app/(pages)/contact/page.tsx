@@ -305,7 +305,7 @@ export default function ContactPage() {
                     <h3 className="font-medium text-gray-900">Office</h3>
                     <p className="text-gray-700">{contactInfo.office}</p>
                     <a
-                      href="https://maps.google.com/?q=50+Emerald+Avenue+Sangotedo+Ajah+Lagos"
+                      href="https://www.google.com/maps/search/Hilmak+Plaza,+Enugu/@6.4663537,6.8559616,10z/data=!3m1!4b1?entry=ttu&g_ep=EgoyMDI2MDIxMS4wIKXMDSoASAFQAw%3D%3D"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-brand hover:text-brand/95 mt-1 inline-block"
