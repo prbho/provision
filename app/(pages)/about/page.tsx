@@ -227,11 +227,11 @@ export default function AboutPage() {
       {/* MISSION / VISION / VALUES */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-white p-8 rounded-xl border hover:border-brand/30 transition-colors">
               <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <Target className="h-6 w-6 text-blue-600" />
+                <div className="p-3 bg-gren-50 rounded-lg">
+                  <Target className="h-6 w-6 text-brand" />
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900">Our Mission</h3>
@@ -241,15 +241,16 @@ export default function AboutPage() {
                 </div>
               </div>
               <p className="text-gray-700">
-                To eliminate real estate fraud in Africa by making verification
-                accessible and affordable for everyone.
+                To provide a safe haven for all real estate investors by
+                providing accessible and secure real estate platform that meets
+                the needs of everyone.
               </p>
             </div>
 
             <div className="bg-white p-8 rounded-xl border hover:border-brand/30 transition-colors">
               <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 bg-purple-50 rounded-lg">
-                  <Eye className="h-6 w-6 text-purple-600" />
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <Eye className="h-6 w-6 text-brand" />
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900">Our Vision</h3>
@@ -259,12 +260,14 @@ export default function AboutPage() {
                 </div>
               </div>
               <p className="text-gray-700">
-                To become the most trusted real estate verification platform
-                across Africa, setting new standards for transparency.
+                To become the most trusted real estate company and verification
+                platform across Africa, setting a new standards for transparency
+                in real estate transactions and empowering individuals to make
+                informed decisions with confidence.
               </p>
             </div>
 
-            <div className="bg-white p-8 rounded-xl border hover:border-brand/30 transition-colors">
+            {/* <div className="bg-white p-8 rounded-xl border hover:border-brand/30 transition-colors">
               <div className="flex items-center gap-4 mb-6">
                 <div className="p-3 bg-green-50 rounded-lg">
                   <Handshake className="h-6 w-6 text-green-600" />
@@ -278,7 +281,7 @@ export default function AboutPage() {
                 Integrity first, transparency always, professional excellence,
                 and creating lasting value for our community.
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
       </section>

@@ -58,8 +58,8 @@ export default function ContactPage() {
 
   const contactInfo = {
     office:
-      'Didi Mall, Suit LF6A, Adjacent Novare Mall, Sangotedo, Ajah, Lagos',
-    phone: '+234 906 8425 841',
+      'First Floor, Hilmak Plaza, by Trans Ekulu Bridge, off Onitsha/Enugu Expressway, Enugu, Enugu State, Nigeria.',
+    phone: '+234 906 009 1554',
     email: 'propertyvisiondev@gmail.com,',
     email2: 'hello@propertyvisionltd.com',
   }
