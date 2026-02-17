@@ -501,7 +501,7 @@ export default function ScheduleMeetingPage() {
                     href="tel:+2349023558992"
                     className="text-emerald-600 hover:text-emerald-700 font-medium"
                   >
-                    +234 906 8425 841
+                    +234 906 009 1554
                   </a>
                 </p>
               </div>

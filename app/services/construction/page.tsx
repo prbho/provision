@@ -421,7 +421,7 @@ export default function ConstructionServicePage() {
             <div className="font-semibold text-gray-900 mb-1">
               Call Construction Team
             </div>
-            <div className="text-sm text-gray-600">+234 906 8425 841</div>
+            <div className="text-sm text-gray-600">+234 906 009 1554</div>
           </a>
         </div>
       </div>
