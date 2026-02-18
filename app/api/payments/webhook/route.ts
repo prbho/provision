@@ -45,7 +45,6 @@ export async function POST(req: NextRequest) {
 
     const event = JSON.parse(rawBody)
 
-    // Only process successful charges
     if (event?.event !== 'charge.success') {
       return NextResponse.json({ success: true, ignored: true })
     }
@@ -62,7 +61,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Idempotency: ignore if already processed
     const existing = await paymentExists(reference)
     if (existing) {
       return NextResponse.json({ success: true, message: 'Already processed' })
@@ -75,7 +73,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Must be property purchase
     if (metadata.paymentType !== 'property_purchase') {
       return NextResponse.json({ success: true, ignored: true })
     }
@@ -91,14 +88,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Fetch property
     const property: any = await databases.getDocument(
       DATABASE_ID,
       PROPERTIES_COLLECTION_ID,
       propertyId
     )
 
-    // Create payment record (your schema currently expects planType/duration; we set safe defaults)
     await databases.createDocument(
       DATABASE_ID,
       PAYMENT_COLLECTION_ID,
@@ -113,11 +108,8 @@ export async function POST(req: NextRequest) {
         paymentMethod: data.channel || 'card',
         paymentGateway: 'paystack',
         gatewayReference: reference,
-
-        // keep your existing required fields:
         planType: 'premium',
         duration: 0,
-
         customerEmail: data.customer?.email || metadata.buyerEmail,
         ipAddress: data.ip_address,
         fees: data.fees ? data.fees / 100 : 0,
@@ -129,7 +121,6 @@ export async function POST(req: NextRequest) {
       }
     )
 
-    // Mark property sold (only if not already)
     if (property.status !== 'sold') {
       await databases.updateDocument(
         DATABASE_ID,
@@ -146,7 +137,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (err: any) {
-    console.error('❌ paystack webhook error:', err)
+    console.error('Paystack webhook error:', err)
     return NextResponse.json(
       { success: false, error: 'Webhook error', details: err.message },
       { status: 500 }

@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "appwrite:indexes": "npx dotenv -e .env -- tsx scripts/ensure-appwrite-indexes.ts",
     "seed:agents": "node -r dotenv/config scripts/seed-agents.ts",
     "seed:agents:dev": "npx dotenv -e .env -- tsx scripts/seed-agents.ts"
   },
@@ -73,6 +74,7 @@
     "@types/node": "^20",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19",
+    "baseline-browser-mapping": "^2.9.19",
     "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",

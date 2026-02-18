@@ -69,6 +69,7 @@ export interface ChatMessage {
 
 export interface Memory {
   propertyType?: string
+  listingType?: 'buy' | 'rent' | 'short-let'
   budget?: string
   location?: string
   bedrooms?: string

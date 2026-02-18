@@ -15,26 +15,21 @@ type Intent =
   | 'view_details'
   | 'unknown'
 
+const LOCATION_RE =
+  /\b(lagos|abuja|ikeja|lekki|yaba|ikoyi|victoria island|vi|enugu|anambra|awka|onitsha|nnewi|port harcourt|ibadan|kano|kaduna|jos|calabar|uyo|asaba|owerri|benin|warri|akure)\b/i
+
+const PROPERTY_TYPE_RE =
+  /\b(duplex|apartment|house|condo|townhouse|land|bungalow|flat|villa|penthouse|studio)\b/i
+
+const PROPERTY_SIGNAL_RE =
+  /\b(property|properties|house|home|apartment|duplex|villa|land|flat|condo|townhouse|buy|purchase|rent|lease|looking\s+for|find|search)\b/i
+
 export const detectIntent = (message: string, _memory: Memory): Intent => {
   const text = message.toLowerCase().trim()
 
-  console.log('🧠 Detecting intent for:', text) // Debug log
-
-  // Order matters! More specific first
-
-  // 1. Clear chat intent
-  if (/(clear|reset|start over)/i.test(text)) return 'clear_chat'
-
-  // 2. Thanks intent
+  if (/(clear|reset|start over|new chat)/i.test(text)) return 'clear_chat'
   if (/(thanks|thank you)/i.test(text)) return 'thanks'
 
-  // 3. Help intent
-  if (/(help|what can you do)/i.test(text)) return 'help'
-
-  // 4. Basic Q&A about the bot
-  if (/(your name|who are you|what are you)/i.test(text)) return 'basic_qa'
-
-  // 5. Greeting intent (check this BEFORE location_search for "hi lagos" etc)
   if (
     /^(hi|hello|hey)$/i.test(text) ||
     /^(good\s(morning|afternoon|evening))$/i.test(text)
@@ -42,159 +37,110 @@ export const detectIntent = (message: string, _memory: Memory): Intent => {
     return 'greeting'
   }
 
-  // 6. LOCATION SEARCH - This needs to come BEFORE property_search
-  // Check if the message contains location keywords
-  const locations = [
-    'lagos',
-    'abuja',
-    'ikeja',
-    'lekki',
-    'yaba',
-    'ikoyi',
-    'victoria island',
-    'vi',
-  ]
-  const containsLocation = locations.some((loc) => {
-    const regex = new RegExp(`\\b${loc}\\b`, 'i') // Word boundary to match whole words
-    return regex.test(text)
-  })
+  if (/\bwhat about\s+[a-z]/i.test(text)) return 'location_search'
 
-  // If it's JUST a location name or contains "in [location]" pattern
+  if (/(your name|who are you|what are you)/i.test(text)) return 'basic_qa'
+
   if (
-    containsLocation ||
-    /(in|at|near|around|within)\s+(lagos|abuja|ikeja|lekki|yaba|ikoyi)/i.test(
+    /viewing|tour|visit|schedule.*viewing|book.*viewing|view it|i like to view|i want to view/i.test(
       text
     )
   ) {
-    console.log('📍 Detected location search:', text) // Debug log
-    return 'location_search'
+    return 'schedule_viewing'
   }
 
-  // 7. Property search (general property inquiry)
   if (
-    /property|house|apartment|home|buy.*property|rent.*property|looking.*for.*property/i.test(
+    /details|show me|tell me about|information|more info|see details|price range/i.test(
       text
     )
   ) {
-    console.log('🏠 Detected property search:', text) // Debug log
+    return 'view_details'
+  }
+
+  if (/agent|contact.*someone|speak.*person|talk.*to.*agent/i.test(text)) {
+    return 'contact_agent'
+  }
+
+  if (LOCATION_RE.test(text)) return 'location_search'
+
+  if (PROPERTY_SIGNAL_RE.test(text) || PROPERTY_TYPE_RE.test(text)) {
     return 'property_search'
   }
 
-  // 8. View details intent
-  if (
-    /details|show me|tell me about|information|more info|see details/i.test(
-      text
-    )
-  )
-    return 'view_details'
-
-  // 9. Schedule viewing
-  if (/viewing|tour|visit|see.*property|schedule.*viewing/i.test(text))
-    return 'schedule_viewing'
-
-  // 10. Contact agent
-  if (/agent|contact.*someone|speak.*person|talk.*to.*agent/i.test(text))
-    return 'contact_agent'
-
-  // 11. Budget inquiry
-  if (/price|cost|budget|how much|afford/i.test(text)) return 'budget_info'
-
-  // 12. If we get a greeting with location, still treat as location_search
-  // This handles cases like "hello lagos" or "hi in lekki"
-  const greetingWithLocation =
-    /^(hi|hello|hey)\s+(in|at)?\s*(lagos|abuja|ikeja|lekki)/i.test(text)
-  if (greetingWithLocation) {
-    return 'location_search'
+  if (/price|cost|budget|how much|afford|cheap|low budget|expensive/i.test(text)) {
+    return 'budget_info'
   }
 
-  console.log('❓ No intent matched, defaulting to unknown')
+  if (/\bhelp\b|what can you do/i.test(text)) return 'help'
+
   return 'unknown'
 }
 
-// Extract memory updates from message - UPDATED VERSION
 export const extractMemoryUpdates = (text: string): Partial<Memory> => {
   const updates: Partial<Memory> = {}
+  const lower = text.toLowerCase()
 
-  console.log('💾 Extracting memory from:', text) // Debug log
+  const nameMatch = text.match(/(?:my name is|i am|call me)\s+([a-zA-Z'-]+)/i)
+  if (nameMatch) updates.name = nameMatch[1]
 
-  // Extract name (simplified)
-  const nameMatch = text.match(/(?:my name is|I am|call me)\s+(\w+)/i)
-  if (nameMatch) {
-    updates.name = nameMatch[1]
-    console.log('📝 Found name:', updates.name)
-  }
-
-  // Extract email
   const emailMatch = text.match(/[\w.-]+@[\w.-]+\.\w+/i)
-  if (emailMatch) {
-    updates.email = emailMatch[0]
-    console.log('📧 Found email:', updates.email)
-  }
+  if (emailMatch) updates.email = emailMatch[0]
 
-  // Extract phone (simple pattern)
   const phoneMatch = text.match(/\b\d{10,}\b/)
-  if (phoneMatch) {
-    updates.phone = phoneMatch[0]
-    console.log('📱 Found phone:', updates.phone)
-  }
+  if (phoneMatch) updates.phone = phoneMatch[0]
 
-  // Extract location - FIXED with better pattern matching
-  const locations = [
-    'lagos',
-    'abuja',
-    'ikeja',
-    'lekki',
-    'yaba',
-    'ikoyi',
-    'victoria island',
-  ]
-  for (const loc of locations) {
-    const regex = new RegExp(`\\b${loc}\\b`, 'i')
-    if (regex.test(text)) {
-      updates.location = loc
-      console.log('📍 Found location:', updates.location)
-      break
+  const locationMatch = text.match(LOCATION_RE)
+  if (locationMatch) {
+    updates.location = locationMatch[0].toLowerCase()
+  } else {
+    const whatAboutMatch = lower.match(/\bwhat about\s+([a-z]+(?:\s+[a-z]+){0,2})\b/)
+    if (whatAboutMatch) {
+      updates.location = whatAboutMatch[1].replace(/\s+state$/, '').trim()
+      return updates
+    }
+
+    const trailingStateMatch = lower.match(
+      /\b([a-z]+(?:\s+[a-z]+){0,2})\s+state\b/
+    )
+    if (trailingStateMatch) {
+      updates.location = trailingStateMatch[1].trim().toLowerCase()
+    } else {
+      const prepositionLocationMatch = lower.match(
+        /\b(?:in|at|around|within|from|near)\s+([a-z]+(?:\s+[a-z]+){0,2})\b/
+      )
+      if (prepositionLocationMatch) {
+        const candidate = prepositionLocationMatch[1]
+          .replace(/\b(state|platform|please|now)\b/g, '')
+          .trim()
+        if (candidate) updates.location = candidate
+      } else if (/^[a-z]+(?:\s+[a-z]+){0,2}(?:\s+state)?$/.test(lower)) {
+        updates.location = lower.replace(/\s+state$/, '').trim()
+      }
     }
   }
 
-  // Extract bedrooms
   const bedMatch = text.match(/(\d+)\s*(?:bed|br|bedroom)/i)
-  if (bedMatch) {
-    updates.bedrooms = bedMatch[1]
-    console.log('🛏️ Found bedrooms:', updates.bedrooms)
-  }
+  if (bedMatch) updates.bedrooms = bedMatch[1]
 
-  // Extract budget (simple pattern)
   const budgetMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:million|m|k)/i)
   if (budgetMatch) {
     updates.budget = budgetMatch[0]
-    console.log('💰 Found budget:', updates.budget)
+  } else if (/\b(cheap|low budget|affordable)\b/i.test(text)) {
+    updates.budget = 'affordable'
   }
 
-  // Extract property type
-  const propertyTypes = [
-    'duplex',
-    'apartment',
-    'house',
-    'condo',
-    'townhouse',
-    'land',
-    'bungalow',
-    'flat',
-    'villa',
-    'penthouse',
-    'studio',
-  ]
-
-  for (const type of propertyTypes) {
-    const regex = new RegExp(`\\b${type}\\b`, 'i')
-    if (regex.test(text)) {
-      updates.propertyType = type
-      console.log('🏡 Found property type:', updates.propertyType)
-      break
-    }
+  if (/\b(short let|short-let)\b/i.test(text)) {
+    updates.listingType = 'short-let'
+  } else if (/\b(rent|rental|lease)\b/i.test(text)) {
+    updates.listingType = 'rent'
+  } else if (/\b(buy|purchase|for sale|outright)\b/i.test(lower)) {
+    updates.listingType = 'buy'
   }
 
-  console.log('✅ Memory updates:', updates)
+  const propertyTypeMatch = text.match(PROPERTY_TYPE_RE)
+  if (propertyTypeMatch) {
+    updates.propertyType = propertyTypeMatch[0].toLowerCase()
+  }
+
   return updates
 }

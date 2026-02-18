@@ -185,42 +185,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  /**
-   * ✅ Server-side cookie sync for SSR routes.
-   * We call your server login route so it can set pv_jwt (httpOnly).
-   * This will NOT break production if it fails.
-   */
-  const ssrLoginSync = async (email: string, password: string) => {
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-
-      // Your login route returns 200/401. We don’t block user if it fails.
-      const json = await res.json().catch(() => null)
-      if (!res.ok) {
-        console.warn('⚠️ SSR login sync failed:', json?.error || res.statusText)
-        return
-      }
-
-      console.log('✅ SSR login sync ok (pv_jwt should be set)')
-    } catch (e) {
-      console.warn('⚠️ SSR login sync error:', e)
-    }
-  }
-
-  /**
-   * ✅ Server-side logout sync (clears pv_jwt).
-   * You need a tiny /api/auth/logout route to clear cookie (I’ll provide below).
-   */
-  const ssrLogoutSync = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' }).catch(() => null)
-    } catch {}
-  }
-
   const checkAuthStatus = useCallback(async () => {
     try {
       console.log('🔍 Starting auth status check...')
@@ -330,7 +294,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       return result as EmailCheckResult
-    } catch (error: any) {
+    } catch {
       return {
         exists: false,
         error: true,

@@ -1,7 +1,7 @@
 //components/agents/DashboardAgentSidebar.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
@@ -70,7 +70,7 @@ export default function AgentDashboardSidebar({
   const [countsLoading, setCountsLoading] = useState(true)
 
   // Fetch notification counts from backend
-  const fetchNotificationCounts = async () => {
+  const fetchNotificationCounts = useCallback(async () => {
     if (!user?.$id) return
 
     try {
@@ -88,7 +88,7 @@ export default function AgentDashboardSidebar({
     } finally {
       setCountsLoading(false)
     }
-  }
+  }, [user?.$id])
 
   // Simulate role checking delay to prevent flash of wrong content
   useEffect(() => {

@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const propertyData = await request.json()
 
     // Remove sensitive or unnecessary fields
-    const { $permissions, ...cleanPropertyData } = propertyData
+    const cleanPropertyData = propertyData
 
     console.log('🔍 Received property data:', {
       userType: cleanPropertyData.userType,

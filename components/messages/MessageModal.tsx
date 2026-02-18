@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Message } from '@/types'
 import { Check, CheckCheck, Send, X } from 'lucide-react'
@@ -39,13 +39,7 @@ export default function MessageModal({
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
 
-  useEffect(() => {
-    if (user && toUserId) {
-      fetchMessages()
-    }
-  }, [user, toUserId, propertyId, propertyTitle, onClose])
-
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     if (!user?.$id || !toUserId) return
 
     try {
@@ -79,7 +73,13 @@ export default function MessageModal({
     } finally {
       setLoading(false)
     }
-  }
+  }, [propertyId, toUserId, user?.$id])
+
+  useEffect(() => {
+    if (user && toUserId) {
+      fetchMessages()
+    }
+  }, [user, toUserId, fetchMessages])
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !user || !toUserId) return

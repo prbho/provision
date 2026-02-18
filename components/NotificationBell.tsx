@@ -1,7 +1,7 @@
 // components/NotificationBell.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Bell, Check, Eye, EyeOff, Loader2 } from 'lucide-react'
 
@@ -38,13 +38,7 @@ export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false)
   const [error, setError] = useState<string>('')
 
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      fetchNotifications()
-    }
-  }, [isAuthenticated, user])
-
-  const getNotificationEndpoint = () => {
+  const getNotificationEndpoint = useCallback(() => {
     if (!user) return null
 
     if (user.userType === 'agent') {
@@ -52,7 +46,7 @@ export default function NotificationBell() {
     } else {
       return `/api/notifications?userId=${user.$id}`
     }
-  }
+  }, [user])
 
   const getMarkAsReadEndpoint = (notificationId: string) => {
     if (!user) return null
@@ -65,7 +59,7 @@ export default function NotificationBell() {
   }
 
   // components/NotificationBell.tsx - Update the fetchNotifications function
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     const endpoint = getNotificationEndpoint()
     if (!endpoint) return
 
@@ -99,7 +93,13 @@ export default function NotificationBell() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [getNotificationEndpoint])
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      fetchNotifications()
+    }
+  }, [isAuthenticated, user, fetchNotifications])
 
   const markAsRead = async (notificationId: string) => {
     const endpoint = getMarkAsReadEndpoint(notificationId)

@@ -1,4 +1,3 @@
-// app/[userType]/[id]/purchases/page.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 'use client'
@@ -11,12 +10,12 @@ import { Property } from '@/types'
 import { Query } from 'appwrite'
 import {
   BirdhouseIcon,
-  CreditCard,
+  DollarSign,
   Eye,
-  Heart,
   Home,
   Search,
   ShieldCheck,
+  Star,
 } from 'lucide-react'
 
 import PropertyCard from '@/components/PropertyCard'
@@ -31,18 +30,7 @@ import {
 } from '@/components/ui/select'
 import { databases } from '@/lib/appwrite'
 
-type PurchaseDoc = {
-  $id: string
-  $createdAt: string
-  buyerId: string
-  propertyId: string
-  agentId?: string
-  amount?: number
-  status?: string // success | pending | failed
-  reference?: string
-}
-
-export default function DynamicPurchasesPage() {
+export default function DynamicViewedPage() {
   const router = useRouter()
   const params = useParams()
   const userType = params.userType as string
@@ -51,15 +39,12 @@ export default function DynamicPurchasesPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
 
   const [loading, setLoading] = useState(true)
-  const [purchases, setPurchases] = useState<PurchaseDoc[]>([])
   const [properties, setProperties] = useState<Property[]>([])
-
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  const PURCHASES_CACHE_TTL_MS = 60 * 1000
-  const purchasesCacheKey = `purchases:${userType}:${id}`
+  const VIEWED_CACHE_TTL_MS = 60 * 1000
+  const viewedCacheKey = `viewed:${userType}:${id}`
 
-  // ✅ Access control
   useEffect(() => {
     if (!authLoading && user) {
       if (user.$id !== id) {
@@ -67,21 +52,18 @@ export default function DynamicPurchasesPage() {
         return
       }
 
-      // Only allow buyer (and optionally seller/agent if you want)
-      // If you want ANY logged-in user to view purchases, remove this check.
       if (!['buyer', 'user'].includes(user.userType)) {
         router.push(`/dashboard/${user.userType}/${user.$id}`)
         return
       }
 
-      // Route/userType mismatch guard (optional)
       if (user.userType !== userType) {
         router.push(`/dashboard/${user.userType}/${user.$id}`)
       }
     }
   }, [authLoading, user, id, userType, router])
 
-  const fetchPurchases = useCallback(async () => {
+  const fetchViewedProperties = useCallback(async () => {
     if (!user?.$id) return
 
     try {
@@ -89,18 +71,16 @@ export default function DynamicPurchasesPage() {
 
       if (typeof window !== 'undefined') {
         try {
-          const cachedRaw = sessionStorage.getItem(purchasesCacheKey)
+          const cachedRaw = sessionStorage.getItem(viewedCacheKey)
           if (cachedRaw) {
             const cached = JSON.parse(cachedRaw) as {
               at: number
-              purchases: PurchaseDoc[]
               properties: Property[]
             }
             if (
               cached?.at &&
-              Date.now() - cached.at <= PURCHASES_CACHE_TTL_MS
+              Date.now() - cached.at <= VIEWED_CACHE_TTL_MS
             ) {
-              setPurchases(cached.purchases || [])
               setProperties(cached.properties || [])
               setLoading(false)
               return
@@ -113,72 +93,38 @@ export default function DynamicPurchasesPage() {
 
       const databaseId =
         process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'propertyDB'
-
-      const purchasesCollectionId =
-        process.env.NEXT_PUBLIC_APPWRITE_PURCHASES_TABLE_ID || 'purchases'
-
+      const usersCollectionId =
+        process.env.NEXT_PUBLIC_APPWRITE_USERS_TABLE_ID || 'users'
       const propertiesCollectionId =
         process.env.NEXT_PUBLIC_APPWRITE_PROPERTIES_TABLE_ID || 'properties'
 
-      // 1) Fetch purchases by buyerId
-      let purchasesRes
+      let recentlyViewed: string[] = []
+
       try {
-        purchasesRes = await databases.listDocuments(databaseId, purchasesCollectionId, [
-          Query.equal('buyerId', user.$id),
-          Query.orderDesc('$createdAt'),
-          Query.limit(100),
-          Query.select([
-            '$id',
-            '$createdAt',
-            'buyerId',
-            'propertyId',
-            'agentId',
-            'amount',
-            'status',
-            'reference',
-          ]),
-        ])
-      } catch {
-        purchasesRes = await databases.listDocuments(
+        const userDoc = await databases.getDocument(
           databaseId,
-          purchasesCollectionId,
-          [
-            Query.equal('buyerId', user.$id),
-            Query.orderDesc('$createdAt'),
-            Query.limit(100),
-          ]
+          usersCollectionId,
+          user.$id
         )
+        if (Array.isArray((userDoc as any).recentlyViewed)) {
+          recentlyViewed = (userDoc as any).recentlyViewed
+        }
+      } catch {
+        if (Array.isArray((user as any)?.recentlyViewed)) {
+          recentlyViewed = (user as any).recentlyViewed
+        }
       }
 
-      const purchaseDocs: PurchaseDoc[] = purchasesRes.documents.map(
-        (d: any) => ({
-          $id: d.$id,
-          $createdAt: d.$createdAt,
-          buyerId: d.buyerId,
-          propertyId: d.propertyId,
-          agentId: d.agentId,
-          amount: d.amount,
-          status: d.status,
-          reference: d.reference,
-        })
-      )
-
-      setPurchases(purchaseDocs)
-
-      // 2) Fetch properties linked to purchases
-      const propertyIds = [
-        ...new Set(purchaseDocs.map((p) => p.propertyId).filter(Boolean)),
-      ]
-      if (propertyIds.length === 0) {
+      const viewedIds = [...new Set(recentlyViewed.filter(Boolean))]
+      if (viewedIds.length === 0) {
         setProperties([])
         return
       }
 
-      // Appwrite Query.equal(field, array) supports IN
       let propsRes
       try {
         propsRes = await databases.listDocuments(databaseId, propertiesCollectionId, [
-          Query.equal('$id', propertyIds),
+          Query.equal('$id', viewedIds),
           Query.limit(100),
           Query.select([
             '$id',
@@ -213,7 +159,7 @@ export default function DynamicPurchasesPage() {
         propsRes = await databases.listDocuments(
           databaseId,
           propertiesCollectionId,
-          [Query.equal('$id', propertyIds), Query.limit(100)]
+          [Query.equal('$id', viewedIds), Query.limit(100)]
         )
       }
 
@@ -275,71 +221,58 @@ export default function DynamicPurchasesPage() {
         customPlanMonths: doc.customPlanMonths || 0,
       }))
 
+      const idToOrder = new Map(viewedIds.map((propId, idx) => [propId, idx]))
+      transformed.sort(
+        (a, b) => (idToOrder.get(a.$id) ?? 9999) - (idToOrder.get(b.$id) ?? 9999)
+      )
+
       setProperties(transformed)
 
       if (typeof window !== 'undefined') {
         sessionStorage.setItem(
-          purchasesCacheKey,
-          JSON.stringify({
-            at: Date.now(),
-            purchases: purchaseDocs,
-            properties: transformed,
-          })
+          viewedCacheKey,
+          JSON.stringify({ at: Date.now(), properties: transformed })
         )
       }
     } catch (error) {
-      console.error('Error fetching purchases:', error)
-      setPurchases([])
+      console.error('Error fetching viewed properties:', error)
       setProperties([])
     } finally {
       setLoading(false)
     }
-  }, [user?.$id, purchasesCacheKey, PURCHASES_CACHE_TTL_MS])
+  }, [user?.$id, viewedCacheKey, VIEWED_CACHE_TTL_MS])
 
   useEffect(() => {
     if (isAuthenticated && user && user.$id === id) {
-      fetchPurchases()
+      fetchViewedProperties()
     }
-  }, [isAuthenticated, user, id, fetchPurchases])
-
-  // Join purchase info to property cards (optional use)
-  const purchaseMap = useMemo(() => {
-    const map = new Map<string, PurchaseDoc>()
-    for (const p of purchases) map.set(p.propertyId, p)
-    return map
-  }, [purchases])
+  }, [isAuthenticated, user, id, fetchViewedProperties])
 
   const filteredProperties = useMemo(() => {
     return properties.filter((property) => {
-      const purchase = purchaseMap.get(property.$id)
-
       const matchesSearch =
         property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        property.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (purchase?.reference || '')
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase())
+        property.city.toLowerCase().includes(searchTerm.toLowerCase())
 
       const matchesStatus =
-        statusFilter === 'all' ||
-        (purchase?.status || 'success') === statusFilter
+        statusFilter === 'all' || property.status === statusFilter
 
       return matchesSearch && matchesStatus
     })
-  }, [properties, purchaseMap, searchTerm, statusFilter])
+  }, [properties, searchTerm, statusFilter])
 
-  const totalAmount = useMemo(() => {
-    return purchases.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
-  }, [purchases])
+  const totalValue = useMemo(() => {
+    return filteredProperties.reduce((sum, p) => sum + (Number(p.price) || 0), 0)
+  }, [filteredProperties])
 
-  const successCount = useMemo(() => {
-    return purchases.filter((p) => p.status === 'completed').length
-  }, [purchases])
+  const featuredCount = useMemo(() => {
+    return filteredProperties.filter((p) => p.isFeatured).length
+  }, [filteredProperties])
 
-  const pendingCount = useMemo(() => {
-    return purchases.filter((p) => p.status === 'pending').length
-  }, [purchases])
+  const verifiedCount = useMemo(() => {
+    return filteredProperties.filter((p) => p.isVerified).length
+  }, [filteredProperties])
 
   if (authLoading || loading) {
     return (
@@ -382,26 +315,23 @@ export default function DynamicPurchasesPage() {
 
   if (!isAuthenticated || !user || user.$id !== id) return null
 
-  const formatNaira = (kobo: number) => {
-    // if you store NGN in kobo, divide by 100; if you store naira, remove /100.
-    const naira = kobo / 100
+  const formatNaira = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN',
       maximumFractionDigits: 0,
-    }).format(naira)
+    }).format(amount)
   }
 
   return (
     <div className="p-4 md:p-6 mx-auto max-w-7xl">
-      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-            My Purchases
+            Recently Viewed
           </h1>
           <p className="text-gray-600 mt-2 text-sm md:text-base">
-            View your successful property purchases and payment references.
+            Continue from where you left off.
           </p>
         </div>
         <Link
@@ -413,18 +343,17 @@ export default function DynamicPurchasesPage() {
         </Link>
       </div>
 
-      {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Purchases</p>
+              <p className="text-sm text-gray-600">Viewed</p>
               <p className="text-xl font-bold text-gray-900">
-                {purchases.length}
+                {filteredProperties.length}
               </p>
             </div>
             <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-emerald-50 rounded-xl">
-              <CreditCard className="w-5 h-5 md:w-6 md:h-6 text-emerald-700" />
+              <Eye className="w-5 h-5 md:w-6 md:h-6 text-emerald-700" />
             </div>
           </div>
         </div>
@@ -432,23 +361,11 @@ export default function DynamicPurchasesPage() {
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Successful</p>
-              <p className="text-xl font-bold text-gray-900">{successCount}</p>
-            </div>
-            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-emerald-50 rounded-xl">
-              <ShieldCheck className="w-5 h-5 md:w-6 md:h-6 text-emerald-700" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Pending</p>
-              <p className="text-xl font-bold text-gray-900">{pendingCount}</p>
+              <p className="text-sm text-gray-600">Featured</p>
+              <p className="text-xl font-bold text-gray-900">{featuredCount}</p>
             </div>
             <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-amber-50 rounded-xl">
-              <Eye className="w-5 h-5 md:w-6 md:h-6 text-amber-700" />
+              <Star className="w-5 h-5 md:w-6 md:h-6 text-amber-700" />
             </div>
           </div>
         </div>
@@ -456,19 +373,30 @@ export default function DynamicPurchasesPage() {
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Spent</p>
+              <p className="text-sm text-gray-600">Verified</p>
+              <p className="text-xl font-bold text-gray-900">{verifiedCount}</p>
+            </div>
+            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-blue-50 rounded-xl">
+              <ShieldCheck className="w-5 h-5 md:w-6 md:h-6 text-blue-700" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Value</p>
               <p className="text-xl font-bold text-gray-900">
-                {formatNaira(totalAmount)}
+                {formatNaira(totalValue)}
               </p>
             </div>
             <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-gray-50 rounded-xl">
-              <Heart className="w-5 h-5 md:w-6 md:h-6 text-gray-700" />
+              <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-gray-700" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filters and Search */}
       <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
@@ -476,7 +404,7 @@ export default function DynamicPurchasesPage() {
               <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search by property, location, or payment reference..."
+                placeholder="Search by property title or location..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500"
@@ -493,9 +421,10 @@ export default function DynamicPurchasesPage() {
                 <SelectGroup>
                   <SelectLabel>Status</SelectLabel>
                   <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="for-sale">For Sale</SelectItem>
+                  <SelectItem value="for-rent">For Rent</SelectItem>
+                  <SelectItem value="short-let">Short Let</SelectItem>
+                  <SelectItem value="sold">Sold</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -503,20 +432,19 @@ export default function DynamicPurchasesPage() {
         </div>
       </div>
 
-      {/* Purchases Grid */}
       {filteredProperties.length === 0 ? (
         <div className="bg-white rounded-lg border border-gray-200 p-8 md:p-12 text-center">
           <BirdhouseIcon className="w-12 h-12 md:w-16 md:h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2">
-            {purchases.length === 0 ? 'No Purchases Yet' : 'No Purchases Found'}
+            {properties.length === 0 ? 'No Viewed Properties Yet' : 'No Match Found'}
           </h3>
           <p className="text-gray-500 mb-6 max-w-md mx-auto">
-            {purchases.length === 0
-              ? 'When you complete a purchase, it will show up here with the payment reference.'
+            {properties.length === 0
+              ? 'Properties you open will appear here for quick access.'
               : "Try adjusting your search or filters to find what you're looking for."}
           </p>
 
-          {purchases.length === 0 && (
+          {properties.length === 0 && (
             <Link
               href="/properties"
               className="inline-flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors"
@@ -526,34 +454,11 @@ export default function DynamicPurchasesPage() {
           )}
         </div>
       ) : (
-        <>
-          {/* Optional: show purchase reference strip above each card */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProperties.map((property) => {
-              const purchase = purchaseMap.get(property.$id)
-
-              return (
-                <div key={property.$id} className="space-y-2">
-                  {purchase?.reference && (
-                    <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600">
-                      <span className="font-semibold text-gray-800">
-                        Reference:
-                      </span>{' '}
-                      {purchase.reference}
-                      {purchase.status && (
-                        <span className="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-700">
-                          {purchase.status}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  <PropertyCard property={property} userId={user?.$id} />
-                </div>
-              )
-            })}
-          </div>
-        </>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProperties.map((property) => (
+            <PropertyCard key={property.$id} property={property} userId={user?.$id} />
+          ))}
+        </div>
       )}
     </div>
   )

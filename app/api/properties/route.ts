@@ -1,4 +1,3 @@
-// app/api/properties/route.ts - FIXED
 import { NextRequest, NextResponse } from 'next/server'
 
 import {
@@ -8,10 +7,10 @@ import {
   Query,
 } from '@/lib/appwrite'
 
+let propertyFulltextSupported: boolean | null = null
+
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 Properties API called')
-
     const { searchParams } = new URL(request.url)
 
     const status = searchParams.get('status')
@@ -26,18 +25,10 @@ export async function GET(request: NextRequest) {
     const propertyType = searchParams.get('propertyType')
     const q = searchParams.get('q')
 
-    console.log(
-      '📋 All query params:',
-      Object.fromEntries(searchParams.entries())
-    )
+    const baseQueries = [Query.equal('isActive', true)]
 
-    // Build queries array
-    const queries = [Query.equal('isActive', true)]
-
-    // Handle status/type - FIXED LOGIC
     let finalStatus = status
 
-    // If type is provided (from frontend), use it to determine status
     if (type === 'buy') {
       finalStatus = 'for-sale'
     } else if (type === 'rent') {
@@ -48,83 +39,99 @@ export async function GET(request: NextRequest) {
       finalStatus = null
     }
 
-    // Only add status filter if we have a specific status
     if (finalStatus && finalStatus !== 'all') {
-      console.log(`🎯 Filtering by status: ${finalStatus}`)
-      queries.push(Query.equal('status', finalStatus))
-    } else {
-      console.log('🌐 Showing all property types (no status filter)')
+      baseQueries.push(Query.equal('status', finalStatus))
     }
 
-    // Search functionality
-    if (q) {
-      console.log(`🔎 Searching for: "${q}"`)
+    const searchQueries = [...baseQueries]
+    if (q && propertyFulltextSupported !== false) {
       const cleanQuery = q.trim().toLowerCase()
-
-      // Search across multiple fields (case-insensitive)
-      queries.push(
+      searchQueries.push(
         Query.or([
           Query.search('title', cleanQuery),
           Query.search('city', cleanQuery),
           Query.search('state', cleanQuery),
-          Query.search('location', cleanQuery),
           Query.search('description', cleanQuery),
         ])
       )
     }
 
-    // If specific city/state provided, use them
-    if (city && !q) {
-      queries.push(Query.equal('city', city))
+    if (city) {
+      const cityOrStateQuery = Query.or([
+        Query.equal('city', city),
+        Query.equal('state', city),
+      ])
+      baseQueries.push(cityOrStateQuery)
+      searchQueries.push(cityOrStateQuery)
     }
-    if (state && !q) {
-      queries.push(Query.equal('state', state))
+    if (state) {
+      const stateQuery = Query.equal('state', state)
+      baseQueries.push(stateQuery)
+      searchQueries.push(stateQuery)
     }
 
-    // Numeric filters
     if (minPrice) {
-      queries.push(Query.greaterThanEqual('price', parseInt(minPrice)))
+      const min = Query.greaterThanEqual('price', parseInt(minPrice))
+      baseQueries.push(min)
+      searchQueries.push(min)
     }
     if (maxPrice) {
-      queries.push(Query.lessThanEqual('price', parseInt(maxPrice)))
+      const max = Query.lessThanEqual('price', parseInt(maxPrice))
+      baseQueries.push(max)
+      searchQueries.push(max)
     }
     if (bedrooms) {
-      queries.push(Query.equal('bedrooms', parseInt(bedrooms)))
+      const beds = Query.equal('bedrooms', parseInt(bedrooms))
+      baseQueries.push(beds)
+      searchQueries.push(beds)
     }
     if (propertyType) {
-      queries.push(Query.equal('propertyType', propertyType))
+      const pt = Query.equal('propertyType', propertyType)
+      baseQueries.push(pt)
+      searchQueries.push(pt)
     }
 
-    // Add pagination and sorting
     const offset = (page - 1) * limit
-    queries.push(Query.limit(limit))
-    queries.push(Query.offset(offset))
-    queries.push(Query.orderDesc('isFeatured'))
-    queries.push(Query.orderDesc('listDate'))
+    const paginationQueries = [
+      Query.limit(limit),
+      Query.offset(offset),
+      Query.orderDesc('isFeatured'),
+      Query.orderDesc('listDate'),
+    ]
 
-    console.log('📤 Final queries count:', queries.length)
-    console.log('📝 Page:', page, 'Limit:', limit, 'Offset:', offset)
+    let properties
+    try {
+      properties = await databases.listDocuments(
+        DATABASE_ID,
+        PROPERTIES_COLLECTION_ID,
+        [...searchQueries, ...paginationQueries]
+      )
+      if (q) {
+        propertyFulltextSupported = true
+      }
+    } catch (error: unknown) {
+      const message = String((error as { message?: string })?.message || '')
+      const fullTextUnavailable = message.includes('requires a fulltext index')
+      if (!fullTextUnavailable || !q) throw error
 
-    // Execute query
-    const properties = await databases.listDocuments(
-      DATABASE_ID,
-      PROPERTIES_COLLECTION_ID,
-      queries
-    )
-
-    console.log('✅ Found properties:', properties.documents.length)
-    console.log('📊 Total documents in collection:', properties.total)
+      propertyFulltextSupported = false
+      properties = await databases.listDocuments(
+        DATABASE_ID,
+        PROPERTIES_COLLECTION_ID,
+        [...baseQueries, ...paginationQueries]
+      )
+    }
 
     return NextResponse.json({
       success: true,
       documents: properties.documents,
       total: properties.total,
       currentPage: page,
-      limit: limit,
+      limit,
       hasMore: page * limit < properties.total,
     })
   } catch (error) {
-    console.error('❌ API Error:', error)
+    console.error('Properties API error:', error)
     return NextResponse.json(
       {
         success: false,

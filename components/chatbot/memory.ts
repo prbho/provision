@@ -32,10 +32,12 @@ export class MemoryManager {
     // Intent-aware memory updates
     switch (intent) {
       case 'property_search':
-        // Only update property-specific info
+        // Keep all search-relevant context so follow-up prompts are coherent
+        if (updates.location) this.memory.location = updates.location
         if (updates.bedrooms) this.memory.bedrooms = updates.bedrooms
-        if (updates.propertyType)
-          this.memory.propertyType = updates.propertyType
+        if (updates.propertyType) this.memory.propertyType = updates.propertyType
+        if (updates.budget) this.memory.budget = updates.budget
+        if (updates.listingType) this.memory.listingType = updates.listingType
         break
 
       case 'location_search':

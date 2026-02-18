@@ -60,7 +60,7 @@ export default function ContactPage() {
     office:
       'First Floor, Hilmak Plaza, by Trans Ekulu Bridge, off Onitsha/Enugu Expressway, Enugu, Enugu State, Nigeria.',
     phone: '+234 906 009 1554',
-    email: 'propertyvisiondev@gmail.com,',
+    email: 'propertyvisiondev@gmail.com',
     email2: 'hello@propertyvisionltd.com',
   }
 
@@ -310,7 +310,7 @@ export default function ContactPage() {
                       rel="noopener noreferrer"
                       className="text-sm text-brand hover:text-brand/95 mt-1 inline-block"
                     >
-                      Get directions →
+                      Get directions -&gt;
                     </a>
                   </div>
                 </div>

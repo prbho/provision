@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Property } from '@/types'
 import { BarChart, Edit, Eye, MessageCircle, UserCheck } from 'lucide-react'
@@ -48,13 +48,7 @@ export default function MessageButton({
   const [ownerInfo, setOwnerInfo] = useState<OwnerInfo | null>(null)
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (propertyId) {
-      fetchOwnerInfo()
-    }
-  }, [propertyId])
-
-  const fetchOwnerInfo = async () => {
+  const fetchOwnerInfo = useCallback(async () => {
     try {
       setLoading(true)
       console.log('🔍 Fetching owner info for property:', propertyId)
@@ -96,7 +90,13 @@ export default function MessageButton({
     } finally {
       setLoading(false)
     }
-  }
+  }, [property, propertyId, propertyTitle])
+
+  useEffect(() => {
+    if (propertyId) {
+      fetchOwnerInfo()
+    }
+  }, [propertyId, fetchOwnerInfo])
 
   // Check if current user is the owner
   const isOwnProfile = ownerInfo

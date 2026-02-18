@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   AlertCircle,
   CheckCircle2,
@@ -45,44 +45,7 @@ export default function EmailVerificationModal({
   const [showProgress, setShowProgress] = useState(false)
   const [progress, setProgress] = useState(0)
 
-  // Auto-check verification status every 10 seconds when modal is open
-  useEffect(() => {
-    if (!isOpen) return
-
-    // Initial check when modal opens
-    checkVerificationStatus()
-
-    const checkInterval = setInterval(async () => {
-      await checkVerificationStatus()
-    }, 10000) // Check every 10 seconds
-
-    return () => clearInterval(checkInterval)
-  }, [isOpen])
-
-  // Progress bar for auto-close countdown
-  useEffect(() => {
-    if (!isVerified) {
-      setShowProgress(false)
-      setProgress(0)
-      return
-    }
-
-    setShowProgress(true)
-    const duration = 3000 // 3 seconds
-    const interval = 50 // Update every 50ms
-    const steps = duration / interval
-    const increment = 100 / steps
-
-    let currentProgress = 0
-    const timer = setInterval(() => {
-      currentProgress += increment
-      setProgress(Math.min(currentProgress, 100))
-    }, interval)
-
-    return () => clearInterval(timer)
-  }, [isVerified])
-
-  const checkVerificationStatus = async () => {
+  const checkVerificationStatus = useCallback(async () => {
     if (isChecking) return
 
     setIsChecking(true)
@@ -113,7 +76,43 @@ export default function EmailVerificationModal({
     } finally {
       setIsChecking(false)
     }
-  }
+  }, [isChecking, onCheckVerification, onClose])
+
+  // Auto-check verification status every 10 seconds when modal is open
+  useEffect(() => {
+    if (!isOpen) return
+
+    checkVerificationStatus()
+
+    const checkInterval = setInterval(async () => {
+      await checkVerificationStatus()
+    }, 10000)
+
+    return () => clearInterval(checkInterval)
+  }, [isOpen, checkVerificationStatus])
+
+  // Progress bar for auto-close countdown
+  useEffect(() => {
+    if (!isVerified) {
+      setShowProgress(false)
+      setProgress(0)
+      return
+    }
+
+    setShowProgress(true)
+    const duration = 3000
+    const interval = 50
+    const steps = duration / interval
+    const increment = 100 / steps
+
+    let currentProgress = 0
+    const timer = setInterval(() => {
+      currentProgress += increment
+      setProgress(Math.min(currentProgress, 100))
+    }, interval)
+
+    return () => clearInterval(timer)
+  }, [isVerified])
 
   const handleResendVerification = async () => {
     try {

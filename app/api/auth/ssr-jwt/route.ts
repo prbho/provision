@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     })
 
     return res
-  } catch (err) {
+  } catch {
     return jsonError('Failed to set SSR JWT cookie', 500)
   }
 }

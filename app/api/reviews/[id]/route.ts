@@ -9,8 +9,10 @@ interface RouteParams {
   }>
 }
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, context: RouteParams) {
   try {
+    void request
+    void context
     // For now, we'll return reviews for this agent/property
     // You could modify this to fetch a specific review by ID if needed
     const reviews = await ReviewService.getDetailedReviews({
@@ -38,6 +40,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
+    void request
     const { id } = await params
 
     await ReviewService.deleteReview(id)

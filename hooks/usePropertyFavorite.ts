@@ -1,5 +1,5 @@
 // hooks/usePropertyFavorite.ts
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Property } from '@/types'
 
@@ -12,7 +12,7 @@ export function usePropertyFavorite(property: Property) {
   const [error, setError] = useState<string | null>(null)
 
   // Check favorite status
-  const checkFavoriteStatus = async () => {
+  const checkFavoriteStatus = useCallback(async () => {
     if (!user?.$id || !property?.$id) {
       console.log(
         '🔄 [usePropertyFavorite] No user or property ID, setting isFavorited to false'
@@ -35,7 +35,7 @@ export function usePropertyFavorite(property: Property) {
     } catch {
       setIsFavorited(false)
     }
-  }
+  }, [property?.$id, user?.$id])
 
   // Check favorite status on mount and when dependencies change
   useEffect(() => {

@@ -171,9 +171,6 @@ export default function AnalyticsPage() {
         const propertyLeads = messages.filter(
           (m: any) => m.propertyId === property.$id
         ).length
-        const propertyViewings = viewings.filter(
-          (v: any) => v.propertyId === property.$id
-        ).length
         const propertyConversionRate =
           property.views > 0 ? (propertyLeads / property.views) * 100 : 0
 
@@ -242,11 +239,7 @@ export default function AnalyticsPage() {
     }
 
     // Calculate performance trends
-    const performanceTrends = generatePerformanceTrends(
-      properties,
-      viewings,
-      range
-    )
+    const performanceTrends = generatePerformanceTrends(properties)
 
     // Get recent viewings (last 5)
     const recentViewings: ScheduleViewing[] = viewings
@@ -402,9 +395,7 @@ export default function AnalyticsPage() {
   }
 
   const generatePerformanceTrends = (
-    properties: any[],
-    viewings: any[],
-    range: '7d' | '30d' | '90d'
+    properties: any[]
   ): Record<string, number> => {
     // Group properties by status for trend analysis
     const statusCounts = {
@@ -429,7 +420,6 @@ export default function AnalyticsPage() {
     trend,
     change,
     description,
-    color = 'blue',
   }: {
     title: string
     value: string | number
@@ -437,15 +427,7 @@ export default function AnalyticsPage() {
     trend?: 'up' | 'down' | 'neutral'
     change?: string
     description?: string
-    color?: 'blue' | 'green' | 'purple' | 'orange'
   }) => {
-    const colorClasses = {
-      blue: 'bg-blue-50 text-blue-600',
-      green: 'bg-green-50 text-green-600',
-      purple: 'bg-purple-50 text-purple-600',
-      orange: 'bg-orange-50 text-orange-600',
-    }
-
     const trendColors = {
       up: 'text-green-600',
       down: 'text-red-600',
@@ -616,7 +598,6 @@ export default function AnalyticsPage() {
           trend="up"
           change="+12%"
           description="Across all properties"
-          color="blue"
         />
         <MetricCard
           title="Active Leads"
@@ -625,7 +606,6 @@ export default function AnalyticsPage() {
           trend="up"
           change="+8%"
           description="New inquiries"
-          color="green"
         />
         <MetricCard
           title="Conversion Rate"
@@ -634,7 +614,6 @@ export default function AnalyticsPage() {
           trend="up"
           change="+2%"
           description="Lead to viewing ratio"
-          color="purple"
         />
         <MetricCard
           title="Active Listings"
@@ -642,7 +621,6 @@ export default function AnalyticsPage() {
           icon={Home}
           trend="neutral"
           description="Currently listed"
-          color="orange"
         />
       </div>
 

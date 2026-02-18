@@ -18,7 +18,7 @@ export async function PUT(request: NextRequest) {
     let body
     try {
       body = await request.json()
-    } catch (parseError) {
+    } catch {
       return NextResponse.json(
         {
           success: false,
@@ -154,8 +154,9 @@ export async function PUT(request: NextRequest) {
 }
 
 // Add GET method for testing
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
+    void _request
     console.log('🔧 GET /api/user/profile - Testing route...')
 
     const user = await getCurrentUser()

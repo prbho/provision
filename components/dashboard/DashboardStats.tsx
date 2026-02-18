@@ -26,7 +26,7 @@ export default function DashboardStats({ stats }: DashboardStatsProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-xl font-bold text-gray-900 mt-1">
                 {stat.value}
               </p>
               <p className="text-xs text-gray-500 mt-1">{stat.description}</p>

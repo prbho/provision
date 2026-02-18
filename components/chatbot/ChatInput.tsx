@@ -20,7 +20,7 @@ export default function ChatInput({ onSend }: ChatInputProps) {
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-        placeholder="Type your message…"
+        placeholder="Type your message..."
         className="flex-1 px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
       />
 
@@ -33,3 +33,4 @@ export default function ChatInput({ onSend }: ChatInputProps) {
     </div>
   )
 }
+

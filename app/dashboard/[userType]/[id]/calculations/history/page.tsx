@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import {
@@ -22,17 +22,11 @@ export default function CalculationHistoryPage() {
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
 
-  useEffect(() => {
-    if (user) {
-      fetchCalculationHistory()
-    }
-  }, [user])
+  const fetchCalculationHistory = useCallback(async () => {
+    if (!user?.$id) return
 
-  const fetchCalculationHistory = async () => {
     try {
-      const response = await fetch(
-        `/api/calculator/history?userId=${user?.$id}`
-      )
+      const response = await fetch(`/api/calculator/history?userId=${user.$id}`)
       const data = await response.json()
 
       if (data.success) {
@@ -46,7 +40,13 @@ export default function CalculationHistoryPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user?.$id])
+
+  useEffect(() => {
+    if (user) {
+      fetchCalculationHistory()
+    }
+  }, [user, fetchCalculationHistory])
 
   const deleteCalculation = async (calculationId: string) => {
     try {

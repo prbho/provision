@@ -11,53 +11,241 @@ import { getContextualQuickReplies } from './quickReplies'
 import { getShortResponse } from './responses'
 import { ChatMessage, LeadFormData, Memory } from './types'
 
-// Update the mockSearchProperties function:
-const mockSearchProperties = async (filters: Partial<Memory>) => {
-  console.log('🔍 Searching properties with filters:', filters)
+const MAX_MESSAGES = 80
+const WELCOME_MESSAGE =
+  "Hi! I'm Axon. I can help you find properties, compare options, and schedule viewings. Which location are you interested in?"
 
-  // Mock data based on filters
-  const mockProperties = [
-    {
-      id: '1',
-      title: 'Beautiful Duplex in Lagos',
-      price: 50000000,
-      bedrooms: 4,
-      bathrooms: 3,
-      city: 'Lagos',
-      address: 'Lekki Phase 1',
-      images: ['/placeholder-property.jpg'],
-      propertyType: 'duplex',
-    },
-    {
-      id: '2',
-      title: 'Modern Apartment in Abuja',
-      price: 35000000,
-      bedrooms: 3,
-      bathrooms: 2,
-      city: 'Abuja',
-      address: 'Wuse 2',
-      images: ['/placeholder-property.jpg'],
-      propertyType: 'apartment',
-    },
-  ]
+type PropertyResult = {
+  $id: string
+  title?: string
+  propertyType?: string
+  city?: string
+  state?: string
+  address?: string
+  price?: number
+}
 
-  // Filter by location and property type
-  let filtered = mockProperties
+type LocationResult = {
+  name?: string
+  state?: string
+  lga?: string
+  type?: 'state' | 'lga' | 'area'
+  searchTerms?: string[]
+}
 
-  if (filters.location) {
-    filtered = filtered.filter((p) =>
-      p.city.toLowerCase().includes(filters.location!.toLowerCase())
-    )
+type CachedLocation = {
+  value: LocationResult | null
+  expiresAt: number
+}
+
+const LOCATION_CACHE_TTL_MS = 10 * 60 * 1000
+const locationLookupCache = new Map<string, CachedLocation>()
+
+function parseBudgetToPriceRange(budget?: string): {
+  minPrice?: number
+  maxPrice?: number
+} {
+  if (!budget) return {}
+  const lower = budget.toLowerCase()
+  if (lower === 'affordable') {
+    return { maxPrice: 50_000_000 }
   }
 
-  if (filters.propertyType) {
-    filtered = filtered.filter((p) =>
-      p.propertyType.toLowerCase().includes(filters.propertyType!.toLowerCase())
-    )
+  const matched = lower.match(/(\d+(?:\.\d+)?)\s*(million|m|k)/)
+  if (!matched) return {}
+
+  const value = Number(matched[1])
+  if (!Number.isFinite(value) || value <= 0) return {}
+
+  const unit = matched[2]
+  const multiplier = unit === 'k' ? 1_000 : 1_000_000
+  return { maxPrice: Math.round(value * multiplier) }
+}
+
+function formatPrice(price?: number): string {
+  const n = Number(price)
+  if (!Number.isFinite(n) || n <= 0) return 'Price on request'
+  return `NGN ${n.toLocaleString()}`
+}
+
+function formatPropertyResults(properties: PropertyResult[]): string {
+  return properties
+    .slice(0, 3)
+    .map((p, i) => {
+      const title = p.title || 'Untitled Property'
+      const location = [p.city, p.state].filter(Boolean).join(', ')
+      return `${i + 1}. ${title} (${formatPrice(p.price)})${location ? ` - ${location}` : ''}`
+    })
+    .join('\n')
+}
+
+function buildPropertyUrl(propertyId?: string): string {
+  if (!propertyId) return ''
+  const base =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (typeof window !== 'undefined' ? window.location.origin : '')
+  return `${base}/properties/${propertyId}`
+}
+
+function formatPropertyLinks(properties: PropertyResult[]): string {
+  return properties
+    .slice(0, 3)
+    .map((p, i) => {
+      const title = p.title || 'Untitled Property'
+      const url = buildPropertyUrl(p.$id)
+      return `${i + 1}. ${title}: ${url}`
+    })
+    .join('\n')
+}
+
+function toTitleCase(value: string): string {
+  return value
+    .split(' ')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ')
+}
+
+async function resolveLocationFromApi(
+  rawLocation: string
+): Promise<LocationResult | null> {
+  const q = rawLocation.trim()
+  if (!q) return null
+
+  const cached = locationLookupCache.get(q.toLowerCase())
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.value
   }
 
-  console.log('✅ Found properties:', filtered.length)
-  return filtered
+  try {
+    const res = await fetch(
+      `/api/locations/search?q=${encodeURIComponent(q)}&limit=5`,
+      {
+        method: 'GET',
+      }
+    )
+    if (!res.ok) return null
+
+    const json = await res.json()
+    const locations = Array.isArray(json?.locations) ? json.locations : []
+    if (locations.length === 0) return null
+
+    const normalizedInput = q.toLowerCase()
+    const exact = locations.find((loc: LocationResult) => {
+      const name = String(loc?.name || '').toLowerCase()
+      const state = String(loc?.state || '').toLowerCase()
+      return normalizedInput === name || normalizedInput === `${state} state`
+    })
+
+    const resolved = (exact || locations[0]) as LocationResult
+    locationLookupCache.set(q.toLowerCase(), {
+      value: resolved,
+      expiresAt: Date.now() + LOCATION_CACHE_TTL_MS,
+    })
+    return resolved
+  } catch {
+    locationLookupCache.set(q.toLowerCase(), {
+      value: null,
+      expiresAt: Date.now() + 30_000,
+    })
+    return null
+  }
+}
+
+const searchPropertiesFromApi = async (
+  memory: Partial<Memory>,
+  message?: string
+): Promise<PropertyResult[]> => {
+  const params = new URLSearchParams()
+  params.set('limit', '6')
+
+  if (memory.propertyType) {
+    params.set('propertyType', memory.propertyType)
+  }
+  if (memory.listingType) {
+    params.set('type', memory.listingType)
+  }
+  if (memory.location) {
+    const normalized = memory.location.trim().toLowerCase()
+    const resolved = await resolveLocationFromApi(normalized)
+
+    if (resolved?.type === 'state') {
+      params.set('state', toTitleCase(resolved.name || normalized))
+    } else if (resolved?.type === 'lga' || resolved?.type === 'area') {
+      if (resolved.name) params.set('city', toTitleCase(resolved.name))
+      if (resolved.state) params.set('state', toTitleCase(resolved.state))
+    } else if (normalized.endsWith(' state')) {
+      params.set('state', toTitleCase(normalized.replace(/\s+state$/, '')))
+    } else {
+      params.set('city', toTitleCase(resolved?.name || normalized))
+      if (resolved?.state) {
+        params.set('state', toTitleCase(resolved.state))
+      }
+    }
+  }
+
+  const { minPrice, maxPrice } = parseBudgetToPriceRange(memory.budget)
+  if (typeof minPrice === 'number') params.set('minPrice', String(minPrice))
+  if (typeof maxPrice === 'number') params.set('maxPrice', String(maxPrice))
+
+  const hasStructuredFilters = Boolean(
+    memory.location || memory.propertyType || memory.listingType
+  )
+  const queryText = (message || '').trim()
+  if (queryText && !hasStructuredFilters) {
+    params.set('q', queryText)
+  }
+
+  const res = await fetch(`/api/properties?${params.toString()}`, {
+    method: 'GET',
+  })
+
+  if (!res.ok) {
+    throw new Error(`Property search failed: ${res.status}`)
+  }
+
+  const json = await res.json()
+  const docs = Array.isArray(json?.documents) ? json.documents : []
+  return docs as PropertyResult[]
+}
+
+function resolveIntentWithContext(
+  message: string,
+  baseIntent: string,
+  memory: Memory
+): string {
+  if (baseIntent !== 'unknown' && baseIntent !== 'help') {
+    return baseIntent
+  }
+
+  const text = message.trim().toLowerCase()
+  const updates = extractMemoryUpdates(text)
+  const asksForProperties =
+    /\b(find|search|show|i want to buy|buy|purchase|rent|lease|properties?)\b/i.test(
+      text
+    )
+
+  if (memory.lastQuestionAsked === 'propertyType' && updates.propertyType) {
+    return 'property_search'
+  }
+
+  if (memory.lastQuestionAsked === 'location' && updates.location) {
+    return 'location_search'
+  }
+
+  if (asksForProperties && (updates.location || updates.propertyType)) {
+    return 'property_search'
+  }
+
+  if (asksForProperties && (memory.location || memory.propertyType)) {
+    return 'property_search'
+  }
+
+  if (baseIntent === 'help' && asksForProperties) {
+    return 'property_search'
+  }
+
+  return baseIntent
 }
 
 export const useChatEngine = () => {
@@ -74,7 +262,10 @@ export const useChatEngine = () => {
   const leadFlowManager = useRef<LeadFlowManager | null>(null)
 
   const generateUniqueId = (): string => {
-    return `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID()
+    }
+    return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
   }
 
   const addMessage = useCallback((message: Omit<ChatMessage, 'id'>) => {
@@ -82,7 +273,31 @@ export const useChatEngine = () => {
       ...message,
       id: generateUniqueId(),
     }
-    setMessages((prev) => [...prev, newMessage])
+    setMessages((prev) => [...prev, newMessage].slice(-MAX_MESSAGES))
+  }, [])
+
+  const addBotMessage = useCallback(
+    (content: string) => {
+      addMessage({ content, timestamp: new Date(), type: 'bot' })
+    },
+    [addMessage]
+  )
+
+  const startNewChat = useCallback(() => {
+    memoryManager.current?.clear()
+    setMessages([
+      {
+        id: generateUniqueId(),
+        type: 'bot',
+        content: WELCOME_MESSAGE,
+        timestamp: new Date(),
+      },
+    ])
+    setDisplayedProperties([])
+    setShowLeadForm(false)
+    setLeadStep(0)
+    setLeadData({})
+    setIsTyping(false)
   }, [])
 
   const getCurrentLeadData = useCallback((): Record<string, string> => {
@@ -90,234 +305,202 @@ export const useChatEngine = () => {
   }, [leadData])
 
   const processUserMessage = useCallback(
-    async (message: string) => {
-      console.log('💬 Processing message:', message)
-
-      if (!memoryManager.current || !leadFlowManager.current) {
-        console.error('Managers not initialized yet')
+    async (rawMessage: string) => {
+      const message = rawMessage.trim()
+      if (!message || !memoryManager.current || !leadFlowManager.current) {
         return
       }
 
-      // Add user message
       addMessage({
         content: message,
         timestamp: new Date(),
         type: 'user',
       })
 
-      // Get current memory
       const currentMemory = memoryManager.current.getMemory()
-      console.log('🧠 Current memory:', currentMemory)
+      const initialIntent = detectIntent(message, currentMemory)
+      const intent = resolveIntentWithContext(message, initialIntent, currentMemory)
 
-      // Detect intent
-      const intent = detectIntent(message, currentMemory)
-      console.log('🎯 Detected intent:', intent)
-
-      // Update memory from intent
       memoryManager.current.updateFromIntent(intent, message)
-
-      // Get updated memory
       const updatedMemory = memoryManager.current.getMemory()
 
       setIsTyping(true)
 
-      // Handle different intents with proper conversation flow
       setTimeout(() => {
         let response = ''
-        let foundProperties = 0
+        const wantsLink =
+          /\b(link|url|website|open it|property page)\b/i.test(message)
 
         switch (intent) {
           case 'clear_chat':
-            memoryManager.current?.clear()
-            setMessages([])
-            setDisplayedProperties([])
-            response = 'Chat cleared! How can I help you today?'
-            break
+            startNewChat()
+            return
 
           case 'greeting':
             response = getShortResponse(intent, updatedMemory)
             break
 
           case 'property_search':
-            // Check if we need location or property type
             if (!updatedMemory.location) {
-              updatedMemory.lastQuestionAsked = 'location'
-              response = 'Which location are you interested in?'
+              memoryManager.current?.update({ lastQuestionAsked: 'location' })
+              response = 'Great. Which location are you interested in?'
             } else if (!updatedMemory.propertyType) {
-              updatedMemory.lastQuestionAsked = 'propertyType'
-              response = `Got it 👍 What type of property are you looking for in ${updatedMemory.location}?`
+              memoryManager.current?.update({ lastQuestionAsked: 'propertyType' })
+              response = `Nice. What type of property are you looking for in ${updatedMemory.location}?`
             } else {
-              // Both location and property type are known - search properties
-              mockSearchProperties({
-                location: updatedMemory.location,
-                propertyType: updatedMemory.propertyType,
-              }).then((properties) => {
-                foundProperties = properties.length
-                updatedMemory.propertiesFound = foundProperties
-                memoryManager.current?.update(updatedMemory)
+              searchPropertiesFromApi(updatedMemory, message)
+                .then((properties) => {
+                  const foundProperties = properties.length
+                  memoryManager.current?.update({
+                    propertiesFound: foundProperties,
+                    lastQuestionAsked: 'none',
+                  })
 
-                if (foundProperties > 0) {
-                  setDisplayedProperties(properties)
-                  response = `Great! I found ${foundProperties} ${updatedMemory.propertyType}(s) in ${updatedMemory.location}. Would you like to see the details or schedule a viewing?`
-                } else {
-                  response = `I couldn't find any ${updatedMemory.propertyType} in ${updatedMemory.location}. Would you like to try another location or property type?`
-                }
+                  if (foundProperties > 0) {
+                    setDisplayedProperties(properties)
+                    response =
+                      `I found ${foundProperties} matching properties. Top options:\n` +
+                      `${formatPropertyResults(properties)}\n\n` +
+                      'Would you like details or should I help you schedule a viewing?'
+                  } else {
+                    response = `I couldn't find ${updatedMemory.propertyType} options in ${updatedMemory.location} right now. Want to try another location or property type?`
+                  }
 
-                // Add bot response
-                addMessage({
-                  content: response,
-                  timestamp: new Date(),
-                  type: 'bot',
+                  addBotMessage(response)
+                  setIsTyping(false)
                 })
-                setIsTyping(false)
-              })
-              return // Exit early for async operation
-            }
-            break
-
-          case 'location_search':
-            // Extract location from message
-            const locationMatch = message.match(
-              /\b(lagos|abuja|ikeja|lekki|yaba|ikoyi)\b/i
-            )
-            const location = locationMatch ? locationMatch[0] : message
-
-            // Update memory with location
-            if (memoryManager.current) {
-              memoryManager.current.update({ location })
-            }
-            const updatedMem = memoryManager.current?.getMemory()
-
-            if (!updatedMem || !updatedMem.propertyType) {
-              response = `Great! Looking for properties in ${location}. What type of property are you looking for?`
-            } else {
-              // Both location and property type known - search
-              mockSearchProperties({
-                location: location,
-                propertyType: updatedMem.propertyType,
-              }).then((properties) => {
-                foundProperties = properties.length
-                memoryManager.current?.update({
-                  propertiesFound: foundProperties,
+                .catch(() => {
+                  addBotMessage(
+                    'I could not reach the property listings right now. Please try again in a moment.'
+                  )
+                  setIsTyping(false)
                 })
-
-                if (foundProperties > 0) {
-                  setDisplayedProperties(properties)
-                  response = `Great! I found ${foundProperties} ${updatedMem.propertyType}(s) in ${location}. Would you like to see the details or schedule a viewing?`
-                } else {
-                  response = `I couldn't find any ${updatedMem.propertyType} in ${location}. Would you like to try another location or property type?`
-                }
-
-                addMessage({
-                  content: response,
-                  timestamp: new Date(),
-                  type: 'bot',
-                })
-                setIsTyping(false)
-              })
               return
             }
             break
 
+          case 'location_search': {
+            const extracted = extractMemoryUpdates(message)
+            const location =
+              extracted.location?.toLowerCase() || message.toLowerCase().trim()
+
+            const manager = memoryManager.current
+            if (!manager) {
+              setIsTyping(false)
+              return
+            }
+
+            manager.update({ location })
+            const updatedMem = manager.getMemory()
+
+            if (!updatedMem.propertyType) {
+              manager.update({ lastQuestionAsked: 'propertyType' })
+              response = `Noted: ${location}. What property type do you want there?`
+            } else {
+              searchPropertiesFromApi(
+                { ...updatedMem, location },
+                `${updatedMem.propertyType} in ${location}`
+              )
+                .then((properties) => {
+                  const foundProperties = properties.length
+                  manager.update({
+                    propertiesFound: foundProperties,
+                    lastQuestionAsked: 'none',
+                  })
+
+                  if (foundProperties > 0) {
+                    setDisplayedProperties(properties)
+                    response =
+                      `Great, I found ${foundProperties} listings in ${location}. Top options:\n` +
+                      `${formatPropertyResults(properties)}\n\n` +
+                      'Want me to show more details or schedule a viewing?'
+                  } else {
+                    response = `No ${updatedMem.propertyType} listings found in ${location} yet. Would you like me to search a nearby area?`
+                  }
+
+                  addBotMessage(response)
+                  setIsTyping(false)
+                })
+                .catch(() => {
+                  addBotMessage(
+                    'I could not reach the property listings right now. Please try again in a moment.'
+                  )
+                  setIsTyping(false)
+                })
+              return
+            }
+            break
+          }
+
           case 'schedule_viewing':
             if (!updatedMemory.location || !updatedMemory.propertyType) {
               response =
-                'Let me get a few details first. What location are you interested in?'
+                'I can do that. First, tell me the location and property type you want.'
             } else if (displayedProperties.length === 0) {
               response =
-                'Please search for properties first, then I can help you schedule a viewing.'
+                'I need to find matching properties first. Say "find properties" and I will pull options.'
             } else {
               setShowLeadForm(true)
-              setLeadStep(0) // Changed from 1 to 0 - start with name
+              setLeadStep(0)
               setTimeout(() => {
-                addMessage({
-                  content: "Let's schedule a viewing! First, what's your name?",
-                  timestamp: new Date(),
-                  type: 'bot',
-                })
+                addBotMessage("Let's schedule a viewing. What's your name?")
                 setIsTyping(false)
               }, 500)
-              return // Exit early since we're showing a message
+              return
             }
             break
 
           case 'view_details':
             if (!updatedMemory.location || !updatedMemory.propertyType) {
               response =
-                'Let me get a few details first. What location are you interested in?'
+                'Share your preferred location and property type, then I will show details.'
             } else if (displayedProperties.length === 0) {
               response =
-                'Please search for properties first, then I can show you the details.'
+                'I have no matches loaded yet. Say "find properties" and I will search now.'
             } else {
-              // Calculate min and max prices
               const minPrice = displayedProperties.reduce(
-                (min, p) => Math.min(min, p.price),
+                (min, p) => Math.min(min, Number(p.price) || Infinity),
                 Infinity
               )
               const maxPrice = displayedProperties.reduce(
-                (max, p) => Math.max(max, p.price),
+                (max, p) => Math.max(max, Number(p.price) || 0),
                 0
               )
 
               response =
-                `Here are the details for properties in ${updatedMemory.location}:\n\n` +
-                `• Property Type: ${updatedMemory.propertyType}\n` +
-                `• Found: ${displayedProperties.length} properties\n` +
-                `• Price range: ₦${minPrice.toLocaleString()} - ₦${maxPrice.toLocaleString()}\n\n` +
-                `Would you like to schedule a viewing for any of these?`
+                `Here is what I found in ${updatedMemory.location}:\n\n` +
+                `- Type: ${updatedMemory.propertyType}\n` +
+                `- Results: ${displayedProperties.length}\n` +
+                `- Price range: ${formatPrice(minPrice === Infinity ? undefined : minPrice)} - ${formatPrice(maxPrice)}\n\n` +
+                'Would you like to schedule a viewing for one?'
             }
             break
 
           default:
-            response = getShortResponse(
-              intent,
-              updatedMemory,
-              displayedProperties.length
-            )
+            if (wantsLink && displayedProperties.length > 0) {
+              response =
+                `Click the link below:\n${formatPropertyLinks(displayedProperties)}\n\n` +
+                'Tell me which one you want to view and I will help with next steps.'
+            } else {
+              response = getShortResponse(
+                intent,
+                updatedMemory,
+                displayedProperties.length
+              )
+            }
         }
 
-        // Add bot response (for non-async cases)
-        addMessage({
-          content: response,
-          timestamp: new Date(),
-          type: 'bot',
-        })
+        addBotMessage(response)
         setIsTyping(false)
-      }, 500)
+      }, 400)
     },
-    [addMessage, displayedProperties] // ✅ Fixed: Use full displayedProperties array
+    [addBotMessage, addMessage, displayedProperties, startNewChat]
   )
-
-  const updateQuickReplies = useCallback(() => {
-    if (!memoryManager.current) {
-      setQuickReplies([])
-      return
-    }
-
-    const replies = getContextualQuickReplies(
-      {
-        memory: memoryManager.current.getMemory(),
-        hasProperties: displayedProperties.length > 0,
-        conversationLength: messages.length,
-      },
-      {
-        onPropertySearch: () => processUserMessage('Find properties'),
-        onScheduleViewing: () => processUserMessage('Schedule viewing'),
-        onContactAgent: () => processUserMessage('Contact agent'),
-        onClearChat: () => processUserMessage('Clear chat'),
-        onLocationSearch: () => processUserMessage('Search by location'),
-        onBudgetInfo: () => processUserMessage('Tell me about budget'),
-      }
-    )
-
-    setQuickReplies(replies)
-  }, [messages.length, displayedProperties.length, processUserMessage])
 
   const updateLeadDataField = useCallback(
     (field: keyof LeadFormData, value: string) => {
       setLeadData((prev) => ({ ...prev, [field]: value }))
 
-      // Update the lead flow manager in a non-render context
       setTimeout(() => {
         if (leadFlowManager.current) {
           leadFlowManager.current.updateField(field, value)
@@ -334,77 +517,53 @@ export const useChatEngine = () => {
   const submitLead = useCallback(async () => {
     if (!leadFlowManager.current) return
 
-    // Check if current step is valid
     let isValid = false
     let currentField = ''
-    let nextStepField = ''
 
     switch (leadStep) {
-      case 0: // name step
+      case 0:
         currentField = 'name'
         isValid = !!leadData.name?.trim()
-        nextStepField = 'email'
         break
-      case 1: // email step
+      case 1:
         currentField = 'email'
         isValid = !!leadData.email?.trim()
-        nextStepField = 'phone'
         break
-      case 2: // phone step (final step)
+      case 2:
         currentField = 'phone'
         isValid = !!leadData.phone?.trim()
         break
     }
 
     if (!isValid) {
-      addMessage({
-        content: `Please provide your ${currentField}.`,
-        timestamp: new Date(),
-        type: 'bot',
-      })
+      addBotMessage(`Please provide your ${currentField}.`)
       return
     }
 
-    // If we're not on the last step, go to next step
     if (leadStep < 2) {
       setLeadStep(leadStep + 1)
 
-      // Show message for next step
       const nextStepMessages = [
         "Great! Now, what's your email address?",
         "Thanks! Finally, what's your phone number?",
       ]
 
       setTimeout(() => {
-        addMessage({
-          content: nextStepMessages[leadStep],
-          timestamp: new Date(),
-          type: 'bot',
-        })
+        addBotMessage(nextStepMessages[leadStep])
       }, 500)
 
       return
     }
 
-    // We're on the last step (phone), submit the lead
     setIsTyping(true)
 
-    // Save lead data to state manager
     const success = await leadFlowManager.current.saveToAppwrite()
 
     setTimeout(() => {
       if (success) {
-        addMessage({
-          content: 'Thank you! Our agent will contact you shortly.',
-          timestamp: new Date(),
-          type: 'bot',
-        })
+        addBotMessage('Thank you! Our agent will contact you shortly.')
       } else {
-        addMessage({
-          content: 'There was an error. Please try again.',
-          timestamp: new Date(),
-          type: 'bot',
-        })
+        addBotMessage('There was an error. Please try again.')
       }
 
       setShowLeadForm(false)
@@ -415,41 +574,30 @@ export const useChatEngine = () => {
       setLeadData({})
       setIsTyping(false)
     }, 1000)
-  }, [addMessage, leadData, leadStep])
+  }, [addBotMessage, leadData, leadStep])
 
-  // Initialize managers only on client side
   useEffect(() => {
     memoryManager.current = new MemoryManager()
     leadFlowManager.current = new LeadFlowManager()
 
-    // Use requestAnimationFrame to defer state updates
     requestAnimationFrame(() => {
       setIsInitialized(true)
-      // Update quick replies after initialization
-      if (memoryManager.current) {
-        const replies = getContextualQuickReplies(
-          {
-            memory: memoryManager.current.getMemory(),
-            hasProperties: false,
-            conversationLength: 0,
-          },
-          {
-            onPropertySearch: () => processUserMessage('Find properties'),
-            onScheduleViewing: () => processUserMessage('Schedule viewing'),
-            onContactAgent: () => processUserMessage('Contact agent'),
-            onClearChat: () => processUserMessage('Clear chat'),
-            onLocationSearch: () => processUserMessage('Search by location'),
-            onBudgetInfo: () => processUserMessage('Tell me about budget'),
-          }
-        )
-        setQuickReplies(replies)
-      }
+      setMessages((prev) =>
+        prev.length > 0
+          ? prev
+          : [
+              {
+                id: generateUniqueId(),
+                type: 'bot',
+                content: WELCOME_MESSAGE,
+                timestamp: new Date(),
+              },
+            ]
+      )
     })
-  }, [processUserMessage])
+  }, [])
 
-  // Update quick replies whenever relevant state changes
   useEffect(() => {
-    // Use requestAnimationFrame to defer state updates
     requestAnimationFrame(() => {
       if (memoryManager.current) {
         const replies = getContextualQuickReplies(
@@ -459,12 +607,12 @@ export const useChatEngine = () => {
             conversationLength: messages.length,
           },
           {
-            onPropertySearch: () => processUserMessage('Find properties'),
-            onScheduleViewing: () => processUserMessage('Schedule viewing'),
-            onContactAgent: () => processUserMessage('Contact agent'),
-            onClearChat: () => processUserMessage('Clear chat'),
-            onLocationSearch: () => processUserMessage('Search by location'),
-            onBudgetInfo: () => processUserMessage('Tell me about budget'),
+            onPropertySearch: () => processUserMessage('find properties'),
+            onScheduleViewing: () => processUserMessage('schedule viewing'),
+            onContactAgent: () => processUserMessage('contact agent'),
+            onClearChat: () => processUserMessage('new chat'),
+            onLocationSearch: () => processUserMessage('search by location'),
+            onBudgetInfo: () => processUserMessage('tell me about budget'),
           }
         )
         setQuickReplies(replies)

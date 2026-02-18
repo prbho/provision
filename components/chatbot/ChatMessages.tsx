@@ -1,4 +1,7 @@
 // components/chatbot/ChatMessages.tsx
+'use client'
+
+import { useEffect, useRef } from 'react'
 import { Loader2 } from 'lucide-react'
 
 import { SimplePropertyCard } from './SimplePropertyCard'
@@ -11,12 +14,49 @@ interface ChatMessagesProps {
   onQuickReply: (action: () => void) => void
 }
 
+const URL_REGEX = /(https?:\/\/[^\s]+)/g
+
+function renderMessageWithLinks(text: string) {
+  const lines = text.split('\n')
+  return lines.map((line, lineIndex) => {
+    const parts = line.split(URL_REGEX)
+    return (
+      <span key={`line-${lineIndex}`}>
+        {parts.map((part, partIndex) => {
+          const isUrl = /^https?:\/\//.test(part)
+          if (!isUrl) {
+            return <span key={`part-${lineIndex}-${partIndex}`}>{part}</span>
+          }
+          return (
+            <a
+              key={`part-${lineIndex}-${partIndex}`}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline break-all text-blue-600 hover:text-blue-700"
+            >
+              {part}
+            </a>
+          )
+        })}
+        {lineIndex < lines.length - 1 ? <br /> : null}
+      </span>
+    )
+  })
+}
+
 export default function ChatMessages({
   messages,
   isTyping,
   quickReplies,
   onQuickReply,
 }: ChatMessagesProps) {
+  const bottomRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [messages.length, isTyping])
+
   return (
     <div className="flex-1 p-4 overflow-y-auto bg-brand/5">
       <div className="space-y-4">
@@ -45,7 +85,7 @@ export default function ChatMessages({
               ) : (
                 <>
                   <p className="text-sm whitespace-pre-wrap">
-                    {message.content}
+                    {renderMessageWithLinks(message.content)}
                   </p>
                   <p
                     className={`text-xs mt-1 ${
@@ -88,6 +128,7 @@ export default function ChatMessages({
             ))}
           </div>
         )}
+        <div ref={bottomRef} />
       </div>
     </div>
   )

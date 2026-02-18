@@ -1,11 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
 import { Account, Client } from 'node-appwrite'
+import { enforceRateLimit, getRequestClientIp } from '@/lib/rate-limit'
 
 const SESSION_COOKIE_NAME = 'pv_session' // your own cookie name
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getRequestClientIp(req)
+    const limit = enforceRateLimit({
+      key: `auth:ssr-login:${ip}`,
+      limit: 12,
+      windowMs: 10 * 60 * 1000,
+    })
+
+    if (!limit.ok) {
+      return NextResponse.json(
+        { success: false, error: 'Too many login attempts. Try again later.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(limit.retryAfterSeconds) },
+        }
+      )
+    }
+
     const { email, password } = await req.json()
 
     if (!email || !password) {

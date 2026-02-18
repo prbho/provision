@@ -1,7 +1,7 @@
 // components/NotificationBell.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Bell, Check, Eye, EyeOff } from 'lucide-react'
 
@@ -35,13 +35,7 @@ export default function NotificationBell() {
   const [isLoading, setIsLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
 
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      fetchNotifications()
-    }
-  }, [isAuthenticated, user])
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!user) return
 
     try {
@@ -60,7 +54,13 @@ export default function NotificationBell() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      fetchNotifications()
+    }
+  }, [isAuthenticated, user, fetchNotifications])
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -125,15 +125,6 @@ export default function NotificationBell() {
         month: 'short',
         day: 'numeric',
       })
-    }
-  }
-
-  // Parse metadata for additional context
-  const parseMetadata = (metadata: string) => {
-    try {
-      return metadata ? JSON.parse(metadata) : {}
-    } catch {
-      return {}
     }
   }
 

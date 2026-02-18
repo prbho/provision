@@ -9,19 +9,29 @@ import {
   MESSAGES_COLLECTION_ID,
   Query,
 } from '@/lib/appwrite-server'
+import { enforceRateLimit, getRequestClientIp } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-
-    console.log('📨 Creating new message:', {
-      userId: body.userId,
-      toUserId: body.toUserId,
-      propertyId: body.propertyId,
-      message: body.message?.substring(0, 50) + '...',
+    const ip = getRequestClientIp(request)
+    const senderId = String(body?.userId || '')
+    const limit = enforceRateLimit({
+      key: `messages:post:${ip}:${senderId}`,
+      limit: 60,
+      windowMs: 60 * 1000,
     })
 
-    // Validate required fields
+    if (!limit.ok) {
+      return NextResponse.json(
+        { error: 'Too many messages. Please slow down.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(limit.retryAfterSeconds) },
+        }
+      )
+    }
+
     if (!body.userId || !body.toUserId || !body.message) {
       return NextResponse.json(
         { error: 'Missing required fields: userId, toUserId, message' },
@@ -29,7 +39,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create message document
     const messageData = {
       fromUserId: body.userId,
       toUserId: body.toUserId,
@@ -47,8 +56,6 @@ export async function POST(request: NextRequest) {
       messageTitle: body.messageTitle || body.message.substring(0, 50),
     }
 
-    console.log('📨 Creating message with data:', messageData)
-
     const message = await databases.createDocument(
       DATABASE_ID,
       MESSAGES_COLLECTION_ID,
@@ -56,22 +63,13 @@ export async function POST(request: NextRequest) {
       messageData
     )
 
-    console.log('✅ Message created successfully:', {
-      id: message.$id,
-      fromUserId: message.fromUserId,
-      toUserId: message.toUserId,
-      sentAt: message.sentAt,
-    })
-
     return NextResponse.json({
       success: true,
       message: 'Message sent successfully',
       data: message,
     })
   } catch (error: any) {
-    console.error('❌ Error sending message:', error)
-
-    // Return proper error response
+    console.error('Error sending message:', error)
     return NextResponse.json(
       {
         error: error.message || 'Failed to send message',
@@ -82,14 +80,28 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Keep your existing GET function here...
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const otherUserId = searchParams.get('otherUserId')
     const propertyId = searchParams.get('propertyId')
+    const ip = getRequestClientIp(request)
+    const limit = enforceRateLimit({
+      key: `messages:get:${ip}:${userId || 'anon'}`,
+      limit: 120,
+      windowMs: 60 * 1000,
+    })
+
+    if (!limit.ok) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please slow down.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(limit.retryAfterSeconds) },
+        }
+      )
+    }
 
     if (!userId || !otherUserId) {
       return NextResponse.json(
@@ -98,13 +110,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('📨 Fetching messages for conversation:', {
-      userId,
-      otherUserId,
-      propertyId,
-    })
-
-    // Build the query
     const queries = [
       Query.or([
         Query.and([
@@ -120,35 +125,17 @@ export async function GET(request: NextRequest) {
       Query.limit(100),
     ]
 
-    // Add property filter if provided
     if (propertyId) {
       queries.push(Query.equal('propertyId', propertyId))
     }
 
-    // Fetch messages in a single query
     const messagesResponse = await databases.listDocuments(
       DATABASE_ID,
       MESSAGES_COLLECTION_ID,
       queries
     )
 
-    const messages = messagesResponse.documents
-
-    console.log('📨 Messages fetched:', {
-      total: messagesResponse.total,
-      sample: messages.slice(0, 3).map((msg) => ({
-        id: msg.$id,
-        message: msg.message?.substring(0, 50),
-        from: msg.fromUserId,
-        to: msg.toUserId,
-        sentAt: msg.sentAt,
-        isRead: msg.isRead,
-        propertyId: msg.propertyId,
-      })),
-    })
-
-    // Transform to ensure consistent field names
-    const transformedMessages = messages.map((msg: any) => ({
+    const transformedMessages = messagesResponse.documents.map((msg: any) => ({
       $id: msg.$id,
       id: msg.$id,
       fromUserId: msg.fromUserId,

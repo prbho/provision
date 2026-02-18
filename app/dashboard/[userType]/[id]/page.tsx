@@ -93,10 +93,19 @@ type PurchaseDoc = {
   agentId?: string
   propertyId?: string
   propertyTitle?: string
+  amount?: number
   amountKobo?: number
   currency?: string
   status?: string
   reference?: string
+}
+
+type BuyerSummaryResponse = {
+  success: boolean
+  supported?: boolean
+  stats?: DashboardStatsData
+  recentPurchases?: PurchaseDoc[]
+  savedProperties?: DashboardProperty[]
 }
 
 export default function DynamicDashboardPage({}: {
@@ -124,6 +133,8 @@ export default function DynamicDashboardPage({}: {
     process.env.NEXT_PUBLIC_APPWRITE_USERS_TABLE_ID || 'users'
   const agentsCollectionId =
     process.env.NEXT_PUBLIC_APPWRITE_AGENTS_TABLE_ID || 'agents'
+  const DASHBOARD_CACHE_TTL_MS = 60 * 1000
+  const dashboardCacheKey = `dashboard:${userType}:${id}`
 
   const money = useCallback((amountKobo?: number, currency = 'NGN') => {
     const n = Math.round((Number(amountKobo) || 0) / 100)
@@ -134,6 +145,59 @@ export default function DynamicDashboardPage({}: {
       maximumFractionDigits: 0,
     }).format(n)
   }, [])
+
+  const readDashboardCache = useCallback(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const raw = sessionStorage.getItem(dashboardCacheKey)
+      if (!raw) return null
+      const parsed = JSON.parse(raw) as {
+        at: number
+        stats: DashboardStatsData
+        recentActivity: any[]
+        properties: DashboardProperty[]
+        recentPurchases: PurchaseDoc[]
+      }
+      if (!parsed?.at || Date.now() - parsed.at > DASHBOARD_CACHE_TTL_MS) {
+        sessionStorage.removeItem(dashboardCacheKey)
+        return null
+      }
+      return parsed
+    } catch {
+      return null
+    }
+  }, [dashboardCacheKey, DASHBOARD_CACHE_TTL_MS])
+
+  const writeDashboardCache = useCallback(
+    (data: {
+      stats: DashboardStatsData
+      recentActivity: any[]
+      properties: DashboardProperty[]
+      recentPurchases: PurchaseDoc[]
+    }) => {
+      if (typeof window === 'undefined') return
+      try {
+        sessionStorage.setItem(
+          dashboardCacheKey,
+          JSON.stringify({ at: Date.now(), ...data })
+        )
+      } catch {
+        // ignore cache write failures
+      }
+    },
+    [dashboardCacheKey]
+  )
+
+  const fetchBuyerSummaryFromApi = useCallback(async () => {
+    const res = await fetch(`/api/dashboard/${userType}/${id}/summary`, {
+      method: 'GET',
+      cache: 'no-store',
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as BuyerSummaryResponse
+    if (!data.success || !data.supported) return null
+    return data
+  }, [id, userType])
 
   // ✅ Validate route once auth state is ready (prevents loops / spam)
   useEffect(() => {
@@ -155,16 +219,169 @@ export default function DynamicDashboardPage({}: {
   }, [isLoading, user, id, userType, router])
 
   // Fetch properties from Appwrite
+  const listDocumentsWithSelectFallback = useCallback(
+    async (collectionId: string, queries: any[], fallbackQueries: any[]) => {
+      try {
+        return await databases.listDocuments(databaseId, collectionId, queries)
+      } catch {
+        return databases.listDocuments(databaseId, collectionId, fallbackQueries)
+      }
+    },
+    [databaseId]
+  )
+
   const fetchProperties = useCallback(async () => {
     if (!user?.$id) return []
 
     try {
+      // Buyer dashboard only needs saved properties preview.
+      // Fetching all active listings increases CPU, memory, and network egress.
+      if (user.userType === 'buyer') {
+        const favoriteIds = Array.isArray((user as any)?.favoriteProperties)
+          ? ((user as any).favoriteProperties as string[]).filter(Boolean)
+          : []
+
+        if (favoriteIds.length === 0) return []
+
+        const selectedFields = [
+          '$id',
+          '$collectionId',
+          '$databaseId',
+          '$createdAt',
+          '$updatedAt',
+          '$permissions',
+          'agentId',
+          'userId',
+          'name',
+          'propertyId',
+          'agentName',
+          'title',
+          'description',
+          'propertyType',
+          'status',
+          'price',
+          'priceUnit',
+          'address',
+          'city',
+          'state',
+          'images',
+          'isActive',
+          'isFeatured',
+          'isVerified',
+          'views',
+          'favorites',
+        ]
+        const response = await listDocumentsWithSelectFallback(
+          propertiesCollectionId,
+          [
+            Query.equal('$id', favoriteIds.slice(0, 30)),
+            Query.limit(30),
+            Query.select(selectedFields),
+          ],
+          [Query.equal('$id', favoriteIds.slice(0, 30)), Query.limit(30)]
+        )
+
+        const transformed: DashboardProperty[] = response.documents.map(
+          (doc: any) => ({
+            $id: doc.$id,
+            $collectionId: doc.$collectionId,
+            $databaseId: doc.$databaseId,
+            $createdAt: doc.$createdAt,
+            $updatedAt: doc.$updatedAt,
+            $permissions: doc.$permissions || '',
+            agentId: doc.agentId || '',
+            userId: doc.userId || '',
+            name: doc.name || '',
+            propertyId: doc.propertyId || doc.$id,
+            agentName: doc.agentName || '',
+            title: doc.title || 'Untitled Property',
+            description: doc.description || '',
+            propertyType: doc.propertyType || 'house',
+            status: doc.status || 'for-sale',
+            price: doc.price || 0,
+            priceUnit: doc.priceUnit || 'total',
+            originalPrice: doc.originalPrice,
+            priceHistory: doc.priceHistory || [],
+            address: doc.address || '',
+            phone: doc.phone || '',
+            city: doc.city || '',
+            state: doc.state || '',
+            zipCode: doc.zipCode || '',
+            country: doc.country || '',
+            neighborhood: doc.neighborhood,
+            latitude: doc.latitude || 0,
+            longitude: doc.longitude || 0,
+            bedrooms: doc.bedrooms || 0,
+            bathrooms: doc.bathrooms || 0,
+            squareFeet: doc.squareFeet || 0,
+            lotSize: doc.lotSize,
+            yearBuilt: doc.yearBuilt,
+            features: doc.features || [],
+            amenities: doc.amenities || [],
+            images: doc.images || [],
+            videos: doc.videos || [],
+            titles: doc.titles || [],
+            ownerId: doc.ownerId || '',
+            listedBy: doc.listedBy || 'agent',
+            listDate: doc.listDate || doc.$createdAt,
+            lastUpdated: doc.lastUpdated || doc.$updatedAt,
+            isActive: doc.isActive !== undefined ? doc.isActive : true,
+            isFeatured: doc.isFeatured || false,
+            isVerified: doc.isVerified || false,
+            tags: doc.tags || [],
+            views: doc.views || 0,
+            favorites: doc.favorites || 0,
+            paymentOutright: doc.paymentOutright || doc.outright || false,
+            outright: doc.outright || false,
+            paymentPlan: doc.paymentPlan || false,
+            mortgageEligible: doc.mortgageEligible || false,
+            customPlanAvailable: doc.customPlanAvailable || false,
+            customPlanDepositPercent: doc.customPlanDepositPercent || 0,
+            customPlanMonths: doc.customPlanMonths || 0,
+            inquiries: doc.inquiries || 0,
+            lastInquiry: doc.lastInquiry,
+          })
+        )
+
+        return transformed
+      }
+
       // For admin, fetch all properties without filters
       if (user.userType === 'admin') {
-        const response = await databases.listDocuments(
-          databaseId,
+        const selectedFields = [
+          '$id',
+          '$collectionId',
+          '$databaseId',
+          '$createdAt',
+          '$updatedAt',
+          '$permissions',
+          'agentId',
+          'name',
+          'propertyId',
+          'agentName',
+          'title',
+          'description',
+          'propertyType',
+          'status',
+          'price',
+          'priceUnit',
+          'address',
+          'city',
+          'state',
+          'images',
+          'isActive',
+          'isFeatured',
+          'isVerified',
+          'views',
+          'favorites',
+          'listedBy',
+          'listDate',
+          'lastUpdated',
+        ]
+        const response = await listDocumentsWithSelectFallback(
           propertiesCollectionId,
-          [Query.orderDesc('$createdAt'), Query.limit(1000)]
+          [Query.orderDesc('$createdAt'), Query.limit(200), Query.select(selectedFields)],
+          [Query.orderDesc('$createdAt'), Query.limit(200)]
         )
 
         const transformed: DashboardProperty[] = response.documents.map(
@@ -239,16 +456,46 @@ export default function DynamicDashboardPage({}: {
         queries.push(Query.equal('ownerId', user.$id))
       } else if (user.userType === 'agent') {
         queries.push(Query.equal('agentId', user.$id))
-      } else if (user.userType === 'buyer') {
-        queries.push(Query.equal('isActive', true))
       }
 
       queries.push(Query.orderDesc('$createdAt'))
       queries.push(Query.limit(20))
 
-      const response = await databases.listDocuments(
-        databaseId,
+      const selectedFields = [
+        '$id',
+        '$collectionId',
+        '$databaseId',
+        '$createdAt',
+        '$updatedAt',
+        '$permissions',
+        'agentId',
+        'userId',
+        'name',
+        'propertyId',
+        'agentName',
+        'title',
+        'description',
+        'propertyType',
+        'status',
+        'price',
+        'priceUnit',
+        'address',
+        'city',
+        'state',
+        'images',
+        'isActive',
+        'isFeatured',
+        'isVerified',
+        'views',
+        'favorites',
+        'listedBy',
+        'listDate',
+        'lastUpdated',
+      ]
+
+      const response = await listDocumentsWithSelectFallback(
         propertiesCollectionId,
+        [...queries, Query.select(selectedFields)],
         queries
       )
 
@@ -319,7 +566,7 @@ export default function DynamicDashboardPage({}: {
       console.error('Error fetching properties:', error)
       return []
     }
-  }, [user, databaseId, propertiesCollectionId])
+  }, [user, propertiesCollectionId, listDocumentsWithSelectFallback])
 
   // ✅ Fetch purchases (buyer)
   const fetchPurchases = useCallback(async () => {
@@ -328,22 +575,52 @@ export default function DynamicDashboardPage({}: {
     try {
       const queries: any[] = [
         Query.orderDesc('$createdAt'),
-        Query.limit(5),
+        Query.limit(100),
         Query.equal('buyerId', user.$id),
       ]
 
-      const res = await databases.listDocuments(
-        databaseId,
+      const res = await listDocumentsWithSelectFallback(
         purchasesCollectionId,
+        [
+          ...queries,
+          Query.select([
+            '$id',
+            '$createdAt',
+            'buyerId',
+            'agentId',
+            'propertyId',
+            'propertyTitle',
+            'title',
+            'amount',
+            'amountKobo',
+            'currency',
+            'status',
+            'reference',
+          ]),
+        ],
         queries
       )
 
-      return (res.documents || []) as unknown as PurchaseDoc[]
+      const normalized: PurchaseDoc[] = (res.documents || []).map((d: any) => ({
+        $id: d.$id,
+        $createdAt: d.$createdAt,
+        buyerId: d.buyerId,
+        agentId: d.agentId,
+        propertyId: d.propertyId,
+        propertyTitle: d.propertyTitle || d.title,
+        amount: Number(d.amount) || 0,
+        amountKobo: Number(d.amountKobo ?? d.amount) || 0,
+        currency: d.currency || 'NGN',
+        status: d.status,
+        reference: d.reference,
+      }))
+
+      return normalized
     } catch (e) {
       console.error('Error fetching purchases:', e)
       return []
     }
-  }, [user, databaseId, purchasesCollectionId])
+  }, [user, purchasesCollectionId, listDocumentsWithSelectFallback])
 
   // Calculate dashboard stats based on properties
   const calculateStats = useCallback(
@@ -475,6 +752,84 @@ export default function DynamicDashboardPage({}: {
     try {
       setDashboardLoading(true)
 
+      const cached = readDashboardCache()
+      if (cached) {
+        setDashboardStats(cached.stats || {})
+        setRecentActivity(cached.recentActivity || [])
+        setProperties(cached.properties || [])
+        setRecentPurchases(cached.recentPurchases || [])
+        setDashboardLoading(false)
+        return
+      }
+
+      if (userType === 'buyer') {
+        const summary = await fetchBuyerSummaryFromApi()
+        if (summary?.stats) {
+          const summaryStats = summary.stats
+          const summaryPurchases = summary.recentPurchases || []
+          const summaryProperties = summary.savedProperties || []
+
+          const buyerActivity = summaryPurchases.slice(0, 3).map((p) => ({
+            id: p.$id,
+            title: 'Purchase',
+            description: `Payment completed${
+              p.propertyTitle ? ` for "${p.propertyTitle}"` : ''
+            }`,
+            time: new Date(p.$createdAt).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            }),
+            status: 'completed',
+          }))
+
+          setDashboardStats(summaryStats)
+          setRecentPurchases(summaryPurchases)
+          setProperties(summaryProperties)
+          setRecentActivity(
+            buyerActivity.length > 0
+              ? buyerActivity
+              : [
+                  {
+                    id: 'buyer-welcome',
+                    type: 'notification',
+                    title: 'System',
+                    description: 'Welcome to your dashboard',
+                    time: new Date().toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                    }),
+                    status: 'new',
+                  },
+                ]
+          )
+
+          writeDashboardCache({
+            stats: summaryStats,
+            recentActivity:
+              buyerActivity.length > 0
+                ? buyerActivity
+                : [
+                    {
+                      id: 'buyer-welcome',
+                      type: 'notification',
+                      title: 'System',
+                      description: 'Welcome to your dashboard',
+                      time: new Date().toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      }),
+                      status: 'new',
+                    },
+                  ],
+            properties: summaryProperties,
+            recentPurchases: summaryPurchases,
+          })
+
+          setDashboardLoading(false)
+          return
+        }
+      }
+
       const [fetchedProperties, purchases] = await Promise.all([
         fetchProperties(),
         userType === 'buyer' ? fetchPurchases() : Promise.resolve([]),
@@ -554,13 +909,40 @@ export default function DynamicDashboardPage({}: {
       }
 
       setRecentActivity(activity)
+
+      writeDashboardCache({
+        stats:
+          userType === 'buyer'
+            ? {
+                ...stats,
+                recentPurchasesCount: purchases.length,
+                totalSpentKobo: purchases.reduce(
+                  (sum, p) => sum + (Number(p.amountKobo) || 0),
+                  0
+                ),
+              }
+            : stats,
+        recentActivity: activity,
+        properties: fetchedProperties,
+        recentPurchases: purchases,
+      })
     } catch (error) {
       console.error('Error loading dashboard data:', error)
       toast.error('Failed to load dashboard data')
     } finally {
       setDashboardLoading(false)
     }
-  }, [user, id, userType, fetchProperties, fetchPurchases, calculateStats])
+  }, [
+    user,
+    id,
+    userType,
+    fetchProperties,
+    fetchPurchases,
+    calculateStats,
+    readDashboardCache,
+    writeDashboardCache,
+    fetchBuyerSummaryFromApi,
+  ])
 
   useEffect(() => {
     if (!isLoading && user && user.$id === id && user.userType === userType) {

@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Bell, Check } from 'lucide-react'
 
@@ -29,13 +29,7 @@ export default function UserNotificationsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
 
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      fetchNotifications()
-    }
-  }, [isAuthenticated, user])
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!user?.$id) return
 
     try {
@@ -51,7 +45,13 @@ export default function UserNotificationsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [user?.$id])
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      fetchNotifications()
+    }
+  }, [isAuthenticated, user, fetchNotifications])
 
   const markAsRead = async (notificationId: string) => {
     try {

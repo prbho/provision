@@ -9,6 +9,7 @@ import {
   databases,
   PROPERTIES_COLLECTION_ID,
 } from '@/lib/appwrite-server'
+import { enforceRateLimit, getRequestClientIp } from '@/lib/rate-limit'
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY
 const PAYSTACK_BASE_URL = 'https://api.paystack.co'
@@ -73,6 +74,26 @@ function parsePriceToNaira(price: any): number {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getRequestClientIp(req)
+    const limit = enforceRateLimit({
+      key: `purchases:init:${ip}`,
+      limit: 20,
+      windowMs: 10 * 60 * 1000,
+    })
+
+    if (!limit.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Too many purchase initialization requests. Try again later.',
+        },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(limit.retryAfterSeconds) },
+        }
+      )
+    }
+
     if (!PAYSTACK_SECRET_KEY) {
       return jsonError('Missing PAYSTACK_SECRET_KEY', 500)
     }

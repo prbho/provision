@@ -1,19 +1,22 @@
 // components/chatbot/Chatbot.tsx
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MessageCircle } from 'lucide-react'
 
 import ChatHeader from './ChatHeader'
 import ChatInput from './ChatInput'
 import ChatMessages from './ChatMessages'
 import LeadFormSteps from './LeadFormSteps'
+import { LS_VOICE_MUTED_KEY } from './types'
 import { useChatEngine } from './useChatEngine'
 
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false)
-  const [isVoiceMuted, setIsVoiceMuted] = useState(false)
-  const [isListening, setIsListening] = useState(false)
+  const [isVoiceMuted, setIsVoiceMuted] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem(LS_VOICE_MUTED_KEY) === 'true'
+  })
 
   const {
     messages,
@@ -33,9 +36,12 @@ export default function Chatbot() {
   }
 
   const toggleVoice = () => {
-    setIsVoiceMuted(!isVoiceMuted)
-    // Add voice recognition logic here
+    setIsVoiceMuted((prev) => !prev)
   }
+
+  useEffect(() => {
+    localStorage.setItem(LS_VOICE_MUTED_KEY, String(isVoiceMuted))
+  }, [isVoiceMuted])
 
   return (
     <>
@@ -55,7 +61,7 @@ export default function Chatbot() {
             onToggleVoice={toggleVoice}
             onClearChat={handleClearChat}
             isVoiceMuted={isVoiceMuted}
-            isListening={isListening}
+            isListening={false}
           />
 
           <ChatMessages
