@@ -35,6 +35,12 @@ function getFileUrl(fileId: string): string {
   return `${endpoint}/storage/buckets/${STORAGE_BUCKET_ID}/files/${fileId}/view?project=${projectId}`
 }
 
+function getAppUrl(request: NextRequest): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim()
+  if (configured) return configured.replace(/\/+$/, '')
+  return request.nextUrl.origin.replace(/\/+$/, '')
+}
+
 // Helper function to convert base64 to File
 function base64ToFile(base64Data: string, mimeType: string): File {
   const base64 = base64Data.includes(',')
@@ -197,6 +203,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (!userType || !['buyer', 'seller', 'agent'].includes(userType)) {
+      return NextResponse.json(
+        { error: 'Invalid user type' },
+        { status: 400 }
+      )
+    }
+
     // Agent validation
     if (userType === 'agent') {
       if (!agentData?.agency) {
@@ -242,9 +255,9 @@ export async function POST(request: NextRequest) {
     // Generate verification
     const verificationToken = Buffer.from(
       `${appwriteUser.$id}:${Date.now()}:${Math.random()}`
-    ).toString('base64')
-
-    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify/${verificationToken}`
+    ).toString('base64url')
+    const appUrl = getAppUrl(request)
+    const verificationUrl = `${appUrl}/verify/${verificationToken}`
 
     // Determine collection
     const isAgent = userType === 'agent'
@@ -280,7 +293,6 @@ export async function POST(request: NextRequest) {
         avatar: finalAvatarUrl,
         phone: phone || '',
         mobilePhone: phone || '',
-        userId: appwriteUser.$id,
       }
 
       // Add user-specific fields

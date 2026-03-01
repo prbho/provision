@@ -33,6 +33,12 @@ function getResendClient() {
   return new Resend(apiKey)
 }
 
+function getAppUrl(request: NextRequest): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim()
+  if (configured) return configured.replace(/\/+$/, '')
+  return request.nextUrl.origin.replace(/\/+$/, '')
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json()
@@ -121,10 +127,11 @@ export async function POST(request: NextRequest) {
     // Generate new verification token
     const verificationToken = Buffer.from(
       `${userDoc.$id}:${Date.now()}:${Math.random()}`
-    ).toString('base64')
+    ).toString('base64url')
 
     // Create the NEW verification URL with the NEW token
-    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://localhost:3000'}/verify/${verificationToken}`
+    const appUrl = getAppUrl(request)
+    const verificationUrl = `${appUrl}/verify/${verificationToken}`
 
     console.log('🔐 Generated NEW verification token:', {
       tokenPreview: verificationToken.substring(0, 30) + '...',

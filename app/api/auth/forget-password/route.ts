@@ -11,6 +11,12 @@ import { emailService } from '@/lib/services/email-service'
 // Collection for storing reset tokens
 const PASSWORD_RESET_TOKENS_COLLECTION = 'password_reset_tokens'
 
+function getAppUrl(request: NextRequest): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim()
+  if (configured) return configured.replace(/\/+$/, '')
+  return request.nextUrl.origin.replace(/\/+$/, '')
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log('🔑 Forget password request received')
@@ -118,7 +124,8 @@ export async function POST(request: NextRequest) {
       )
 
       // Create reset URL with our token
-      const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}&email=${encodeURIComponent(email)}`
+      const appUrl = getAppUrl(request)
+      const resetUrl = `${appUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`
 
       console.log('✅ Custom password token created for:', email)
 

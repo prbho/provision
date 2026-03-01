@@ -352,10 +352,10 @@ const sitemapData: SitemapCategory[] = [
       },
       {
         title: 'Sign Up',
-        href: '/signup',
-        description: 'Alternative signup option',
+        href: '/register',
+        description: 'Create your free account',
         icon: Sparkles,
-        personality: 'Quick signup',
+        personality: 'Quick registration',
         tagline: 'Get started in seconds',
       },
       {

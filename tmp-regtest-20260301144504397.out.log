@@ -1,0 +1,30 @@
+
+> prop-safe-hub@0.1.0 start
+> next start -p 3105
+
+   ▲ Next.js 16.0.10
+   - Local:         http://localhost:3105
+   - Network:       http://192.168.0.149:3105
+
+ ✓ Starting...
+ ✓ Ready in 986ms
+✅ Appwrite initialized
+🔍 Registration request received
+📄 Processing JSON request
+📊 Registration summary: {
+  name: 'E2E Reg Test',
+  email: 'e2e.regtest.20260301144517@example.com',
+  userType: 'buyer',
+  agency: 'None',
+  city: 'None',
+  hasAvatar: false
+}
+✅ Appwrite account created: 69a442ed001d5e8e7e79
+⚠️ Using default avatar
+🎯 Final avatar URL: https://api.dicebear.com/7.x/avataaars/svg?seed=e2e.regtest.20260301144517%40example.com
+✅ Appwrite initialized for Railway build
+✅ User document created in users: 69a442ed001d5e8e7e79
+📤 Sending verification email to: e2e.regtest.20260301144517@example.com
+✅ Buyer verification email sent to: e2e.regtest.20260301144517@example.com
+📧 Email ID: 4952e53e-c35a-41b5-823f-bae79dcb3a2c
+📧 Verification email sent

@@ -6,6 +6,14 @@ import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 
+const VALID_DASHBOARD_USER_TYPES = new Set([
+  'buyer',
+  'seller',
+  'agent',
+  'admin',
+  'user',
+])
+
 export default function Dashboard() {
   const router = useRouter()
   const pathname = usePathname()
@@ -21,10 +29,11 @@ export default function Dashboard() {
       return
     }
 
-    const userType =
-      (user as unknown as any)?.userType ||
-      (user as unknown as any)?.prefs?.userType ||
-      'user'
+    const rawUserType =
+      (user as unknown as any)?.userType || (user as unknown as any)?.prefs?.userType
+    const userType = VALID_DASHBOARD_USER_TYPES.has(rawUserType)
+      ? rawUserType
+      : 'buyer'
 
     const target = `/dashboard/${userType}/${user.$id}`
 
@@ -32,7 +41,20 @@ export default function Dashboard() {
     if (pathname === target) return
 
     router.replace(target)
+
+    // Fallback if client-side transition gets stuck on /dashboard.
+    const fallbackTimer = window.setTimeout(() => {
+      if (window.location.pathname === '/dashboard') {
+        window.location.replace(target)
+      }
+    }, 1500)
+
+    return () => window.clearTimeout(fallbackTimer)
   }, [isLoading, isAuthenticated, user, router, pathname])
 
-  return null
+  return (
+    <div className="min-h-[50vh] flex items-center justify-center">
+      <p className="text-sm text-gray-600">Opening your dashboard...</p>
+    </div>
+  )
 }

@@ -76,14 +76,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (userDoc.userType === 'agent') {
           try {
-            const agentProfiles = await databases.listDocuments(
-              DATABASE_ID,
-              AGENTS_COLLECTION_ID,
-              [Query.equal('userId', userId)]
-            )
+            // Prefer direct document lookup (doc id == auth user id), then fallback.
+            let agentProfile: any | null = null
+            try {
+              agentProfile = await databases.getDocument(
+                DATABASE_ID,
+                AGENTS_COLLECTION_ID,
+                userId
+              )
+            } catch {
+              const agentProfiles = await databases.listDocuments(
+                DATABASE_ID,
+                AGENTS_COLLECTION_ID,
+                [Query.equal('userId', userId)]
+              )
+              if (agentProfiles.documents.length > 0) {
+                agentProfile = agentProfiles.documents[0]
+              }
+            }
 
-            if (agentProfiles.documents.length > 0) {
-              const agentProfile: any = agentProfiles.documents[0]
+            if (agentProfile) {
               agentDocumentId = agentProfile.$id
               avatarUrl = agentProfile.avatar || userDoc.avatar
 
@@ -399,14 +411,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setAuthState({
-        user: result.user,
+        user: result.user ?? null,
         isLoading: false,
-        isAuthenticated: true,
+        isAuthenticated: false,
       })
       setAuthCheckComplete(true)
 
       setVerificationDismissed(false)
-      setShowVerificationModal(true)
+      setShowVerificationModal(false)
 
       return result
     } catch (error: any) {

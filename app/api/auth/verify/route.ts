@@ -11,6 +11,13 @@ import {
   USERS_COLLECTION_ID,
 } from '@/lib/appwrite-server'
 
+function decodeVerificationToken(token: string): string {
+  const normalized = token.trim()
+  const base64 = normalized.replace(/-/g, '+').replace(/_/g, '/')
+  const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
+  return Buffer.from(padded, 'base64').toString('utf-8')
+}
+
 // Disable GET method - only POST allowed
 export function GET() {
   return new NextResponse('Method not allowed. Please use POST.', {
@@ -46,7 +53,7 @@ export async function POST(request: NextRequest) {
     // Extract userId from token (token format: userId:timestamp:random)
     let userId = ''
     try {
-      const decoded = Buffer.from(token, 'base64').toString('utf-8')
+      const decoded = decodeVerificationToken(token)
       const parts = decoded.split(':')
       if (parts.length >= 1) {
         userId = parts[0]

@@ -28,7 +28,7 @@ const staticRoutes = [
   { path: '/cookies', priority: '0.3', changefreq: 'yearly' },
   { path: '/accessibility', priority: '0.3', changefreq: 'yearly' },
   { path: '/login', priority: '0.5', changefreq: 'monthly' },
-  { path: '/signup', priority: '0.5', changefreq: 'monthly' },
+  { path: '/register', priority: '0.5', changefreq: 'monthly' },
   { path: '/dashboard', priority: '0.4', changefreq: 'weekly' },
   { path: '/sitemap', priority: '0.3', changefreq: 'monthly' },
 ]

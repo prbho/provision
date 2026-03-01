@@ -72,7 +72,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   // Password reset state
   const [resetToken, setResetToken] = useState('')
-  const [userId, setUserId] = useState('')
   const [newPassword, setNewPassword] = useState('') // Rename for clarity
   const [confirmNewPassword, setConfirmNewPassword] = useState('') // Add confirm for reset
   const [resetEmail, setResetEmail] = useState('')
@@ -103,7 +102,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     // Reset password reset fields
     setResetToken('')
-    setUserId('')
     setNewPassword('')
     setConfirmNewPassword('')
     setResetEmail('')
@@ -125,11 +123,22 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   useEffect(() => {
     if (isOpen) {
       const params = new URLSearchParams(window.location.search)
+      const tokenParam = params.get('token')
+      const emailParam = params.get('email')
       const userIdParam = params.get('userId')
       const secretParam = params.get('secret')
 
+      // New format: /reset-password?token=...&email=...
+      if (tokenParam && emailParam) {
+        setResetToken(tokenParam)
+        setResetEmail(decodeURIComponent(emailParam))
+        setStep('reset-password')
+        toast.info('Please set your new password')
+        return
+      }
+
+      // Legacy format support: /...?...userId=...&secret=...
       if (userIdParam && secretParam) {
-        setUserId(userIdParam)
         setResetToken(secretParam)
         setStep('reset-password')
         toast.info('Please set your new password')
@@ -458,7 +467,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!userId || !resetToken) {
+    if (!resetToken || !resetEmail) {
       toast.error('Invalid reset link. Please request a new one.')
       return
     }
@@ -486,8 +495,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId,
-          secret: resetToken,
+          token: resetToken,
+          email: resetEmail,
           password: newPassword,
           confirmPassword: confirmNewPassword,
         }),
@@ -513,7 +522,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       setNewPassword('')
       setConfirmNewPassword('')
       setResetToken('')
-      setUserId('')
+      setResetEmail('')
     } catch (error) {
       toast.error('Failed to reset password. Please try again.')
     } finally {

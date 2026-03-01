@@ -89,3 +89,7 @@ next-env.d.ts
 
 # Misc
 *.pem
+
+# Appwrite backup script secrets/artifacts
+scripts/appwrite-backup/.gdrive_tokens.json
+scripts/appwrite-backup/backups/

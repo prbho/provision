@@ -14,7 +14,7 @@ Allow: /about
 Allow: /contact
 Allow: /faqs
 Allow: /login
-Allow: /signup
+Allow: /register
 Allow: /privacy
 Allow: /terms
 Allow: /disclaimer

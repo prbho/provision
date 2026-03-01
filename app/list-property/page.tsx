@@ -89,7 +89,7 @@ export default function ListPropertyPage() {
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-50 to-white">
       {/* Hero Section */}
-      <div className="relative bg-linear-to-br from-brand via-emerald-800 from-brand overflow-hidden">
+      <div className="relative bg-linear-to-br via-emerald-800 from-brand overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full -translate-x-32 -translate-y-32"></div>
