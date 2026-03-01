@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node -e \"const { spawn } = require('node:child_process'); const port = process.env.PORT || '3000'; const child = spawn('next', ['start', '-p', port], { stdio: 'inherit', shell: true }); child.on('exit', (code) => process.exit(code ?? 0));\"",
     "lint": "eslint",
     "appwrite:indexes": "npx dotenv -e .env -- tsx scripts/ensure-appwrite-indexes.ts",
     "seed:agents": "node -r dotenv/config scripts/seed-agents.ts",

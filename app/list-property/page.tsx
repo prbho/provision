@@ -285,7 +285,7 @@ export default function ListPropertyPage() {
                 <Button
                   asChild
                   variant="outline"
-                  className="w-full bg-linear-to-r from-brand from-brand hover:from-brand hover:from-brand text-white py-6 text-sm font-semibold shadow-lg hover:shadow-xl transition-all"
+                  className="w-full bg-linear-to-r from-brand hover:from-brand text-white py-6 text-sm font-semibold shadow-lg hover:shadow-xl transition-all"
                   size="lg"
                 >
                   <Link
