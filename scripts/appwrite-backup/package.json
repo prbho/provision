@@ -1,0 +1,25 @@
+{
+  "name": "appwrite-backup-tool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Automated Appwrite database backup to local NDJSON + ZIP + Google Drive",
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "backup": "tsx src/cli.ts backup",
+    "gdrive:auth": "tsx src/cli.ts gdrive:auth"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "dotenv": "^16.4.5",
+    "googleapis": "^144.0.0",
+    "node-appwrite": "^14.1.0"
+  },
+  "devDependencies": {
+    "@types/archiver": "^6.0.2",
+    "@types/node": "^22.8.7",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
