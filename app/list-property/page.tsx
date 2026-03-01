@@ -337,7 +337,7 @@ export default function ListPropertyPage() {
                       Quick Placement
                     </h4>
                     <p className="text-sm text-gray-600">
-                      Average tenant placement in 7 days
+                      Average tenant placement within 7 days
                     </p>
                   </div>
                 </div>
